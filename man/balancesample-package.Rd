@@ -8,6 +8,15 @@
 \description{
 Creates training/testing splits and cross-validation folds that are balanced on several variables at once. Numeric and categorical variables are balanced with anticlustering, data twinning, rerandomization, or crossed strata. Categorical variables can also be stratified exactly, and rows from the same group can be kept together. Results are 'rsample' objects, so they work with 'tune' and the rest of 'tidymodels'.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/jmgirard/balancesample}
+  \item \url{https://jmgirard.github.io/balancesample/}
+  \item Report bugs at \url{https://github.com/jmgirard/balancesample/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Jeffrey M. Girard \email{jeffgirard@gmail.com}
 

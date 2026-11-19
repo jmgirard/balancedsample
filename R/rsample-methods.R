@@ -1,0 +1,100 @@
+# Methods for rsample generics that tune and other tidymodels packages call on
+# resamples.
+
+# tune calls internal_calibration_split() when a workflow has a postprocessor
+# that must be trained (for example, a calibration from tailor). The analysis
+# set is split again: the model is fit on one part and the postprocessor on the
+# other. The inner split uses the same balancing as the outer one.
+
+#' @exportS3Method rsample::internal_calibration_split
+internal_calibration_split.balanced_vfold_split <- function(
+  x,
+  split_args,
+  ...
+) {
+  rlang::check_dots_empty()
+  if (is.null(split_args$prop)) {
+    split_args$prop <- 1 - 1 / split_args$v
+  }
+  balanced_calibration_split(
+    x,
+    split_args,
+    class = c(
+      "balanced_vfold_split_cal",
+      "internal_calibration_split",
+      class(x)
+    )
+  )
+}
+
+#' @exportS3Method rsample::internal_calibration_split
+internal_calibration_split.balanced_initial_split <- function(
+  x,
+  split_args,
+  ...
+) {
+  rlang::check_dots_empty()
+  # tune::last_fit() wraps the split in a manual_rset, so `split_args` is
+  # empty there. The split stores its own arguments.
+  stored <- attributes(x)[c(
+    "prop",
+    "balance",
+    "exact",
+    "group",
+    "method",
+    "options"
+  )]
+  stored <- stored[!vapply(stored, is.null, logical(1))]
+  split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
+  balanced_calibration_split(
+    x,
+    split_args,
+    class = c(
+      "balanced_initial_split_cal",
+      "internal_calibration_split",
+      class(x)
+    )
+  )
+}
+
+# Like rsample, fall back to an empty calibration set with a warning if the
+# analysis set can't be split (for example, if it is too small).
+balanced_calibration_split <- function(x, split_args, class) {
+  analysis_set <- rsample::analysis(x)
+  options <- split_args$options %||% list()
+  # `strategy` applies to folds only.
+  options$strategy <- NULL
+  split <- tryCatch(
+    balanced_initial_split(
+      analysis_set,
+      prop = split_args$prop,
+      balance = tidyselect::all_of(split_args$balance %||% character()),
+      exact = tidyselect::all_of(split_args$exact %||% character()),
+      group = tidyselect::all_of(split_args$group %||% character()),
+      method = split_args$method %||% "anticlust",
+      options = options
+    ),
+    error = function(cnd) {
+      cli::cli_warn(
+        "Cannot create calibration split; creating an empty calibration set.",
+        parent = cnd
+      )
+      rsample::make_splits(analysis_set, analysis_set[0, , drop = FALSE])
+    }
+  )
+  class(split) <- class
+  split
+}
+
+#' @export
+labels.balanced_vfold_cv <- function(object, make_factor = FALSE, ...) {
+  if ("id2" %in% names(object)) {
+    out <- paste(object$id, object$id2, sep = ".")
+  } else {
+    out <- as.character(object$id)
+  }
+  if (make_factor) {
+    out <- as.factor(out)
+  }
+  out
+}
