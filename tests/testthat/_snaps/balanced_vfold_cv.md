@@ -121,3 +121,27 @@
       ! Selected columns must be plain vectors.
       x x is a matrix, data frame, or list column.
 
+# strata and other extra arguments are rejected
+
+    Code
+      balanced_vfold_cv(d, balance = x1, strata = cat)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! balancesample uses `exact`, not `strata`.
+      i Put categorical columns in `exact`, for example `exact = class`.
+      i Put numeric columns in `balance`.
+    Code
+      balanced_initial_split(d, balance = x1, strata = cat)
+    Condition
+      Error in `balanced_initial_split()`:
+      ! balancesample uses `exact`, not `strata`.
+      i Put categorical columns in `exact`, for example `exact = class`.
+      i Put numeric columns in `balance`.
+    Code
+      balanced_vfold_cv(d, balance = x1, folds = 5)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! `...` must be empty.
+      x Problematic argument:
+      * folds = 5
+

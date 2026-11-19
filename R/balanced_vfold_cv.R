@@ -16,12 +16,17 @@
 #'   proportional share, based on the actual size of that set. For folds,
 #'   the counts of a stratum also differ by at most one over the folds
 #'   whenever both rules can hold at once. With `group`, these counts are
-#'   numbers of groups, not rows.
+#'   numbers of groups, not rows. `exact` does the job of `strata` in
+#'   rsample, but it takes several columns and its counts are exact. Numeric
+#'   columns with whole-number values are treated as categories. Put
+#'   continuous columns in `balance`, or use [cut()] to make a factor if you
+#'   need exact counts within ranges.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
 #' @param method The balancing method: `"anticlust"`, `"twinning"`,
 #'   `"rerandomize"`, or `"interaction"`. See Details.
 #' @param options A named list of options for the method. See Details.
+#' @param ... Not used. Must be empty.
 #'
 #' @details
 #' # Methods
@@ -126,9 +131,11 @@ balanced_vfold_cv <- function(
   exact = NULL,
   group = NULL,
   method = "anticlust",
-  options = list()
+  options = list(),
+  ...
 ) {
   call <- rlang::current_env()
+  check_dots(..., call = call)
   check_whole(v, min = 2, call = call)
   check_whole(repeats, min = 1, call = call)
   entry <- get_balance_method(method, call = call)
@@ -253,4 +260,18 @@ check_whole <- function(
     )
   }
   invisible(x)
+}
+
+check_dots <- function(..., call = rlang::caller_env()) {
+  if ("strata" %in% ...names()) {
+    cli::cli_abort(
+      c(
+        "balancesample uses {.arg exact}, not {.arg strata}.",
+        i = "Put categorical columns in {.arg exact}, for example {.code exact = class}.",
+        i = "Put numeric columns in {.arg balance}."
+      ),
+      call = call
+    )
+  }
+  rlang::check_dots_empty(call = call)
 }
