@@ -1,0 +1,22 @@
+# Authors and Citation
+
+## Authors
+
+- **Jeffrey M. Girard**. Author, maintainer.
+
+## Citation
+
+Source:
+[`DESCRIPTION`](https://github.com/jmgirard/balancesample/blob/main/DESCRIPTION)
+
+Girard J (2026). *balancesample: Multivariate Balanced Data Splitting
+for 'rsample'*. R package version 0.0.0.9000,
+<https://github.com/jmgirard/balancesample>.
+
+    @Manual{,
+      title = {balancesample: Multivariate Balanced Data Splitting for 'rsample'},
+      author = {Jeffrey M. Girard},
+      year = {2026},
+      note = {R package version 0.0.0.9000},
+      url = {https://github.com/jmgirard/balancesample},
+    }
