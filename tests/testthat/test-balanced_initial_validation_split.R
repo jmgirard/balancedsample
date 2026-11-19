@@ -1,0 +1,183 @@
+test_that("validation splits have the right sizes and classes", {
+  d <- sim_data()
+  for (m in available_methods()) {
+    set.seed(1)
+    s <- balanced_initial_validation_split(
+      d,
+      prop = c(0.6, 0.2),
+      balance = c(x1, x2, cat),
+      method = m
+    )
+    expect_s3_class(
+      s,
+      c(
+        "balanced_initial_validation_split",
+        "initial_validation_split",
+        "three_way_split"
+      )
+    )
+    expect_equal(nrow(rsample::training(s)), 120, info = m)
+    expect_equal(nrow(rsample::validation(s)), 40, info = m)
+    expect_equal(nrow(rsample::testing(s)), 40, info = m)
+    expect_length(intersect(s$train_id, s$val_id), 0)
+    expect_equal(attr(s, "val_att")$prop, c(0.6, 0.2))
+    expect_equal(attr(s, "val_att")$method, m)
+  }
+})
+
+test_that("validation splits stratify exactly", {
+  d <- sim_data()
+  strata <- interaction(d$cat, d$sex, drop = TRUE)
+  m <- as.vector(table(strata))
+  for (meth in available_methods()) {
+    set.seed(2)
+    s <- balanced_initial_validation_split(
+      d,
+      prop = c(0.5, 0.25),
+      balance = c(x1, x2),
+      exact = c(cat, sex),
+      method = meth
+    )
+    test_id <- setdiff(seq_len(nrow(d)), c(s$train_id, s$val_id))
+    for (ids in list(s$train_id, s$val_id, test_id)) {
+      cnt <- tabulate(as.integer(strata)[ids], nlevels(strata))
+      share <- m * length(ids) / nrow(d)
+      expect_true(
+        all(cnt >= floor(share + 1e-9) & cnt <= ceiling(share - 1e-9)),
+        info = meth
+      )
+    }
+  }
+})
+
+test_that("validation splits keep groups together", {
+  d <- sim_data()
+  for (m in available_methods()) {
+    set.seed(3)
+    s <- balanced_initial_validation_split(
+      d,
+      prop = c(0.5, 0.25),
+      balance = c(x1, x2),
+      group = id,
+      method = m
+    )
+    test_id <- setdiff(seq_len(nrow(d)), c(s$train_id, s$val_id))
+    sets <- list(d$id[s$train_id], d$id[s$val_id], d$id[test_id])
+    expect_length(intersect(sets[[1]], sets[[2]]), 0)
+    expect_length(intersect(sets[[1]], sets[[3]]), 0)
+    expect_length(intersect(sets[[2]], sets[[3]]), 0)
+    # 38 groups * 0.5 = 19 groups for training
+    expect_equal(length(unique(sets[[1]])), 19, info = m)
+  }
+})
+
+test_that("validation splits balance better than rsample", {
+  skip_if_not_installed("anticlust")
+  d <- sim_data()
+  set.seed(4)
+  s <- balanced_initial_validation_split(d, balance = c(x1, x2, x3))
+  set.seed(4)
+  r <- rsample::initial_validation_split(d)
+  bc_s <- balance_check(s)
+  bc_r <- balance_check(r, x1, x2, x3)
+  expect_equal(unique(bc_s$id), c("Validation", "Testing"))
+  expect_lt(
+    max(abs(bc_s$value[bc_s$statistic == "smd"])),
+    max(abs(bc_r$value[bc_r$statistic == "smd"]))
+  )
+})
+
+test_that("twinning validation splits use whole parts", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  set.seed(5)
+  s <- balanced_initial_validation_split(
+    d,
+    prop = c(0.5, 0.25),
+    balance = c(x1, x2),
+    method = "twinning",
+    options = list(strategy = 2)
+  )
+  expect_equal(c(length(s$train_id), length(s$val_id)), c(100, 50))
+  expect_snapshot(error = TRUE, {
+    balanced_initial_validation_split(
+      d,
+      prop = c(0.62, 0.2),
+      balance = x1,
+      method = "twinning"
+    )
+    balanced_initial_validation_split(
+      d,
+      prop = c(0.6, 0.2),
+      balance = x1,
+      method = "twinning",
+      options = list(strategy = 2)
+    )
+  })
+})
+
+test_that("twin_blocks() finds the parts for each set", {
+  expect_equal(twin_blocks(c(120L, 40L, 40L)), c(3L, 1L, 1L))
+  expect_equal(twin_blocks(c(11L, 10L, 10L)), c(1L, 1L, 1L))
+  expect_equal(twin_blocks(c(140L, 30L, 30L)), c(14L, 3L, 3L))
+  expect_null(twin_blocks(c(124L, 40L, 36L)))
+})
+
+test_that("bad validation split inputs give clear errors", {
+  d <- sim_data()
+  expect_snapshot(error = TRUE, {
+    balanced_initial_validation_split(d, prop = 0.6, balance = x1)
+    balanced_initial_validation_split(d, prop = c(0.6, 0.4), balance = x1)
+    balanced_initial_validation_split(d, balance = x1, strata = cat)
+    balanced_initial_validation_split(
+      d[1:4, ],
+      balance = x1,
+      group = site
+    )
+  })
+})
+
+test_that("validation sets work with tune", {
+  skip_if_not_installed("tune")
+  skip_if_not_installed("parsnip")
+
+  set.seed(6)
+  s <- balanced_initial_validation_split(
+    mtcars,
+    balance = c(mpg, hp, wt),
+    method = "rerandomize"
+  )
+  vs <- rsample::validation_set(s)
+  expect_equal(attr(vs, "balance"), c("mpg", "hp", "wt"))
+  expect_equal(balance_check(vs)$id[1], "validation")
+
+  res <- tune::fit_resamples(
+    parsnip::linear_reg(),
+    mpg ~ hp + wt,
+    resamples = vs
+  )
+  expect_true(all(tune::collect_metrics(res)$n == 1))
+
+  res <- tune::last_fit(parsnip::linear_reg(), mpg ~ hp + wt, split = s)
+  expect_equal(nrow(tune::collect_predictions(res)), nrow(rsample::testing(s)))
+})
+
+test_that("calibration splits of a validation split balance the training set", {
+  d <- sim_data()
+  set.seed(7)
+  s <- balanced_initial_validation_split(
+    d,
+    prop = c(0.5, 0.25),
+    balance = c(x1, x2),
+    group = id
+  )
+  cal <- rsample::internal_calibration_split(s, split_args = list())
+  expect_s3_class(cal, "balanced_initial_validation_split_cal")
+  expect_s3_class(cal, "internal_calibration_split")
+  fit_set <- rsample::analysis(cal)
+  cal_set <- rsample::calibration(cal)
+  expect_equal(nrow(fit_set) + nrow(cal_set), length(s$train_id))
+  expect_length(intersect(fit_set$id, cal_set$id), 0)
+  # 19 training groups, 1/3 of them for calibration
+  expect_equal(length(unique(cal_set$id)), 19 / 3, tolerance = 1)
+})

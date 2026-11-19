@@ -190,27 +190,69 @@ method_twinning <- function(
     return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * r))
   }
 
-  if (strategy == 2 && !is_power_of_two(k)) {
+  blocks <- twin_blocks(sizes)
+  if (is.null(blocks)) {
     cli::cli_abort(
       c(
-        "Twinning strategy 2 needs {.arg v} to be a power of 2.",
-        x = "{.arg v} is {k}.",
-        i = "Use {.arg v} = 2, 4, 8, or 16, or use strategy 1 or 3."
+        "With {.code method = \"twinning\"}, each proportion must be a multiple of 1/m for one whole number m up to 20.",
+        i = "For example, {.code prop = c(0.6, 0.2)} uses m = 5."
       ),
       call = NULL
     )
   }
+  m <- sum(blocks)
+  if (strategy == 2 && !is_power_of_two(m)) {
+    if (m == k) {
+      cli::cli_abort(
+        c(
+          "Twinning strategy 2 needs {.arg v} to be a power of 2.",
+          x = "{.arg v} is {k}.",
+          i = "Use {.arg v} = 2, 4, 8, or 16, or use strategy 1 or 3."
+        ),
+        call = NULL
+      )
+    }
+    cli::cli_abort(
+      c(
+        "Twinning strategy 2 needs each proportion to be a multiple of 1/m, where m is a power of 2.",
+        x = "These proportions need m = {m}.",
+        i = "Use proportions in quarters or eighths, such as {.code c(0.5, 0.25)}, or use strategy 1 or 3."
+      ),
+      call = NULL
+    )
+  }
+  # multiplet() makes `m` similar parts. Folds get one part each; other sets
+  # get a whole number of parts.
   fold_fun <- function(x, sz) {
     a <- twinning::multiplet(
       x,
-      k = length(sz),
+      k = m,
       strategy = strategy,
       format_data = FALSE,
       leaf_size = leaf_size
     )
-    relabel_to_sizes(a, sz)
+    if (m == k) {
+      return(relabel_to_sizes(a, sz))
+    }
+    target <- shuffle(rep.int(seq_len(k), blocks))
+    fix_sizes(target[a], sz)
   }
-  within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * k)
+  within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * m)
+}
+
+# Number of equal parts for each set: `m` parts in all, and each set size is
+# within one row of its parts' share of the data. Folds get one part each.
+# Returns NULL if no `m` up to `max_parts` fits.
+twin_blocks <- function(sizes, max_parts = 20L) {
+  n <- sum(sizes)
+  k <- length(sizes)
+  for (m in seq.int(k, max(k, max_parts))) {
+    b <- round(sizes * m / n)
+    if (sum(b) == m && all(b >= 1) && all(abs(sizes - n * b / m) < 1)) {
+      return(as.integer(b))
+    }
+  }
+  NULL
 }
 
 is_power_of_two <- function(k) {
