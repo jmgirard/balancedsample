@@ -37,6 +37,12 @@
 #' train such a postprocessor on any three-way split, including those from
 #' [rsample::initial_validation_split()] (as of tune 2.1.0).
 #'
+#' balancesample's [rsample::internal_calibration_split()] method for this
+#' split is ready for when tune calls it. Like rsample, it fits the model on
+#' `prop[1] / sum(prop)` of the training set. With `method = "twinning"`,
+#' this share is rounded to the nearest `1 - 1/r` (or `1/r`, below 1/2) for
+#' a whole number `r`, for example 14/17 to 5/6.
+#'
 #' @return A `three_way_split` object with class
 #'   `balanced_initial_validation_split` and `initial_validation_split`.
 #'

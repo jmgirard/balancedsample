@@ -206,3 +206,25 @@ test_that("calibration splits of a validation split balance the training set", {
   # 19 training groups, 1/3 of them for calibration
   expect_equal(length(unique(cal_set$id)), 19 / 3, tolerance = 1)
 })
+
+test_that("twinning calibration splits use the nearest share twinning can make", {
+  skip_if_not_installed("twinning")
+  expect_equal(nearest_twin_prop(14 / 17), 5 / 6)
+  expect_equal(nearest_twin_prop(3 / 4), 3 / 4)
+  expect_equal(nearest_twin_prop(0.5), 0.5)
+  expect_equal(nearest_twin_prop(0.2), 0.2)
+
+  d <- sim_data()
+  set.seed(9)
+  s <- balanced_initial_validation_split(
+    d,
+    prop = c(0.7, 0.15),
+    balance = c(x1, x2),
+    method = "twinning"
+  )
+  # 140 training rows; 14/17 can't be twinned, so 1/6 go to calibration.
+  expect_no_warning(
+    cal <- rsample::internal_calibration_split(s, split_args = list())
+  )
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
+})

@@ -4,8 +4,6 @@
       balanced_initial_split(d, prop = 0.7, balance = x1, method = "twinning")
     Condition
       Error in `balanced_initial_split()`:
-      ! Method "twinning" failed.
-      Caused by error:
       ! `method = "twinning"` can only split off 1/r of the data, where r is a whole number.
       i Use `prop` = 1/2, 2/3, 3/4, 4/5, 9/10, or another value of 1 - 1/r.
 

@@ -58,7 +58,8 @@ internal_calibration_split.balanced_initial_split <- function(
 }
 
 # As in rsample, the training set is split with the training share of the
-# training and validation sets.
+# training and validation sets. twinning can only split off 1/r of the data,
+# so with twinning the share is rounded to the nearest 1 - 1/r (or 1/r).
 #' @exportS3Method rsample::internal_calibration_split
 internal_calibration_split.balanced_initial_validation_split <- function(
   x,
@@ -70,6 +71,9 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
   split_args$prop <- split_args$prop[[1]] / sum(split_args$prop)
+  if (identical(split_args$method, "twinning")) {
+    split_args$prop <- nearest_twin_prop(split_args$prop)
+  }
   balanced_calibration_split(
     rsample::training(x),
     split_args,
@@ -80,6 +84,11 @@ internal_calibration_split.balanced_initial_validation_split <- function(
       "rsplit"
     )
   )
+}
+
+nearest_twin_prop <- function(prop) {
+  r <- max(2, round(1 / min(prop, 1 - prop)))
+  if (prop >= 0.5) 1 - 1 / r else 1 / r
 }
 
 # Like rsample, fall back to an empty calibration set with a warning if the

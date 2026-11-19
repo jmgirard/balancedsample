@@ -114,6 +114,25 @@ test_that("calibration falls back to an empty set when it can't split", {
   expect_equal(nrow(rsample::analysis(cal)), 2)
 })
 
+test_that("twinning calibration falls back to an empty set for a bad share", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  set.seed(8)
+  split <- balanced_initial_split(
+    d,
+    prop = 3 / 4,
+    balance = x1,
+    method = "twinning"
+  )
+  args <- rsample::.get_split_args(split)
+  args$prop <- 0.7
+  expect_snapshot(
+    cal <- rsample::internal_calibration_split(split, args)
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 0)
+  expect_equal(nrow(rsample::analysis(cal)), 150)
+})
+
 test_that("tune trains a postprocessor on a balanced calibration split", {
   skip_if_not_installed("tune")
   skip_if_not_installed("parsnip")
