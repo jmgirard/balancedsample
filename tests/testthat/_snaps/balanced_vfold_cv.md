@@ -98,3 +98,12 @@
       ! Selected columns must not have missing values.
       x Missing values in x1.
 
+---
+
+    Code
+      balanced_vfold_cv(m, 3, balance = x)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! Selected columns must be plain vectors.
+      x x is a matrix, data frame, or list column.
+

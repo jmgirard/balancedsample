@@ -36,6 +36,28 @@ test_that("exact strata are balanced to within one row", {
   }
 })
 
+test_that("exact strata follow the actual fold sizes", {
+  d <- data.frame(s = factor(rep(letters[1:3], c(2, 5, 3))))
+  for (seed in 1:20) {
+    set.seed(seed)
+    folds <- balanced_vfold_cv(d, v = 4, exact = s, method = "interaction")
+    expect_true(shares_respected(folds, d$s))
+    expect_true(strata_exact(folds, d$s))
+  }
+})
+
+test_that("exact levels that contain the separator stay distinct", {
+  d <- data.frame(
+    a = rep(c("a:b", "a"), each = 2),
+    b = rep(c("c", "b:c"), each = 2)
+  )
+  for (seed in 1:10) {
+    set.seed(seed)
+    folds <- balanced_vfold_cv(d, v = 2, exact = c(a, b), method = "interaction")
+    expect_equal(sort(rsample::assessment(folds$splits[[1]])$a), c("a", "a:b"))
+  }
+})
+
 test_that("exact alone works without balance columns", {
   d <- sim_data()
   set.seed(3)
@@ -127,6 +149,62 @@ test_that("anticlust options pass through", {
   expect_true(assessed_once(folds, nrow(d)))
 })
 
+test_that("anticlust repetitions keep the exact counts", {
+  skip_if_not_installed("anticlust")
+  d <- withr::with_seed(1, data.frame(x = stats::rnorm(19), s = factor(rep(1:3, c(5, 6, 8)))))
+  set.seed(1)
+  folds <- balanced_vfold_cv(
+    d, 4, balance = x, exact = s,
+    options = list(method = "local-maximum", repetitions = 20)
+  )
+  expect_true(shares_respected(folds, d$s))
+  expect_true(strata_exact(folds, d$s))
+})
+
+test_that("anticlust handles factor-only and one-row-per-fold data", {
+  skip_if_not_installed("anticlust")
+  set.seed(1)
+  folds <- balanced_vfold_cv(data.frame(g = factor(1:6)), 3, balance = g)
+  expect_true(assessed_once(folds, 6))
+  folds <- balanced_vfold_cv(data.frame(x = 1:2), 2, balance = x)
+  expect_true(assessed_once(folds, 2))
+})
+
+test_that("twinning falls back to random folds for small data", {
+  skip_if_not_installed("twinning")
+  set.seed(1)
+  folds <- balanced_vfold_cv(data.frame(x = 1:5), 3, balance = x, method = "twinning")
+  expect_true(assessed_once(folds, 5))
+})
+
+test_that("twinning checks strategy for two folds", {
+  skip_if_not_installed("twinning")
+  expect_error(
+    balanced_vfold_cv(mtcars, 2, balance = mpg, method = "twinning", options = list(strategy = 99)),
+    "strategy"
+  )
+  set.seed(1)
+  folds <- balanced_vfold_cv(mtcars, 2, balance = mpg, method = "twinning", options = list(strategy = 3))
+  expect_true(assessed_once(folds, nrow(mtcars)))
+})
+
+test_that("rerandomize calibrates its threshold under exact strata", {
+  d <- data.frame(s = rep(0:1, each = 5))
+  set.seed(1)
+  expect_no_warning(
+    balanced_initial_split(d, 0.5, balance = s, exact = s, method = "rerandomize",
+                           options = list(max_draws = 5))
+  )
+})
+
+test_that("reshuffle_rset() works when balancesample is attached", {
+  set.seed(1)
+  folds <- balanced_vfold_cv(mtcars, 3, balance = mpg, method = "interaction")
+  re <- rsample::reshuffle_rset(folds)
+  expect_s3_class(re, "balanced_vfold_cv")
+  expect_true(assessed_once(re, nrow(mtcars)))
+})
+
 test_that("twinning strategy 2 needs a power of two", {
   skip_if_not_installed("twinning")
   d <- sim_data()
@@ -152,6 +230,8 @@ test_that("bad inputs give clear errors", {
   })
   d$x1[3] <- NA
   expect_snapshot(balanced_vfold_cv(d, balance = x1), error = TRUE)
+  m <- data.frame(x = I(cbind(1:6, 7:12)))
+  expect_snapshot(balanced_vfold_cv(m, 3, balance = x), error = TRUE)
 })
 
 test_that("results are reproducible with a seed", {

@@ -59,8 +59,8 @@ d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + rnorm(n)
 
 `balanced_vfold_cv()` takes the columns to balance in `balance`.
 Categorical columns in `exact` are stratified exactly: in each fold, the
-count of each level combination is the floor or the ceiling of its fair
-share.
+count of each level combination is the floor or the ceiling of its
+proportional share of that fold.
 
 ``` r
 folds <- balanced_vfold_cv(
@@ -89,20 +89,20 @@ object, so you can compare balanced folds with ordinary folds.
 
 ``` r
 balance_check(folds)
-#> # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.022
+#> # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.0203
 #> # A tibble: 40 × 5
 #>    id    variable  level  statistic     value
 #>    <chr> <chr>     <chr>  <chr>         <dbl>
-#>  1 Fold1 age       <NA>   smd       -0.000217
-#>  2 Fold1 income    <NA>   smd       -0.000270
+#>  1 Fold1 age       <NA>   smd       -0.000600
+#>  2 Fold1 income    <NA>   smd       -0.000770
 #>  3 Fold1 diagnosis mild   smd        0       
 #>  4 Fold1 diagnosis none   smd        0       
 #>  5 Fold1 diagnosis severe smd        0       
 #>  6 Fold1 site      A      smd       -0.00625 
 #>  7 Fold1 site      B      smd        0.00625 
-#>  8 Fold1 <NA>      <NA>   energy     0.0248  
-#>  9 Fold2 age       <NA>   smd        0.000749
-#> 10 Fold2 income    <NA>   smd        0.000681
+#>  8 Fold1 <NA>      <NA>   energy     0.0180  
+#>  9 Fold2 age       <NA>   smd        0.000412
+#> 10 Fold2 income    <NA>   smd       -0.000580
 #> # ℹ 30 more rows
 
 random_folds <- rsample::vfold_cv(d, v = 5)
@@ -151,8 +151,8 @@ collect_metrics(res)
 #> # A tibble: 2 × 6
 #>   .metric .estimator  mean     n std_err .config        
 #>   <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1 rmse    standard   1.01      5  0.0172 pre0_mod0_post0
-#> 2 rsq     standard   0.510     5  0.0278 pre0_mod0_post0
+#> 1 rmse    standard   1.01      5 0.00913 pre0_mod0_post0
+#> 2 rsq     standard   0.505     5 0.0197  pre0_mod0_post0
 ```
 
 `balanced_initial_split()` makes one balanced training/testing split.
