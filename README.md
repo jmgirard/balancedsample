@@ -7,6 +7,9 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/jmgirard/balancesample/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jmgirard/balancesample/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/jmgirard/balancesample/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/balancesample)
 <!-- badges: end -->
 
 balancesample makes training/testing splits and cross-validation folds
