@@ -2,9 +2,8 @@
   register_balance_method(
     "anticlust",
     method_anticlust,
-    pass_through = TRUE,
-    package = "anticlust",
-    reserved = c("x", "K", "categories", "must_link")
+    options = c("moments", "covariances", "k_neighbours", "local_maximum", "repetitions"),
+    package = "anticlust"
   )
   register_balance_method(
     "twinning",

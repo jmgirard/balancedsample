@@ -26,14 +26,28 @@
       Error in `balanced_vfold_cv()`:
       ! All elements of `options` must have unique names.
 
----
+# anticlust options work and are checked
 
     Code
-      balanced_vfold_cv(d, balance = x1, options = list(K = 3))
+      balanced_vfold_cv(d, balance = x1, options = list(moments = 5))
     Condition
       Error in `balanced_vfold_cv()`:
-      ! `options` can't set `K` for method "anticlust".
-      i balancesample sets this argument from `balance`, `exact`, and `group`.
+      ! Method "anticlust" failed.
+      Caused by error:
+      ! `moments` must be 1, 2, 3, or 4.
+    Code
+      balanced_vfold_cv(d, balance = x1, options = list(k_neighbours = 0.5))
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! Method "anticlust" failed.
+      Caused by error:
+      ! `k_neighbours` must be a whole number of at least 1, or `Inf`.
+    Code
+      balanced_vfold_cv(d, balance = x1, options = list(objective = "diversity"))
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! Unknown option for method "anticlust": `objective`.
+      i Valid options: `moments`, `covariances`, `k_neighbours`, `local_maximum`, and `repetitions`.
 
 # twinning strategy 2 needs a power of two
 

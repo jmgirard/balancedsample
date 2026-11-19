@@ -20,7 +20,7 @@ balancesample fills this gap with four methods:
 
 | Method | What it does | Package |
 |----|----|----|
-| `"anticlust"` (default) | Anticlustering with the k-plus objective, which matches the means and variances of the sets. | [anticlust](https://cran.r-project.org/package=anticlust) |
+| `"anticlust"` (default) | Anticlustering with the k-plus objective (`anticlust::fast_anticlustering()`), which matches the means and variances of the sets. | [anticlust](https://cran.r-project.org/package=anticlust) |
 | `"twinning"` | Data twinning, which splits the data into sets with similar distributions. | [twinning](https://cran.r-project.org/package=twinning) |
 | `"rerandomize"` | Draws random splits and keeps the first one with a small Mahalanobis imbalance (Morgan and Rubin, 2012). | none |
 | `"interaction"` | Crosses quantile bins of all variables and stratifies at random. This is a baseline. | none |
@@ -151,8 +151,8 @@ collect_metrics(res)
 #> # A tibble: 2 × 6
 #>   .metric .estimator  mean     n std_err .config        
 #>   <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1 rmse    standard   1.01      5 0.00913 pre0_mod0_post0
-#> 2 rsq     standard   0.505     5 0.0197  pre0_mod0_post0
+#> 1 rmse    standard   1.01      5 0.00969 pre0_mod0_post0
+#> 2 rsq     standard   0.504     5 0.0191  pre0_mod0_post0
 ```
 
 `balanced_initial_split()` makes one balanced training/testing split.
@@ -188,10 +188,10 @@ grouped
 #> # A tibble: 5 × 2
 #>   splits           id   
 #>   <list>           <chr>
-#> 1 <split [319/81]> Fold1
+#> 1 <split [320/80]> Fold1
 #> 2 <split [321/79]> Fold2
 #> 3 <split [319/81]> Fold3
-#> 4 <split [321/79]> Fold4
+#> 4 <split [320/80]> Fold4
 #> 5 <split [320/80]> Fold5
 ```
 
@@ -201,18 +201,21 @@ and it was slow in tests.
 
 ## Options
 
-Pass method options in `options`. For `"anticlust"`, all options go to
-`anticlust::anticlustering()`.
+Pass method options in `options`. See `?balanced_vfold_cv` for the
+options of each method.
 
 ``` r
-balanced_vfold_cv(d, balance = c(age, income), options = list(objective = "diversity"))
+balanced_vfold_cv(d, balance = c(age, income), options = list(moments = 4, k_neighbours = 20))
 balanced_vfold_cv(d, v = 4, balance = c(age, income), method = "twinning", options = list(strategy = 2))
 balanced_vfold_cv(d, balance = c(age, income), method = "rerandomize", options = list(p_accept = 0.01))
 ```
 
-The anticlust exchange method gets slow on large data. In one test with
-10 folds and four variables, it took 0.7 seconds for 1,000 rows and 18
-seconds for 3,000 rows. Twinning took less than 0.1 seconds for both.
+By default, anticlust tries every swap, so its run time grows quickly
+with the number of rows. In one test with 10 folds and four variables,
+it took 0.8 seconds for 1,000 rows, 2.3 seconds for 3,000 rows, and 8.3
+seconds for 10,000 rows. With `k_neighbours = 20`, the same runs took
+0.2, 0.6, and 1.1 seconds. Twinning took less than 0.2 seconds for all
+three.
 
 ## Background
 
@@ -243,6 +246,10 @@ problem next to the other methods.
 Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve
 covariate balance in experiments. *The Annals of Statistics, 40*(2),
 1263-1282.
+
+Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+criterion for maximizing between-group similarity. *British Journal of
+Mathematical and Statistical Psychology, 77*(1), 80-102.
 
 Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 data sets into equivalent parts. *Psychological Methods, 26*(2),

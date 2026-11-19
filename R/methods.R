@@ -2,107 +2,96 @@
 
 # anticlust -------------------------------------------------------------------
 
-# The exchange step only swaps rows that share a category, so a stratified
-# random start keeps the exact counts from allocate_strata(). anticlust's own
-# restarts (`repetitions`) draw starts that ignore those counts, so with exact
-# strata the restarts are run here instead, each from a new stratified start.
-# Groups are handled by aggregation: anticlust's `must_link` needs fold sizes
-# that groups can fill exactly and, for the k-plus objective, equal fold
-# sizes, which real grouped data rarely allows.
+# k-plus anticlustering (Papenberg, 2024) with anticlust::fast_anticlustering():
+# the k-means criterion on the balance columns plus their higher moments (and,
+# optionally, pairwise products), so that set means, variances, and so on are
+# similar. The exchange step only swaps rows that share a category, so a
+# stratified random start keeps the exact counts from allocate_strata(). With
+# `local_maximum = TRUE`, exchange passes repeat until the objective stops
+# improving. Each repetition starts from a new stratified assignment. Groups
+# are handled by aggregation: anticlust's `must_link` needs fold sizes that
+# groups can fill exactly, which real grouped data rarely allows.
 method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                             objective = "kplus", standardize = TRUE,
-                             repetitions = NULL, ...) {
+                             moments = 2L, covariances = FALSE,
+                             k_neighbours = Inf, local_maximum = TRUE,
+                             repetitions = 1L) {
   rlang::check_installed("anticlust", reason = "to use `method = \"anticlust\"`.")
+  if (!rlang::is_scalar_integerish(moments, finite = TRUE) || moments < 1 || moments > 4) {
+    cli::cli_abort("{.arg moments} must be 1, 2, 3, or 4.", call = NULL)
+  }
+  if (!rlang::is_bool(covariances)) {
+    cli::cli_abort("{.arg covariances} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+  }
+  if (!is.numeric(k_neighbours) || length(k_neighbours) != 1 || is.na(k_neighbours) ||
+      k_neighbours < 1 || (is.finite(k_neighbours) && k_neighbours != round(k_neighbours))) {
+    cli::cli_abort("{.arg k_neighbours} must be a whole number of at least 1, or {.code Inf}.", call = NULL)
+  }
+  if (!rlang::is_bool(local_maximum)) {
+    cli::cli_abort("{.arg local_maximum} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+  }
+  if (!rlang::is_scalar_integerish(repetitions, finite = TRUE) || repetitions < 1) {
+    cli::cli_abort("{.arg repetitions} must be a whole number of at least 1.", call = NULL)
+  }
+
   k <- length(sizes)
   # With one row per set, an exchange can only relabel the sets.
   if (all(sizes == 1L)) {
     return(stratified_random(sizes, exact))
   }
-  # The k-plus features are built here, as anticlustering() would build them,
-  # so that constant moment columns can be dropped before scaling (they
-  # become NaN otherwise). A data frame is never mistaken for a distance
-  # matrix.
-  features <- anticlust_features(x_scaled, objective, standardize)
-  if (identical(objective, "kplus")) {
-    x_in <- as.data.frame(features)
-    obj_in <- "variance"
-    std_in <- FALSE
-  } else {
-    x_in <- as.data.frame(x_scaled)
-    obj_in <- objective
-    std_in <- standardize
-  }
+  features <- kplus_features(x_scaled, moments, covariances)
+  categories <- if (is.null(exact)) NULL else as.integer(exact)
   stratum_counts <- function(a) table(exact, factor(a, levels = seq_len(k)), dnn = NULL)
 
-  run <- function(reps) {
+  run <- function() {
     init <- stratified_random(sizes, exact)
-    out <- anticlust::anticlustering(
-      x_in,
-      K = init,
-      objective = obj_in,
-      standardize = std_in,
-      categories = if (is.null(exact)) NULL else as.integer(exact),
-      repetitions = reps,
-      ...
-    )
-    out <- as.integer(out)
-    if (!is.null(exact) && !identical(stratum_counts(out), stratum_counts(init))) {
-      cli::cli_abort(
-        c(
-          "These anticlust options changed the {.arg exact} counts.",
-          i = "Use {.code method = \"exchange\"} or {.code \"local-maximum\"} with {.arg exact}."
-        ),
-        call = NULL
-      )
+    a <- init
+    obj <- -Inf
+    for (pass in seq_len(100)) {
+      b <- as.integer(anticlust::fast_anticlustering(
+        features,
+        K = a,
+        k_neighbours = k_neighbours,
+        categories = categories
+      ))
+      ob <- anticlust::variance_objective(features, b)
+      if (ob - obj <= 1e-9 * abs(ob)) {
+        break
+      }
+      a <- b
+      obj <- ob
+      if (!local_maximum) {
+        break
+      }
     }
-    out
+    if (!is.null(exact) && !identical(stratum_counts(a), stratum_counts(init))) {
+      cli::cli_abort("Internal error: anticlust changed the exact counts.", .internal = TRUE)
+    }
+    list(assign = a, objective = obj)
   }
 
-  if (is.null(exact) || is.null(repetitions) || repetitions <= 1) {
-    return(run(repetitions))
-  }
-  best <- NULL
-  best_val <- -Inf
-  for (r in seq_len(repetitions)) {
-    out <- run(NULL)
-    val <- anticlust_objective(features, out, objective)
-    if (is.null(best) || val > best_val) {
-      best <- out
-      best_val <- val
+  best <- run()
+  for (r in seq_len(repetitions - 1)) {
+    res <- run()
+    if (res$objective > best$objective) {
+      best <- res
     }
   }
-  best
+  best$assign
 }
 
-# The features and objective that anticlustering() maximizes, so that
-# restarts can be compared.
-anticlust_features <- function(x, objective, standardize) {
-  if (identical(objective, "kplus")) {
-    x <- anticlust::kplus_moment_variables(x, 2, FALSE)
+# Balance columns, their moments 2 to `moments` (squared, cubed, ... deviations
+# from the mean), and, if `covariances`, the products of each pair of columns,
+# all standardized. Constant columns are dropped.
+kplus_features <- function(x, moments, covariances) {
+  f <- x
+  if (moments >= 2) {
+    f <- anticlust::kplus_moment_variables(x, moments, FALSE)
   }
-  if (standardize && !is.function(objective)) {
-    x <- scale(x)
-    x <- x[, colSums(!is.finite(x)) == 0, drop = FALSE]
+  if (covariances && ncol(x) > 1) {
+    pairs <- which(upper.tri(diag(ncol(x))), arr.ind = TRUE)
+    f <- cbind(f, x[, pairs[, 1], drop = FALSE] * x[, pairs[, 2], drop = FALSE])
   }
-  x
-}
-
-anticlust_objective <- function(features, clusters, objective) {
-  if (is.function(objective)) {
-    return(objective(features, clusters))
-  }
-  switch(
-    objective,
-    kplus = ,
-    variance = anticlust::variance_objective(features, clusters),
-    diversity = ,
-    distance = anticlust::diversity_objective(features, clusters),
-    dispersion = anticlust::dispersion_objective(features, clusters),
-    cli::cli_abort(
-      "{.arg repetitions} with {.arg exact} does not support {.code objective = \"{objective}\"}.",
-      call = NULL
-    )
-  )
+  standardize_matrix(unname(as.matrix(f)))
 }
 
 # twinning --------------------------------------------------------------------

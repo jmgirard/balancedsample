@@ -52,14 +52,24 @@ the assessment set, and the other folds form the analysis set.
 }
 \section{Methods}{
 \itemize{
-\item \code{"anticlust"} (default) uses \code{\link[anticlust:anticlustering]{anticlust::anticlustering()}} with
-\code{objective = "kplus"} and \code{standardize = TRUE}. The k-plus objective
-makes the means and the variances of the sets similar. \code{options} go to
-\code{anticlustering()}, for example \code{list(objective = "diversity")} or
-\code{list(method = "local-maximum", repetitions = 5)}. With \code{exact}, only
-the \code{"exchange"} and \code{"local-maximum"} anticlust methods keep the exact
-counts, and each repetition starts from a new stratified assignment. The
-anticlust package is required.
+\item \code{"anticlust"} (default) uses k-plus anticlustering (Papenberg, 2024)
+with \code{\link[anticlust:fast_anticlustering]{anticlust::fast_anticlustering()}}. It makes the means and the
+variances of the sets similar. Options are:
+\itemize{
+\item \code{moments} (default 2): the highest moment to balance. 1 balances
+means only, 3 adds skewness, and 4 adds kurtosis.
+\item \code{covariances} (default \code{FALSE}): also balance the product of each
+pair of \code{balance} columns.
+\item \code{k_neighbours} (default \code{Inf}): the number of nearest neighbours each
+row may swap with. \code{Inf} tries every swap. A small number, such as
+20, is faster on large data.
+\item \code{local_maximum} (default \code{TRUE}): repeat the exchange passes until no
+swap improves the balance. \code{FALSE} runs one pass.
+\item \code{repetitions} (default 1): the number of random starts. The best
+result is kept.
+}
+
+The anticlust package is required.
 \item \code{"twinning"} uses \code{\link[twinning:multiplet]{twinning::multiplet()}} for folds. Options are
 \code{strategy} (1, 2, or 3; strategy 2 needs \code{v} to be a power of 2) and
 \code{leaf_size}. For \code{v = 2}, strategies 1 and 2 give the same result.
@@ -110,6 +120,10 @@ balance_check(folds)
 \references{
 Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate
 balance in experiments. \emph{The Annals of Statistics, 40}(2), 1263-1282.
+
+Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+criterion for maximizing between-group similarity. \emph{British Journal of
+Mathematical and Statistical Psychology, 77}(1), 80-102.
 
 Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 data sets into equivalent parts. \emph{Psychological Methods, 26}(2), 161-174.
