@@ -3,3 +3,9 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.claude$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^[.]?air[.]toml$
+^\.vscode$
