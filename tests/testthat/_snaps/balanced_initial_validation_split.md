@@ -4,8 +4,6 @@
       balanced_initial_validation_split(d, prop = c(0.62, 0.2), balance = x1, method = "twinning")
     Condition
       Error in `balanced_initial_validation_split()`:
-      ! Method "twinning" failed.
-      Caused by error:
       ! With `method = "twinning"`, each proportion must be a multiple of 1/m for one whole number m up to 20.
       i For example, `prop = c(0.6, 0.2)` uses m = 5.
     Code
