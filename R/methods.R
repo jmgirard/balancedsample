@@ -146,7 +146,8 @@ method_twinning <- function(
   exact = NULL,
   group = NULL,
   strategy = 1L,
-  leaf_size = 8L
+  leaf_size = 8L,
+  parts = NULL
 ) {
   rlang::check_installed("twinning", reason = "to use `method = \"twinning\"`.")
   n <- sum(sizes)
@@ -190,16 +191,9 @@ method_twinning <- function(
     return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * r))
   }
 
-  blocks <- twin_blocks(sizes)
-  if (is.null(blocks)) {
-    cli::cli_abort(
-      c(
-        "With {.code method = \"twinning\"}, each proportion must be a multiple of 1/m for one whole number m up to 20.",
-        i = "For example, {.code prop = c(0.6, 0.2)} uses m = 5."
-      ),
-      call = NULL
-    )
-  }
+  # `parts` (set by balanced_initial_validation_split()) gives the number of
+  # multiplet() parts for each set. Folds get one part each.
+  blocks <- parts %||% rep.int(1L, k)
   m <- sum(blocks)
   if (strategy == 2 && !is_power_of_two(m)) {
     if (m == k) {
@@ -221,8 +215,6 @@ method_twinning <- function(
       call = NULL
     )
   }
-  # multiplet() makes `m` similar parts. Folds get one part each; other sets
-  # get a whole number of parts.
   fold_fun <- function(x, sz) {
     a <- twinning::multiplet(
       x,
@@ -240,16 +232,14 @@ method_twinning <- function(
   within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * m)
 }
 
-# Number of equal parts for each set: `m` parts in all, and each set size is
-# within one row of its parts' share of the data. Folds get one part each.
-# Returns NULL if no `m` up to `max_parts` fits.
-twin_blocks <- function(sizes, max_parts = 20L) {
-  n <- sum(sizes)
-  k <- length(sizes)
-  for (m in seq.int(k, max(k, max_parts))) {
-    b <- round(sizes * m / n)
-    if (sum(b) == m && all(b >= 1) && all(abs(sizes - n * b / m) < 1)) {
-      return(as.integer(b))
+# Number of twinning parts for each set: the smallest whole number `m` up to
+# `max_parts` for which every proportion is a multiple of 1/m. Returns NULL if
+# there is none. It depends on the proportions only, not on the data size.
+twin_parts <- function(props, max_parts = 20L) {
+  for (m in seq_len(max_parts)) {
+    b <- props * m
+    if (all(abs(b - round(b)) < 1e-8) && all(round(b) >= 1)) {
+      return(as.integer(round(b)))
     }
   }
   NULL

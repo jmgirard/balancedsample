@@ -116,11 +116,36 @@ test_that("twinning validation splits use whole parts", {
   })
 })
 
-test_that("twin_blocks() finds the parts for each set", {
-  expect_equal(twin_blocks(c(120L, 40L, 40L)), c(3L, 1L, 1L))
-  expect_equal(twin_blocks(c(11L, 10L, 10L)), c(1L, 1L, 1L))
-  expect_equal(twin_blocks(c(140L, 30L, 30L)), c(14L, 3L, 3L))
-  expect_null(twin_blocks(c(124L, 40L, 36L)))
+test_that("twin_parts() depends on the proportions only", {
+  expect_equal(twin_parts(c(0.6, 0.2, 0.2)), c(3L, 1L, 1L))
+  expect_equal(twin_parts(c(0.7, 0.15, 0.15)), c(14L, 3L, 3L))
+  expect_equal(twin_parts(c(0.125, 0.125, 0.75)), c(1L, 1L, 6L))
+  expect_null(twin_parts(c(0.62, 0.2, 0.18)))
+})
+
+test_that("twinning validation splits accept or reject the same proportions for any size", {
+  skip_if_not_installed("twinning")
+  d <- data.frame(x = 1:80)
+  set.seed(8)
+  s <- balanced_initial_validation_split(
+    d[1:16, , drop = FALSE],
+    prop = c(0.125, 0.125),
+    balance = x,
+    method = "twinning",
+    options = list(strategy = 2)
+  )
+  expect_equal(c(length(s$train_id), length(s$val_id)), c(2, 2))
+  for (n in c(50, 80)) {
+    expect_error(
+      balanced_initial_validation_split(
+        d[seq_len(n), , drop = FALSE],
+        prop = c(0.62, 0.2),
+        balance = x,
+        method = "twinning"
+      ),
+      "multiple of 1/m"
+    )
+  }
 })
 
 test_that("bad validation split inputs give clear errors", {

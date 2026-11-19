@@ -95,13 +95,21 @@ balanced_initial_validation_split <- function(
     cli::cli_abort("{.arg group} must have at least three groups.", call = call)
   }
 
-  a <- assign_balanced(
-    prep,
-    c(prop, 1 - sum(prop)),
-    entry,
-    options,
-    call = call
-  )
+  props <- c(prop, 1 - sum(prop))
+  method_options <- options
+  if (method == "twinning") {
+    method_options$parts <- twin_parts(props)
+    if (is.null(method_options$parts)) {
+      cli::cli_abort(
+        c(
+          "With {.code method = \"twinning\"}, each proportion must be a multiple of 1/m for one whole number m up to 20.",
+          i = "For example, {.code prop = c(0.6, 0.2)} uses m = 5."
+        ),
+        call = call
+      )
+    }
+  }
+  a <- assign_balanced(prep, props, entry, method_options, call = call)
   res <- list(
     data = data,
     train_id = which(a == 1L),
