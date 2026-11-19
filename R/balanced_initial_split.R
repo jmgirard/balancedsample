@@ -31,15 +31,23 @@
 #' split
 #' rsample::training(split)
 #' @export
-balanced_initial_split <- function(data,
-                                   prop = 3 / 4,
-                                   balance = NULL,
-                                   exact = NULL,
-                                   group = NULL,
-                                   method = "anticlust",
-                                   options = list()) {
+balanced_initial_split <- function(
+  data,
+  prop = 3 / 4,
+  balance = NULL,
+  exact = NULL,
+  group = NULL,
+  method = "anticlust",
+  options = list()
+) {
   call <- rlang::current_env()
-  if (!is.numeric(prop) || length(prop) != 1 || is.na(prop) || prop <= 0 || prop >= 1) {
+  if (
+    !is.numeric(prop) ||
+      length(prop) != 1 ||
+      is.na(prop) ||
+      prop <= 0 ||
+      prop >= 1
+  ) {
     cli::cli_abort("{.arg prop} must be a number between 0 and 1.", call = call)
   }
   entry <- get_balance_method(method, call = call)

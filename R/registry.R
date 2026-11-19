@@ -8,11 +8,13 @@
 
 balance_method_registry <- new.env(parent = emptyenv())
 
-register_balance_method <- function(name,
-                                    fun,
-                                    options = character(),
-                                    native_group = FALSE,
-                                    package = NULL) {
+register_balance_method <- function(
+  name,
+  fun,
+  options = character(),
+  native_group = FALSE,
+  package = NULL
+) {
   balance_method_registry[[name]] <- list(
     name = name,
     fun = fun,
@@ -50,14 +52,20 @@ get_balance_method <- function(method, call = rlang::caller_env()) {
 
 check_method_options <- function(entry, options, call = rlang::caller_env()) {
   if (!is.list(options)) {
-    cli::cli_abort("{.arg options} must be a list, not {.obj_type_friendly {options}}.", call = call)
+    cli::cli_abort(
+      "{.arg options} must be a list, not {.obj_type_friendly {options}}.",
+      call = call
+    )
   }
   if (length(options) == 0) {
     return(invisible(options))
   }
   nms <- names(options)
   if (is.null(nms) || any(nms == "") || anyDuplicated(nms)) {
-    cli::cli_abort("All elements of {.arg options} must have unique names.", call = call)
+    cli::cli_abort(
+      "All elements of {.arg options} must have unique names.",
+      call = call
+    )
   }
   bad <- setdiff(nms, entry$options)
   if (length(bad) > 0) {
@@ -65,7 +73,11 @@ check_method_options <- function(entry, options, call = rlang::caller_env()) {
     cli::cli_abort(
       c(
         "Unknown {cli::qty(length(bad))}option{?s} for method {.val {entry$name}}: {.arg {bad}}.",
-        i = if (length(valid)) "Valid options: {.arg {valid}}." else "This method has no options."
+        i = if (length(valid)) {
+          "Valid options: {.arg {valid}}."
+        } else {
+          "This method has no options."
+        }
       ),
       call = call
     )
@@ -74,7 +86,13 @@ check_method_options <- function(entry, options, call = rlang::caller_env()) {
 }
 
 # Run one method once and return row-level labels.
-assign_balanced <- function(prep, props, entry, options, call = rlang::caller_env()) {
+assign_balanced <- function(
+  prep,
+  props,
+  entry,
+  options,
+  call = rlang::caller_env()
+) {
   run <- function(x, sizes, exact, group = NULL) {
     if (ncol(x) == 0) {
       return(stratified_random(sizes, exact))
@@ -93,7 +111,14 @@ assign_balanced <- function(prep, props, entry, options, call = rlang::caller_en
 
   k <- length(props)
   if (!is.null(prep$group) && !entry$native_group) {
-    out <- assign_grouped(prep$x, prep$exact, prep$group, props, run, call = call)
+    out <- assign_grouped(
+      prep$x,
+      prep$exact,
+      prep$group,
+      props,
+      run,
+      call = call
+    )
   } else {
     sizes <- sizes_from_props(nrow(prep$x), props)
     out <- run(prep$x, sizes, prep$exact, prep$group)
@@ -113,7 +138,10 @@ assign_balanced <- function(prep, props, entry, options, call = rlang::caller_en
     )
   }
   if (any(tabulate(out, k) == 0)) {
-    cli::cli_abort("At least one set is empty. Use fewer sets or more data.", call = call)
+    cli::cli_abort(
+      "At least one set is empty. Use fewer sets or more data.",
+      call = call
+    )
   }
   out
 }

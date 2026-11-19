@@ -10,26 +10,59 @@
 # `local_maximum = TRUE`, exchange passes repeat until a pass makes no swap. Each repetition starts from a new stratified assignment. Groups
 # are handled by aggregation: anticlust's `must_link` needs fold sizes that
 # groups can fill exactly, which real grouped data rarely allows.
-method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                             moments = 2L, covariances = FALSE,
-                             k_neighbours = Inf, local_maximum = TRUE,
-                             repetitions = 1L) {
-  rlang::check_installed("anticlust", reason = "to use `method = \"anticlust\"`.")
-  if (!rlang::is_scalar_integerish(moments, finite = TRUE) || moments < 1 || moments > 4) {
+method_anticlust <- function(
+  x_scaled,
+  sizes,
+  exact = NULL,
+  group = NULL,
+  moments = 2L,
+  covariances = FALSE,
+  k_neighbours = Inf,
+  local_maximum = TRUE,
+  repetitions = 1L
+) {
+  rlang::check_installed(
+    "anticlust",
+    reason = "to use `method = \"anticlust\"`."
+  )
+  if (
+    !rlang::is_scalar_integerish(moments, finite = TRUE) ||
+      moments < 1 ||
+      moments > 4
+  ) {
     cli::cli_abort("{.arg moments} must be 1, 2, 3, or 4.", call = NULL)
   }
   if (!rlang::is_bool(covariances)) {
-    cli::cli_abort("{.arg covariances} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+    cli::cli_abort(
+      "{.arg covariances} must be {.code TRUE} or {.code FALSE}.",
+      call = NULL
+    )
   }
-  if (!is.numeric(k_neighbours) || length(k_neighbours) != 1 || is.na(k_neighbours) ||
-      k_neighbours < 1 || (is.finite(k_neighbours) && k_neighbours != round(k_neighbours))) {
-    cli::cli_abort("{.arg k_neighbours} must be a whole number of at least 1, or {.code Inf}.", call = NULL)
+  if (
+    !is.numeric(k_neighbours) ||
+      length(k_neighbours) != 1 ||
+      is.na(k_neighbours) ||
+      k_neighbours < 1 ||
+      (is.finite(k_neighbours) && k_neighbours != round(k_neighbours))
+  ) {
+    cli::cli_abort(
+      "{.arg k_neighbours} must be a whole number of at least 1, or {.code Inf}.",
+      call = NULL
+    )
   }
   if (!rlang::is_bool(local_maximum)) {
-    cli::cli_abort("{.arg local_maximum} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+    cli::cli_abort(
+      "{.arg local_maximum} must be {.code TRUE} or {.code FALSE}.",
+      call = NULL
+    )
   }
-  if (!rlang::is_scalar_integerish(repetitions, finite = TRUE) || repetitions < 1) {
-    cli::cli_abort("{.arg repetitions} must be a whole number of at least 1.", call = NULL)
+  if (
+    !rlang::is_scalar_integerish(repetitions, finite = TRUE) || repetitions < 1
+  ) {
+    cli::cli_abort(
+      "{.arg repetitions} must be a whole number of at least 1.",
+      call = NULL
+    )
   }
 
   k <- length(sizes)
@@ -39,7 +72,9 @@ method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
   }
   features <- kplus_features(x_scaled, moments, covariances)
   categories <- if (is.null(exact)) NULL else as.integer(exact)
-  stratum_counts <- function(a) table(exact, factor(a, levels = seq_len(k)), dnn = NULL)
+  stratum_counts <- function(a) {
+    table(exact, factor(a, levels = seq_len(k)), dnn = NULL)
+  }
 
   # A data frame is never mistaken for a distance matrix.
   features_df <- as.data.frame(features)
@@ -64,8 +99,13 @@ method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
       }
     }
     obj <- anticlust::variance_objective(features, a)
-    if (!is.null(exact) && !identical(stratum_counts(a), stratum_counts(init))) {
-      cli::cli_abort("Internal error: anticlust changed the exact counts.", .internal = TRUE)
+    if (
+      !is.null(exact) && !identical(stratum_counts(a), stratum_counts(init))
+    ) {
+      cli::cli_abort(
+        "Internal error: anticlust changed the exact counts.",
+        .internal = TRUE
+      )
     }
     list(assign = a, objective = obj)
   }
@@ -100,8 +140,14 @@ kplus_features <- function(x, moments, covariances) {
 
 # twinning --------------------------------------------------------------------
 
-method_twinning <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                            strategy = 1L, leaf_size = 8L) {
+method_twinning <- function(
+  x_scaled,
+  sizes,
+  exact = NULL,
+  group = NULL,
+  strategy = 1L,
+  leaf_size = 8L
+) {
   rlang::check_installed("twinning", reason = "to use `method = \"twinning\"`.")
   n <- sum(sizes)
   k <- length(sizes)
@@ -131,7 +177,12 @@ method_twinning <- function(x_scaled, sizes, exact = NULL, group = NULL,
       )
     }
     split_fun <- function(x, sz) {
-      idx <- twinning::twin(x, r = r, format_data = FALSE, leaf_size = leaf_size)
+      idx <- twinning::twin(
+        x,
+        r = r,
+        format_data = FALSE,
+        leaf_size = leaf_size
+      )
       a <- rep.int(other, nrow(x))
       a[idx] <- small
       fix_sizes(a, sz)
@@ -175,13 +226,30 @@ is_power_of_two <- function(k) {
 # (at least 100, more for small `p_accept`, up to `max_draws`) made under the
 # same constraints, so it accounts for exact strata, unequal
 # set sizes, and the dependence between the comparisons.
-method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                               p_accept = 0.1, max_draws = 1000L) {
-  if (!is.numeric(p_accept) || length(p_accept) != 1 || p_accept <= 0 || p_accept > 1) {
-    cli::cli_abort("{.arg p_accept} must be a number above 0 and at most 1.", call = NULL)
+method_rerandomize <- function(
+  x_scaled,
+  sizes,
+  exact = NULL,
+  group = NULL,
+  p_accept = 0.1,
+  max_draws = 1000L
+) {
+  if (
+    !is.numeric(p_accept) ||
+      length(p_accept) != 1 ||
+      p_accept <= 0 ||
+      p_accept > 1
+  ) {
+    cli::cli_abort(
+      "{.arg p_accept} must be a number above 0 and at most 1.",
+      call = NULL
+    )
   }
   if (!is.numeric(max_draws) || length(max_draws) != 1 || max_draws < 1) {
-    cli::cli_abort("{.arg max_draws} must be a whole number of at least 1.", call = NULL)
+    cli::cli_abort(
+      "{.arg max_draws} must be a whole number of at least 1.",
+      call = NULL
+    )
   }
   k <- length(sizes)
   inv <- pseudo_inverse(stats::cov(x_scaled))
@@ -191,7 +259,11 @@ method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
   imbalance <- function(a) max_mahalanobis(x_scaled, a, k, inv$inverse)
 
   n_pilot <- max(100L, min(ceiling(10 / p_accept), max_draws))
-  pilot <- vapply(seq_len(n_pilot), function(i) imbalance(stratified_random(sizes, exact)), numeric(1))
+  pilot <- vapply(
+    seq_len(n_pilot),
+    function(i) imbalance(stratified_random(sizes, exact)),
+    numeric(1)
+  )
   threshold <- stats::quantile(pilot, p_accept, names = FALSE, type = 1)
   # With discrete data many draws can tie at the threshold. Draws at the
   # threshold are accepted with the probability that brings the estimated
@@ -210,7 +282,10 @@ method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
       best <- a
       best_val <- val
     }
-    if (val < threshold - tol || (val <= threshold + tol && stats::runif(1) < p_tie)) {
+    if (
+      val < threshold - tol ||
+        (val <= threshold + tol && stats::runif(1) < p_tie)
+    ) {
       return(a)
     }
   }
@@ -227,10 +302,14 @@ max_mahalanobis <- function(x, assign, k, s_inv) {
   sums <- rowsum(x, assign, reorder = TRUE)
   total <- colSums(x)
   nk <- tabulate(assign, k)
-  vals <- vapply(seq_len(k), function(j) {
-    d <- sums[j, ] / nk[j] - (total - sums[j, ]) / (n - nk[j])
-    nk[j] * (n - nk[j]) / n * drop(crossprod(d, s_inv %*% d))
-  }, numeric(1))
+  vals <- vapply(
+    seq_len(k),
+    function(j) {
+      d <- sums[j, ] / nk[j] - (total - sums[j, ]) / (n - nk[j])
+      nk[j] * (n - nk[j]) / n * drop(crossprod(d, s_inv %*% d))
+    },
+    numeric(1)
+  )
   max(vals)
 }
 
@@ -251,15 +330,29 @@ pseudo_inverse <- function(m) {
 # Baseline: cut each numeric column into quantile bins, cross all bins, pool
 # sparse cells, and stratify at random. Exact strata stay exact because the
 # crossed cells are nested inside them.
-method_interaction <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                               n_bins = 4L, pool = 0.1) {
+method_interaction <- function(
+  x_scaled,
+  sizes,
+  exact = NULL,
+  group = NULL,
+  n_bins = 4L,
+  pool = 0.1
+) {
   if (!is.numeric(n_bins) || length(n_bins) != 1 || n_bins < 2) {
-    cli::cli_abort("{.arg n_bins} must be a whole number of at least 2.", call = NULL)
+    cli::cli_abort(
+      "{.arg n_bins} must be a whole number of at least 2.",
+      call = NULL
+    )
   }
   if (!is.numeric(pool) || length(pool) != 1 || pool < 0 || pool >= 1) {
-    cli::cli_abort("{.arg pool} must be a number from 0 up to (not including) 1.", call = NULL)
+    cli::cli_abort(
+      "{.arg pool} must be a number from 0 up to (not including) 1.",
+      call = NULL
+    )
   }
-  bins <- lapply(seq_len(ncol(x_scaled)), function(j) bin_column(x_scaled[, j], n_bins))
+  bins <- lapply(seq_len(ncol(x_scaled)), function(j) {
+    bin_column(x_scaled[, j], n_bins)
+  })
   fine <- combine_levels(bins)
   fine <- pool_strata(fine, exact, min_size = pool * nrow(x_scaled))
   stratified_random(sizes, exact, fine)

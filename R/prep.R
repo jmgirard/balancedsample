@@ -1,16 +1,40 @@
 # Column selection and preprocessing shared by the user-facing functions.
 
-prepare_balance_data <- function(data, balance, exact, group, call = rlang::caller_env()) {
+prepare_balance_data <- function(
+  data,
+  balance,
+  exact,
+  group,
+  call = rlang::caller_env()
+) {
   if (!is.data.frame(data)) {
-    cli::cli_abort("{.arg data} must be a data frame, not {.obj_type_friendly {data}}.", call = call)
+    cli::cli_abort(
+      "{.arg data} must be a data frame, not {.obj_type_friendly {data}}.",
+      call = call
+    )
   }
   if (nrow(data) < 2) {
     cli::cli_abort("{.arg data} must have at least two rows.", call = call)
   }
 
-  bal_pos <- tidyselect::eval_select(balance, data, allow_rename = FALSE, error_call = call)
-  exa_pos <- tidyselect::eval_select(exact, data, allow_rename = FALSE, error_call = call)
-  grp_pos <- tidyselect::eval_select(group, data, allow_rename = FALSE, error_call = call)
+  bal_pos <- tidyselect::eval_select(
+    balance,
+    data,
+    allow_rename = FALSE,
+    error_call = call
+  )
+  exa_pos <- tidyselect::eval_select(
+    exact,
+    data,
+    allow_rename = FALSE,
+    error_call = call
+  )
+  grp_pos <- tidyselect::eval_select(
+    group,
+    data,
+    allow_rename = FALSE,
+    error_call = call
+  )
 
   if (length(bal_pos) == 0 && length(exa_pos) == 0) {
     cli::cli_abort(
@@ -35,7 +59,11 @@ prepare_balance_data <- function(data, balance, exact, group, call = rlang::call
   }
 
   used <- unique(c(bal_pos, exa_pos, grp_pos))
-  not_vector <- names(data)[used][vapply(data[used], function(v) !is.null(dim(v)) || is.list(v), logical(1))]
+  not_vector <- names(data)[used][vapply(
+    data[used],
+    function(v) !is.null(dim(v)) || is.list(v),
+    logical(1)
+  )]
   if (length(not_vector) > 0) {
     cli::cli_abort(
       c(
@@ -108,8 +136,12 @@ build_balance_matrix <- function(df, call = rlang::caller_env()) {
   }
   cols <- lapply(names(df), function(nm) {
     v <- df[[nm]]
-    if (is.logical(v)) v <- as.integer(v)
-    if (is.character(v)) v <- factor(v)
+    if (is.logical(v)) {
+      v <- as.integer(v)
+    }
+    if (is.character(v)) {
+      v <- factor(v)
+    }
     if (is.factor(v)) {
       v <- droplevels(v)
       m <- outer(as.integer(v), seq_len(nlevels(v)), "==") * 1
@@ -151,7 +183,14 @@ standardize_matrix <- function(x) {
 # Collapse rows to one row per group, assign groups, and expand back to rows.
 # Each group row holds the group means of the standardized columns plus the log
 # group size, so large and small groups are also spread over the sets.
-assign_grouped <- function(x, exact, group, props, assign_fun, call = rlang::caller_env()) {
+assign_grouped <- function(
+  x,
+  exact,
+  group,
+  props,
+  assign_fun,
+  call = rlang::caller_env()
+) {
   g <- as.integer(group)
   n_grp <- nlevels(group)
   counts <- tabulate(g, n_grp)
@@ -168,7 +207,11 @@ assign_grouped <- function(x, exact, group, props, assign_fun, call = rlang::cal
 
   exact_g <- NULL
   if (!is.null(exact)) {
-    n_lvl <- vapply(split(as.integer(exact), g), function(z) length(unique(z)), integer(1))
+    n_lvl <- vapply(
+      split(as.integer(exact), g),
+      function(z) length(unique(z)),
+      integer(1)
+    )
     if (any(n_lvl > 1)) {
       cli::cli_abort(
         c(
