@@ -38,6 +38,19 @@ strata_exact <- function(rset, strata) {
   all(apply(tab, 1, function(r) max(r) - min(r) <= 1))
 }
 
+# Each stratum count in each assessment set is the floor or the ceiling of
+# its share of that set's actual size.
+shares_respected <- function(rset, strata) {
+  m <- tabulate(as.integer(strata), nlevels(strata))
+  n <- length(strata)
+  all(vapply(rset$splits, function(s) {
+    out <- rsample::complement(s)
+    cnt <- tabulate(as.integer(strata)[out], nlevels(strata))
+    share <- m * length(out) / n
+    all(cnt >= floor(share + 1e-9) & cnt <= ceiling(share - 1e-9))
+  }, logical(1)))
+}
+
 groups_intact <- function(rset, group) {
   all(vapply(rset$splits, function(s) {
     length(intersect(group[s$in_id], group[rsample::complement(s)])) == 0

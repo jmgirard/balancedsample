@@ -29,7 +29,9 @@ logical columns become one indicator column per level.}
 \item{exact}{<\code{\link[tidyselect:language]{tidy-select}}> Categorical columns to
 stratify exactly. Each combination of levels is one stratum. In each
 stratum, the count in every set is the floor or the ceiling of its
-proportional share.}
+proportional share, based on the actual size of that set. For folds,
+the counts of a stratum also differ by at most one over the folds
+whenever both rules can hold at once.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}
@@ -54,16 +56,23 @@ the assessment set, and the other folds form the analysis set.
 \code{objective = "kplus"} and \code{standardize = TRUE}. The k-plus objective
 makes the means and the variances of the sets similar. \code{options} go to
 \code{anticlustering()}, for example \code{list(objective = "diversity")} or
-\code{list(method = "local-maximum", repetitions = 5)}. The anticlust package
-is required.
+\code{list(method = "local-maximum", repetitions = 5)}. With \code{exact}, only
+the \code{"exchange"} and \code{"local-maximum"} anticlust methods keep the exact
+counts, and each repetition starts from a new stratified assignment. The
+anticlust package is required.
 \item \code{"twinning"} uses \code{\link[twinning:multiplet]{twinning::multiplet()}} for folds. Options are
 \code{strategy} (1, 2, or 3; strategy 2 needs \code{v} to be a power of 2) and
-\code{leaf_size}. The twinning package is required.
+\code{leaf_size}. For \code{v = 2}, strategies 1 and 2 give the same result.
+Strata with fewer than \code{2 * v} rows are assigned at random. The
+twinning package is required.
 \item \code{"rerandomize"} draws stratified random splits and keeps the first one
 whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
-2012). Options are \code{p_accept}, the target acceptance rate (default 0.1),
-and \code{max_draws} (default 1000). If no draw meets the threshold, the best
-draw is used with a warning.
+2012). For folds, the imbalance is the largest over the "one fold versus
+the rest" comparisons. The threshold is the \code{p_accept} quantile of the
+imbalance over pilot draws made with the same \code{exact} and \code{group}
+constraints (\code{max(100, min(10 / p_accept, max_draws))} draws). Options are \code{p_accept}, the target acceptance rate
+(default 0.1), and \code{max_draws} (default 1000). If no draw meets the
+threshold, the best draw is used with a warning.
 \item \code{"interaction"} cuts numeric columns into quantile bins, crosses all
 bins, and stratifies at random. It is a baseline that shows how crossed
 strata become sparse. Options are \code{n_bins} (default 4) and \code{pool}
@@ -78,6 +87,12 @@ the log of the group size. The method assigns groups, and then each row
 gets the set of its group. The number of groups per set follows the target
 proportions, so the number of rows per set is only approximate. \code{exact}
 columns must be constant within each group.
+}
+
+\section{Reshuffling}{
+\code{\link[rsample:reshuffle_rset]{rsample::reshuffle_rset()}} finds the function that made an \code{rset} by
+its class name, so it only works on these folds when balancesample is
+attached with \code{library(balancesample)}.
 }
 
 \examples{

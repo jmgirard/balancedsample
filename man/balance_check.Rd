@@ -39,7 +39,12 @@ For a numeric variable, the SMD is the difference in means (assessment
 minus analysis) divided by the pooled standard deviation,
 \code{sqrt((var_assessment + var_analysis) / 2)}. For a categorical variable,
 there is one SMD per level, from the proportions of that level. Values
-under 0.1 in absolute size are often taken as good balance.
+under 0.1 in absolute size are often taken as good balance. If both sets
+have zero variance but different means, the SMD is \code{Inf} or \code{-Inf}; the
+plot shows these values at the edge of the panel.
+
+Missing values are dropped variable by variable for the SMD. The energy
+distance uses the rows that have no missing values in any checked column.
 
 The energy distance is the V-statistic
 \verb{2 E|X - Y| - E|X - X'| - E|Y - Y'|} on the standardized variables (one

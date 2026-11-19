@@ -35,6 +35,16 @@ prepare_balance_data <- function(data, balance, exact, group, call = rlang::call
   }
 
   used <- unique(c(bal_pos, exa_pos, grp_pos))
+  not_vector <- names(data)[used][vapply(data[used], function(v) !is.null(dim(v)) || is.list(v), logical(1))]
+  if (length(not_vector) > 0) {
+    cli::cli_abort(
+      c(
+        "Selected columns must be plain vectors.",
+        x = "{.field {not_vector}} {?is a/are} matrix, data frame, or list column{?s}."
+      ),
+      call = call
+    )
+  }
   has_na <- names(data)[used][vapply(data[used], anyNA, logical(1))]
   if (length(has_na) > 0) {
     cli::cli_abort(
@@ -63,7 +73,7 @@ prepare_balance_data <- function(data, balance, exact, group, call = rlang::call
 
   exact_fct <- NULL
   if (length(exa_pos) > 0) {
-    exact_fct <- interaction(lapply(data[exa_pos], as.factor), drop = TRUE, sep = ":")
+    exact_fct <- combine_levels(data[exa_pos])
   }
   group_fct <- NULL
   if (length(grp_pos) == 1) {
@@ -78,6 +88,14 @@ prepare_balance_data <- function(data, balance, exact, group, call = rlang::call
     exact_names = names(exa_pos),
     group_name = names(grp_pos)
   )
+}
+
+# One factor level per observed combination of the columns in `cols`. The key
+# is built from integer codes, so level labels that contain the separator
+# can't make two combinations collide.
+combine_levels <- function(cols) {
+  codes <- lapply(cols, function(v) as.integer(as.factor(v)))
+  factor(do.call(paste, c(codes, sep = "_")))
 }
 
 # Numeric matrix with one standardized column per numeric variable and one

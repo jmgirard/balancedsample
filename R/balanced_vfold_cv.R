@@ -13,7 +13,9 @@
 #' @param exact <[`tidy-select`][tidyselect::language]> Categorical columns to
 #'   stratify exactly. Each combination of levels is one stratum. In each
 #'   stratum, the count in every set is the floor or the ceiling of its
-#'   proportional share.
+#'   proportional share, based on the actual size of that set. For folds,
+#'   the counts of a stratum also differ by at most one over the folds
+#'   whenever both rules can hold at once.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
 #' @param method The balancing method: `"anticlust"`, `"twinning"`,
@@ -27,16 +29,23 @@
 #'   `objective = "kplus"` and `standardize = TRUE`. The k-plus objective
 #'   makes the means and the variances of the sets similar. `options` go to
 #'   `anticlustering()`, for example `list(objective = "diversity")` or
-#'   `list(method = "local-maximum", repetitions = 5)`. The anticlust package
-#'   is required.
+#'   `list(method = "local-maximum", repetitions = 5)`. With `exact`, only
+#'   the `"exchange"` and `"local-maximum"` anticlust methods keep the exact
+#'   counts, and each repetition starts from a new stratified assignment. The
+#'   anticlust package is required.
 #' * `"twinning"` uses [twinning::multiplet()] for folds. Options are
 #'   `strategy` (1, 2, or 3; strategy 2 needs `v` to be a power of 2) and
-#'   `leaf_size`. The twinning package is required.
+#'   `leaf_size`. For `v = 2`, strategies 1 and 2 give the same result.
+#'   Strata with fewer than `2 * v` rows are assigned at random. The
+#'   twinning package is required.
 #' * `"rerandomize"` draws stratified random splits and keeps the first one
 #'   whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
-#'   2012). Options are `p_accept`, the target acceptance rate (default 0.1),
-#'   and `max_draws` (default 1000). If no draw meets the threshold, the best
-#'   draw is used with a warning.
+#'   2012). For folds, the imbalance is the largest over the "one fold versus
+#'   the rest" comparisons. The threshold is the `p_accept` quantile of the
+#'   imbalance over pilot draws made with the same `exact` and `group`
+#'   constraints (`max(100, min(10 / p_accept, max_draws))` draws). Options are `p_accept`, the target acceptance rate
+#'   (default 0.1), and `max_draws` (default 1000). If no draw meets the
+#'   threshold, the best draw is used with a warning.
 #' * `"interaction"` cuts numeric columns into quantile bins, crosses all
 #'   bins, and stratifies at random. It is a baseline that shows how crossed
 #'   strata become sparse. Options are `n_bins` (default 4) and `pool`
@@ -50,6 +59,12 @@
 #' gets the set of its group. The number of groups per set follows the target
 #' proportions, so the number of rows per set is only approximate. `exact`
 #' columns must be constant within each group.
+#'
+#' # Reshuffling
+#'
+#' [rsample::reshuffle_rset()] finds the function that made an `rset` by
+#' its class name, so it only works on these folds when balancesample is
+#' attached with `library(balancesample)`.
 #'
 #' @return A tibble with class `balanced_vfold_cv` and `rset`. It has a
 #'   `splits` column of `rsplit` objects and one or two ID columns.
