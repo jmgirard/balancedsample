@@ -21,3 +21,12 @@
 - [`labels()`](https://rdrr.io/r/base/labels.html) of repeated folds now
   combines the repeat and fold IDs, as it does for
   [`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html).
+
+- New “Get started” article that walks through a full tidymodels
+  workflow.
+
+- [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
+  and
+  [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
+  now reject unknown arguments. If you pass `strata`, the error tells
+  you to use `exact`.

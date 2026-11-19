@@ -19,7 +19,8 @@ the assessment set, and the other folds form the analysis set."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/balancesample.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -53,7 +54,8 @@ the assessment set, and the other folds form the analysis set.</p>
 <span>  exact <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"anticlust"</span>,</span>
-<span>  options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,7 +88,11 @@ stratum, the count in every set is the floor or the ceiling of its
 proportional share, based on the actual size of that set. For folds,
 the counts of a stratum also differ by at most one over the folds
 whenever both rules can hold at once. With <code>group</code>, these counts are
-numbers of groups, not rows.</p></dd>
+numbers of groups, not rows. <code>exact</code> does the job of <code>strata</code> in
+rsample, but it takes several columns and its counts are exact. Numeric
+columns with whole-number values are treated as categories. Put
+continuous columns in <code>balance</code>, or use <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> to make a factor if you
+need exact counts within ranges.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -101,6 +107,10 @@ IDs. All rows of a group go to the same set. See Details.</p></dd>
 
 <dt id="arg-options">options<a class="anchor" aria-label="anchor" href="#arg-options"></a></dt>
 <dd><p>A named list of options for the method. See Details.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Not used. Must be empty.</p></dd>
 
 </dl></div>
     <div class="section level2">

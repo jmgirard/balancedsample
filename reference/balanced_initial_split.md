@@ -17,7 +17,8 @@ balanced_initial_split(
   exact = NULL,
   group = NULL,
   method = "anticlust",
-  options = list()
+  options = list(),
+  ...
 )
 ```
 
@@ -48,7 +49,12 @@ balanced_initial_split(
   the ceiling of its proportional share, based on the actual size of
   that set. For folds, the counts of a stratum also differ by at most
   one over the folds whenever both rules can hold at once. With `group`,
-  these counts are numbers of groups, not rows.
+  these counts are numbers of groups, not rows. `exact` does the job of
+  `strata` in rsample, but it takes several columns and its counts are
+  exact. Numeric columns with whole-number values are treated as
+  categories. Put continuous columns in `balance`, or use
+  [`cut()`](https://rdrr.io/r/base/cut.html) to make a factor if you
+  need exact counts within ranges.
 
 - group:
 
@@ -64,6 +70,10 @@ balanced_initial_split(
 - options:
 
   A named list of options for the method. See Details.
+
+- ...:
+
+  Not used. Must be empty.
 
 ## Value
 

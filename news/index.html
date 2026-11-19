@@ -15,7 +15,8 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/balancesample.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -37,6 +38,8 @@
 <ul><li><p>First draft of the package: <code><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv()</a></code>, <code><a href="../reference/balanced_initial_split.html">balanced_initial_split()</a></code>, <code><a href="../reference/balance_check.html">balance_check()</a></code>, and four balancing methods (<code>"anticlust"</code>, <code>"twinning"</code>, <code>"rerandomize"</code>, <code>"interaction"</code>).</p></li>
 <li><p>Workflows with a postprocessor that must be trained (for example, a tailor calibration) now work with <code><a href="https://tune.tidymodels.org/reference/fit_resamples.html" class="external-link">tune::fit_resamples()</a></code>, <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune::tune_grid()</a></code>, and <code><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">tune::last_fit()</a></code>. The inner calibration split is balanced with the same settings as the outer split. This needs rsample 1.3.1 or later.</p></li>
 <li><p><code><a href="https://rdrr.io/r/base/labels.html" class="external-link">labels()</a></code> of repeated folds now combines the repeat and fold IDs, as it does for <code><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">rsample::vfold_cv()</a></code>.</p></li>
+<li><p>New “Get started” article that walks through a full tidymodels workflow.</p></li>
+<li><p><code><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv()</a></code> and <code><a href="../reference/balanced_initial_split.html">balanced_initial_split()</a></code> now reject unknown arguments. If you pass <code>strata</code>, the error tells you to use <code>exact</code>.</p></li>
 </ul></div>
   </main></div>
 

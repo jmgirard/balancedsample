@@ -288,3 +288,9 @@ Analysis and Data Mining, 15*(5), 598-610.
   [`balancesample-package`](https://jmgirard.github.io/balancesample/reference/balancesample-package.md)
   : balancesample: Multivariate Balanced Data Splitting for 'rsample'
 
+# Articles
+
+### All vignettes
+
+- [Get started with
+  balancesample](https://jmgirard.github.io/balancesample/articles/balancesample.md):
