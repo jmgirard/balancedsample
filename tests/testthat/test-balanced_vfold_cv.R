@@ -443,6 +443,15 @@ test_that("bad inputs give clear errors", {
   expect_snapshot(balanced_vfold_cv(m, 3, balance = x), error = TRUE)
 })
 
+test_that("strata and other extra arguments are rejected", {
+  d <- sim_data()
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(d, balance = x1, strata = cat)
+    balanced_initial_split(d, balance = x1, strata = cat)
+    balanced_vfold_cv(d, balance = x1, folds = 5)
+  })
+})
+
 test_that("results are reproducible with a seed", {
   d <- sim_data()
   for (m in available_methods()) {

@@ -11,3 +11,8 @@
 
 * `labels()` of repeated folds now combines the repeat and fold IDs, as it
   does for `rsample::vfold_cv()`.
+
+* New "Get started" article that walks through a full tidymodels workflow.
+
+* `balanced_vfold_cv()` and `balanced_initial_split()` now reject unknown
+  arguments. If you pass `strata`, the error tells you to use `exact`.

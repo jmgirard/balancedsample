@@ -42,9 +42,11 @@ balanced_initial_split <- function(
   exact = NULL,
   group = NULL,
   method = "anticlust",
-  options = list()
+  options = list(),
+  ...
 ) {
   call <- rlang::current_env()
+  check_dots(..., call = call)
   if (
     !is.numeric(prop) ||
       length(prop) != 1 ||

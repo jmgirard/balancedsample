@@ -12,7 +12,8 @@ balanced_vfold_cv(
   exact = NULL,
   group = NULL,
   method = "anticlust",
-  options = list()
+  options = list(),
+  ...
 )
 }
 \arguments{
@@ -32,7 +33,11 @@ stratum, the count in every set is the floor or the ceiling of its
 proportional share, based on the actual size of that set. For folds,
 the counts of a stratum also differ by at most one over the folds
 whenever both rules can hold at once. With \code{group}, these counts are
-numbers of groups, not rows.}
+numbers of groups, not rows. \code{exact} does the job of \code{strata} in
+rsample, but it takes several columns and its counts are exact. Numeric
+columns with whole-number values are treated as categories. Put
+continuous columns in \code{balance}, or use \code{\link[=cut]{cut()}} to make a factor if you
+need exact counts within ranges.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}
@@ -41,6 +46,8 @@ IDs. All rows of a group go to the same set. See Details.}
 \code{"rerandomize"}, or \code{"interaction"}. See Details.}
 
 \item{options}{A named list of options for the method. See Details.}
+
+\item{...}{Not used. Must be empty.}
 }
 \value{
 A tibble with class \code{balanced_vfold_cv} and \code{rset}. It has a
