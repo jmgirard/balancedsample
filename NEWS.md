@@ -16,3 +16,14 @@
 
 * `balanced_vfold_cv()` and `balanced_initial_split()` now reject unknown
   arguments. If you pass `strata`, the error tells you to use `exact`.
+
+* New `balanced_initial_validation_split()` makes a training/validation/testing
+  split. All three sets are balanced in one pass. It works with
+  `rsample::validation_set()`, `tune::tune_grid()`, and `tune::last_fit()`.
+
+* `balance_check()` now works on three-way splits, including those from
+  `rsample::initial_validation_split()`. It compares the validation and
+  testing sets each with the training set.
+
+* `method = "twinning"` can now make sets of unequal size from whole numbers
+  of similar parts.
