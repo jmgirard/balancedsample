@@ -73,11 +73,19 @@
 #' proportions, so the number of rows per set is only approximate. `exact`
 #' columns must be constant within each group.
 #'
-#' # Reshuffling
+#' # Use with tune
 #'
-#' [rsample::reshuffle_rset()] finds the function that made an `rset` by
-#' its class name, so it only works on these folds when balancesample is
-#' attached with `library(balancesample)`.
+#' tune and [rsample::reshuffle_rset()] find the function that made an
+#' `rset` by its class name. They only find `balanced_vfold_cv()` when
+#' balancesample is attached with `library(balancesample)`. If you call
+#' `balancesample::balanced_vfold_cv()` without attaching the package,
+#' [tune::fit_resamples()] and [tune::tune_grid()] fail with "Could not find
+#' function".
+#'
+#' If a workflow has a postprocessor that must be trained, such as a
+#' calibration from the tailor package, tune splits each analysis set again.
+#' That inner split is a [balanced_initial_split()] with the same `balance`,
+#' `exact`, `group`, `method`, and `options`, and with `prop = 1 - 1/v`.
 #'
 #' @return A tibble with class `balanced_vfold_cv` and `rset`. It has a
 #'   `splits` column of `rsplit` objects and one or two ID columns.

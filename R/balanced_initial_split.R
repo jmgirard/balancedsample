@@ -14,6 +14,10 @@
 #' [balanced_vfold_cv()]. With `method = "twinning"`, the split uses
 #' [twinning::twin()], and the options are `leaf_size` only.
 #'
+#' If a workflow has a postprocessor that must be trained, [tune::last_fit()]
+#' splits the training set again with `balanced_initial_split()`, using the
+#' same arguments.
+#'
 #' @return An `rsplit` object with class `balanced_initial_split` and
 #'   `initial_split`.
 #'

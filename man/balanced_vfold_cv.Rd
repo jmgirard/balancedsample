@@ -104,10 +104,18 @@ proportions, so the number of rows per set is only approximate. \code{exact}
 columns must be constant within each group.
 }
 
-\section{Reshuffling}{
-\code{\link[rsample:reshuffle_rset]{rsample::reshuffle_rset()}} finds the function that made an \code{rset} by
-its class name, so it only works on these folds when balancesample is
-attached with \code{library(balancesample)}.
+\section{Use with tune}{
+tune and \code{\link[rsample:reshuffle_rset]{rsample::reshuffle_rset()}} find the function that made an
+\code{rset} by its class name. They only find \code{balanced_vfold_cv()} when
+balancesample is attached with \code{library(balancesample)}. If you call
+\code{balancesample::balanced_vfold_cv()} without attaching the package,
+\code{\link[tune:fit_resamples]{tune::fit_resamples()}} and \code{\link[tune:tune_grid]{tune::tune_grid()}} fail with "Could not find
+function".
+
+If a workflow has a postprocessor that must be trained, such as a
+calibration from the tailor package, tune splits each analysis set again.
+That inner split is a \code{\link[=balanced_initial_split]{balanced_initial_split()}} with the same \code{balance},
+\code{exact}, \code{group}, \code{method}, and \code{options}, and with \code{prop = 1 - 1/v}.
 }
 
 \examples{
