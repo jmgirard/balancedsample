@@ -4,6 +4,7 @@
 \alias{balance_check}
 \alias{balance_check.rset}
 \alias{balance_check.rsplit}
+\alias{balance_check.three_way_split}
 \title{Check the balance of a split or of a set of resamples}
 \usage{
 balance_check(x, ..., max_n = 2000)
@@ -11,10 +12,14 @@ balance_check(x, ..., max_n = 2000)
 \method{balance_check}{rset}(x, ..., max_n = 2000)
 
 \method{balance_check}{rsplit}(x, ..., max_n = 2000)
+
+\method{balance_check}{three_way_split}(x, ..., max_n = 2000)
 }
 \arguments{
-\item{x}{An \code{rset} (for example from \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}) or an \code{rsplit}
-(for example from \code{\link[=balanced_initial_split]{balanced_initial_split()}}).}
+\item{x}{An \code{rset} (for example from \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}), an \code{rsplit}
+(for example from \code{\link[=balanced_initial_split]{balanced_initial_split()}}), or a three-way split (from
+\code{\link[=balanced_initial_validation_split]{balanced_initial_validation_split()}} or
+\code{\link[rsample:initial_validation_split]{rsample::initial_validation_split()}}).}
 
 \item{...}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to check. If
 empty, the \code{balance} and \code{exact} columns stored in \code{x} are used.}
@@ -29,7 +34,8 @@ and \code{value}. Energy rows have \code{NA} in \code{variable} and \code{level}
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its
-analysis set. It reports a standardized mean difference (SMD) for each
+analysis set. For a three-way split, it compares the validation set and the
+testing set each with the training set. It reports a standardized mean difference (SMD) for each
 variable and the energy distance for all variables together. It works
 with any \code{rset} or \code{rsplit}, so you can compare balanced folds with
 ordinary \code{\link[rsample:vfold_cv]{rsample::vfold_cv()}} folds.

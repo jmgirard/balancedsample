@@ -17,7 +17,7 @@ internal_calibration_split.balanced_vfold_split <- function(
     split_args$prop <- 1 - 1 / split_args$v
   }
   balanced_calibration_split(
-    x,
+    rsample::analysis(x),
     split_args,
     class = c(
       "balanced_vfold_split_cal",
@@ -47,7 +47,7 @@ internal_calibration_split.balanced_initial_split <- function(
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
   balanced_calibration_split(
-    x,
+    rsample::analysis(x),
     split_args,
     class = c(
       "balanced_initial_split_cal",
@@ -57,10 +57,34 @@ internal_calibration_split.balanced_initial_split <- function(
   )
 }
 
+# As in rsample, the training set is split with the training share of the
+# training and validation sets.
+#' @exportS3Method rsample::internal_calibration_split
+internal_calibration_split.balanced_initial_validation_split <- function(
+  x,
+  split_args,
+  ...
+) {
+  rlang::check_dots_empty()
+  stored <- attr(x, "val_att")
+  stored <- stored[!vapply(stored, is.null, logical(1))]
+  split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
+  split_args$prop <- split_args$prop[[1]] / sum(split_args$prop)
+  balanced_calibration_split(
+    rsample::training(x),
+    split_args,
+    class = c(
+      "balanced_initial_validation_split_cal",
+      "internal_calibration_split",
+      "mc_split",
+      "rsplit"
+    )
+  )
+}
+
 # Like rsample, fall back to an empty calibration set with a warning if the
 # analysis set can't be split (for example, if it is too small).
-balanced_calibration_split <- function(x, split_args, class) {
-  analysis_set <- rsample::analysis(x)
+balanced_calibration_split <- function(analysis_set, split_args, class) {
   options <- split_args$options %||% list()
   # `strategy` applies to folds only.
   options$strategy <- NULL

@@ -111,6 +111,14 @@ split
 balance_check(split)
 ```
 
+`balanced_initial_validation_split()` makes one balanced training/validation/testing split. Pass it to `rsample::validation_set()` to tune on the validation set.
+
+```{r validation-split}
+split3 <- balanced_initial_validation_split(d, prop = c(0.6, 0.2), balance = c(age, income))
+split3
+balance_check(split3)
+```
+
 ## Groups
 
 Use `group` to keep all rows of a group (for example, a participant or a hospital) in the same set. Each group becomes one row with its group means and its log size. The method assigns the groups, and each row then gets the set of its group. The number of groups per set follows the target proportions, so the number of rows per set is only approximate.
