@@ -2,7 +2,13 @@
   register_balance_method(
     "anticlust",
     method_anticlust,
-    options = c("moments", "covariances", "k_neighbours", "local_maximum", "repetitions"),
+    options = c(
+      "moments",
+      "covariances",
+      "k_neighbours",
+      "local_maximum",
+      "repetitions"
+    ),
     package = "anticlust"
   )
   register_balance_method(

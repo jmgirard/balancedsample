@@ -29,11 +29,19 @@ autoplot.balance_check <- function(object, type = c("smd", "energy"), ...) {
 
   if (type == "smd") {
     df <- df[df$statistic == "smd", , drop = FALSE]
-    df$label <- ifelse(is.na(df$level), df$variable, paste0(df$variable, ": ", df$level))
+    df$label <- ifelse(
+      is.na(df$level),
+      df$variable,
+      paste0(df$variable, ": ", df$level)
+    )
     df$label <- factor(df$label, levels = rev(unique(df$label)))
     p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$value, y = .data$label)) +
       ggplot2::geom_vline(xintercept = 0, colour = "grey50") +
-      ggplot2::geom_vline(xintercept = c(-0.1, 0.1), linetype = "dashed", colour = "grey50") +
+      ggplot2::geom_vline(
+        xintercept = c(-0.1, 0.1),
+        linetype = "dashed",
+        colour = "grey50"
+      ) +
       ggplot2::geom_point(alpha = 0.6) +
       ggplot2::labs(
         x = "Standardized mean difference (assessment - analysis)",
@@ -44,7 +52,10 @@ autoplot.balance_check <- function(object, type = c("smd", "energy"), ...) {
 
   df <- df[df$statistic == "energy", , drop = FALSE]
   if (has_id2) {
-    p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$id2, y = .data$value, colour = .data$id)) +
+    p <- ggplot2::ggplot(
+      df,
+      ggplot2::aes(x = .data$id2, y = .data$value, colour = .data$id)
+    ) +
       ggplot2::geom_point() +
       ggplot2::labs(x = NULL, y = "Energy distance", colour = NULL)
   } else {

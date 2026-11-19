@@ -110,14 +110,16 @@
 #' folds
 #' balance_check(folds)
 #' @export
-balanced_vfold_cv <- function(data,
-                              v = 10,
-                              repeats = 1,
-                              balance = NULL,
-                              exact = NULL,
-                              group = NULL,
-                              method = "anticlust",
-                              options = list()) {
+balanced_vfold_cv <- function(
+  data,
+  v = 10,
+  repeats = 1,
+  balance = NULL,
+  exact = NULL,
+  group = NULL,
+  method = "anticlust",
+  options = list()
+) {
   call <- rlang::current_env()
   check_whole(v, min = 2, call = call)
   check_whole(repeats, min = 1, call = call)
@@ -171,7 +173,9 @@ balanced_vfold_cv <- function(data,
     method = method,
     options = options
   )
-  attrib <- attrib[!vapply(attrib, function(z) length(z) == 0 && !is.list(z), logical(1))]
+  attrib <- attrib[
+    !vapply(attrib, function(z) length(z) == 0 && !is.list(z), logical(1))
+  ]
 
   rsample::new_rset(
     splits = splits,
@@ -192,13 +196,21 @@ print.balanced_vfold_cv <- function(x, ...) {
 #' @export
 pretty.balanced_vfold_cv <- function(x, ...) {
   details <- attributes(x)
-  res <- paste0(details$v, "-fold balanced cross-validation (", details$method, ")")
+  res <- paste0(
+    details$v,
+    "-fold balanced cross-validation (",
+    details$method,
+    ")"
+  )
   if (!is.null(details$repeats) && details$repeats > 1) {
     res <- paste(res, "repeated", details$repeats, "times")
   }
   extra <- character()
   if (length(details$exact) > 0) {
-    extra <- c(extra, paste("stratified by", paste(details$exact, collapse = ", ")))
+    extra <- c(
+      extra,
+      paste("stratified by", paste(details$exact, collapse = ", "))
+    )
   }
   if (length(details$group) > 0) {
     extra <- c(extra, paste("grouped by", details$group))
@@ -213,10 +225,24 @@ names0 <- function(num, prefix) {
   paste0(prefix, formatC(seq_len(num), width = nchar(num), flag = "0"))
 }
 
-check_whole <- function(x, min, max = Inf, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
-  ok <- is.numeric(x) && length(x) == 1 && !is.na(x) && x == round(x) && x >= min && x <= max
+check_whole <- function(
+  x,
+  min,
+  max = Inf,
+  arg = rlang::caller_arg(x),
+  call = rlang::caller_env()
+) {
+  ok <- is.numeric(x) &&
+    length(x) == 1 &&
+    !is.na(x) &&
+    x == round(x) &&
+    x >= min &&
+    x <= max
   if (!ok) {
-    cli::cli_abort("{.arg {arg}} must be a whole number of at least {min}.", call = call)
+    cli::cli_abort(
+      "{.arg {arg}} must be a whole number of at least {min}.",
+      call = call
+    )
   }
   invisible(x)
 }
