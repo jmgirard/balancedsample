@@ -34,6 +34,8 @@
   small data because of rounding. Write `prop` as an exact fraction, such as
   `2 / 3`, not `0.67`.
 
-* For twinning three-way splits, the calibration split now uses the nearest
-  training share that twinning can make (for example 5/6 instead of 14/17),
-  instead of falling back to an empty calibration set.
+* `rsample::internal_calibration_split()` on a twinning three-way split now
+  uses the nearest training share that twinning can make (for example 5/6
+  instead of 14/17). Before, such shares gave a warning and an empty
+  calibration set. That still happens when the training set can't be split,
+  for example when it has fewer than two groups.

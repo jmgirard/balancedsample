@@ -84,11 +84,12 @@ that inner split at random, without balancing. \code{\link[tune:last_fit]{tune::
 train such a postprocessor on any three-way split, including those from
 \code{\link[rsample:initial_validation_split]{rsample::initial_validation_split()}} (as of tune 2.1.0).
 
-balancesample's \code{\link[rsample:internal_calibration_split]{rsample::internal_calibration_split()}} method for this
-split is ready for when tune calls it. Like rsample, it fits the model on
-\code{prop[1] / sum(prop)} of the training set. With \code{method = "twinning"},
-this share is rounded to the nearest \code{1 - 1/r} (or \code{1/r}, below 1/2) for
-a whole number \code{r}, for example 14/17 to 5/6.
+Calling \code{\link[rsample:internal_calibration_split]{rsample::internal_calibration_split()}} on this split yourself
+gives a balanced split of the training set. As in rsample,
+\code{prop[1] / sum(prop)} of the training set goes to the first part and the
+rest to the calibration set. With \code{method = "twinning"}, this share is
+rounded to the nearest \code{1 - 1/r} (or \code{1/r}, below 1/2) for a whole number
+\code{r}, for example 14/17 to 5/6.
 }
 
 \examples{
