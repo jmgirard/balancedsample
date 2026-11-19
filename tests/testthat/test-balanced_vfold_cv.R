@@ -134,29 +134,51 @@ test_that("method options are checked", {
     balanced_vfold_cv(d, balance = x1, method = "nope")
     balanced_vfold_cv(d, balance = x1, method = "interaction", options = list(1))
   })
-  skip_if_not_installed("anticlust")
-  expect_snapshot(
-    balanced_vfold_cv(d, balance = x1, options = list(K = 3)),
-    error = TRUE
-  )
 })
 
-test_that("anticlust options pass through", {
+test_that("anticlust options work and are checked", {
   skip_if_not_installed("anticlust")
   d <- sim_data(n = 60)
-  set.seed(8)
-  folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, x2), options = list(objective = "diversity"))
-  expect_true(assessed_once(folds, nrow(d)))
+  opts <- list(
+    list(moments = 1),
+    list(moments = 4, covariances = TRUE),
+    list(k_neighbours = 5),
+    list(local_maximum = FALSE),
+    list(repetitions = 3)
+  )
+  for (o in opts) {
+    set.seed(8)
+    folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, x2), exact = sex, options = o)
+    expect_true(assessed_once(folds, nrow(d)), info = names(o))
+    expect_true(strata_exact(folds, factor(d$sex)), info = names(o))
+  }
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(d, balance = x1, options = list(moments = 5))
+    balanced_vfold_cv(d, balance = x1, options = list(k_neighbours = 0.5))
+    balanced_vfold_cv(d, balance = x1, options = list(objective = "diversity"))
+  })
+})
+
+test_that("local_maximum balances at least as well as one pass", {
+  skip_if_not_installed("anticlust")
+  d <- sim_data(n = 120)
+  x <- build_balance_matrix(d[c("x1", "x2", "x3")])
+  f <- kplus_features(x, 2, FALSE)
+  sizes <- sizes_from_props(nrow(d), rep(1 / 4, 4))
+  for (seed in 1:5) {
+    set.seed(seed)
+    one <- method_anticlust(x, sizes, local_maximum = FALSE)
+    set.seed(seed)
+    many <- method_anticlust(x, sizes)
+    expect_gte(anticlust::variance_objective(f, many), anticlust::variance_objective(f, one))
+  }
 })
 
 test_that("anticlust repetitions keep the exact counts", {
   skip_if_not_installed("anticlust")
   d <- withr::with_seed(1, data.frame(x = stats::rnorm(19), s = factor(rep(1:3, c(5, 6, 8)))))
   set.seed(1)
-  folds <- balanced_vfold_cv(
-    d, 4, balance = x, exact = s,
-    options = list(method = "local-maximum", repetitions = 20)
-  )
+  folds <- balanced_vfold_cv(d, 4, balance = x, exact = s, options = list(repetitions = 20))
   expect_true(shares_respected(folds, d$s))
   expect_true(strata_exact(folds, d$s))
 })

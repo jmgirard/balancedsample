@@ -25,14 +25,22 @@
 #' @details
 #' # Methods
 #'
-#' * `"anticlust"` (default) uses [anticlust::anticlustering()] with
-#'   `objective = "kplus"` and `standardize = TRUE`. The k-plus objective
-#'   makes the means and the variances of the sets similar. `options` go to
-#'   `anticlustering()`, for example `list(objective = "diversity")` or
-#'   `list(method = "local-maximum", repetitions = 5)`. With `exact`, only
-#'   the `"exchange"` and `"local-maximum"` anticlust methods keep the exact
-#'   counts, and each repetition starts from a new stratified assignment. The
-#'   anticlust package is required.
+#' * `"anticlust"` (default) uses k-plus anticlustering (Papenberg, 2024)
+#'   with [anticlust::fast_anticlustering()]. It makes the means and the
+#'   variances of the sets similar. Options are:
+#'   * `moments` (default 2): the highest moment to balance. 1 balances
+#'     means only, 3 adds skewness, and 4 adds kurtosis.
+#'   * `covariances` (default `FALSE`): also balance the product of each
+#'     pair of `balance` columns.
+#'   * `k_neighbours` (default `Inf`): the number of nearest neighbours each
+#'     row may swap with. `Inf` tries every swap. A small number, such as
+#'     20, is faster on large data.
+#'   * `local_maximum` (default `TRUE`): repeat the exchange passes until no
+#'     swap improves the balance. `FALSE` runs one pass.
+#'   * `repetitions` (default 1): the number of random starts. The best
+#'     result is kept.
+#'
+#'   The anticlust package is required.
 #' * `"twinning"` uses [twinning::multiplet()] for folds. Options are
 #'   `strategy` (1, 2, or 3; strategy 2 needs `v` to be a power of 2) and
 #'   `leaf_size`. For `v = 2`, strategies 1 and 2 give the same result.
@@ -72,6 +80,10 @@
 #' @references
 #' Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate
 #' balance in experiments. *The Annals of Statistics, 40*(2), 1263-1282.
+#'
+#' Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+#' criterion for maximizing between-group similarity. *British Journal of
+#' Mathematical and Statistical Psychology, 77*(1), 80-102.
 #'
 #' Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 #' data sets into equivalent parts. *Psychological Methods, 26*(2), 161-174.

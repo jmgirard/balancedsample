@@ -11,18 +11,14 @@ balance_method_registry <- new.env(parent = emptyenv())
 register_balance_method <- function(name,
                                     fun,
                                     options = character(),
-                                    pass_through = FALSE,
                                     native_group = FALSE,
-                                    package = NULL,
-                                    reserved = character()) {
+                                    package = NULL) {
   balance_method_registry[[name]] <- list(
     name = name,
     fun = fun,
     options = options,
-    pass_through = pass_through,
     native_group = native_group,
-    package = package,
-    reserved = reserved
+    package = package
   )
   invisible(name)
 }
@@ -63,28 +59,16 @@ check_method_options <- function(entry, options, call = rlang::caller_env()) {
   if (is.null(nms) || any(nms == "") || anyDuplicated(nms)) {
     cli::cli_abort("All elements of {.arg options} must have unique names.", call = call)
   }
-  bad_reserved <- intersect(nms, entry$reserved)
-  if (length(bad_reserved) > 0) {
+  bad <- setdiff(nms, entry$options)
+  if (length(bad) > 0) {
+    valid <- entry$options
     cli::cli_abort(
       c(
-        "{.arg options} can't set {.arg {bad_reserved}} for method {.val {entry$name}}.",
-        i = "balancesample sets {cli::qty(length(bad_reserved))}{?this argument/these arguments} from {.arg balance}, {.arg exact}, and {.arg group}."
+        "Unknown {cli::qty(length(bad))}option{?s} for method {.val {entry$name}}: {.arg {bad}}.",
+        i = if (length(valid)) "Valid options: {.arg {valid}}." else "This method has no options."
       ),
       call = call
     )
-  }
-  if (!entry$pass_through) {
-    bad <- setdiff(nms, entry$options)
-    if (length(bad) > 0) {
-      valid <- entry$options
-      cli::cli_abort(
-        c(
-          "Unknown {cli::qty(length(bad))}option{?s} for method {.val {entry$name}}: {.arg {bad}}.",
-          i = if (length(valid)) "Valid options: {.arg {valid}}." else "This method has no options."
-        ),
-        call = call
-      )
-    }
   }
   invisible(options)
 }
