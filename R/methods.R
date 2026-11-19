@@ -146,7 +146,8 @@ method_twinning <- function(
   exact = NULL,
   group = NULL,
   strategy = 1L,
-  leaf_size = 8L
+  leaf_size = 8L,
+  parts = NULL
 ) {
   rlang::check_installed("twinning", reason = "to use `method = \"twinning\"`.")
   n <- sum(sizes)
@@ -190,12 +191,26 @@ method_twinning <- function(
     return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * r))
   }
 
-  if (strategy == 2 && !is_power_of_two(k)) {
+  # `parts` (set by balanced_initial_validation_split()) gives the number of
+  # multiplet() parts for each set. Folds get one part each.
+  blocks <- parts %||% rep.int(1L, k)
+  m <- sum(blocks)
+  if (strategy == 2 && !is_power_of_two(m)) {
+    if (m == k) {
+      cli::cli_abort(
+        c(
+          "Twinning strategy 2 needs {.arg v} to be a power of 2.",
+          x = "{.arg v} is {k}.",
+          i = "Use {.arg v} = 2, 4, 8, or 16, or use strategy 1 or 3."
+        ),
+        call = NULL
+      )
+    }
     cli::cli_abort(
       c(
-        "Twinning strategy 2 needs {.arg v} to be a power of 2.",
-        x = "{.arg v} is {k}.",
-        i = "Use {.arg v} = 2, 4, 8, or 16, or use strategy 1 or 3."
+        "Twinning strategy 2 needs each proportion to be a multiple of 1/m, where m is a power of 2.",
+        x = "These proportions need m = {m}.",
+        i = "Use proportions in quarters or eighths, such as {.code c(0.5, 0.25)}, or use strategy 1 or 3."
       ),
       call = NULL
     )
@@ -203,14 +218,31 @@ method_twinning <- function(
   fold_fun <- function(x, sz) {
     a <- twinning::multiplet(
       x,
-      k = length(sz),
+      k = m,
       strategy = strategy,
       format_data = FALSE,
       leaf_size = leaf_size
     )
-    relabel_to_sizes(a, sz)
+    if (m == k) {
+      return(relabel_to_sizes(a, sz))
+    }
+    target <- shuffle(rep.int(seq_len(k), blocks))
+    fix_sizes(target[a], sz)
   }
-  within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * k)
+  within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * m)
+}
+
+# Number of twinning parts for each set: the smallest whole number `m` up to
+# `max_parts` for which every proportion is a multiple of 1/m. Returns NULL if
+# there is none. It depends on the proportions only, not on the data size.
+twin_parts <- function(props, max_parts = 20L) {
+  for (m in seq_len(max_parts)) {
+    b <- props * m
+    if (all(abs(b - round(b)) < 1e-8) && all(round(b) >= 1)) {
+      return(as.integer(round(b)))
+    }
+  }
+  NULL
 }
 
 is_power_of_two <- function(k) {

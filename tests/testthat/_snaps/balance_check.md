@@ -13,5 +13,5 @@
       balance_check(1)
     Condition
       Error in `balance_check()`:
-      ! `x` must be an <rset> or an <rsplit>, not a number.
+      ! `x` must be an <rset>, an <rsplit>, or a <three_way_split>, not a number.
 

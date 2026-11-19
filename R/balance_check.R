@@ -1,13 +1,16 @@
 #' Check the balance of a split or of a set of resamples
 #'
 #' `balance_check()` compares the assessment set of each split with its
-#' analysis set. It reports a standardized mean difference (SMD) for each
+#' analysis set. For a three-way split, it compares the validation set and the
+#' testing set each with the training set. It reports a standardized mean difference (SMD) for each
 #' variable and the energy distance for all variables together. It works
 #' with any `rset` or `rsplit`, so you can compare balanced folds with
 #' ordinary [rsample::vfold_cv()] folds.
 #'
-#' @param x An `rset` (for example from [balanced_vfold_cv()]) or an `rsplit`
-#'   (for example from [balanced_initial_split()]).
+#' @param x An `rset` (for example from [balanced_vfold_cv()]), an `rsplit`
+#'   (for example from [balanced_initial_split()]), or a three-way split (from
+#'   [balanced_initial_validation_split()] or
+#'   [rsample::initial_validation_split()]).
 #' @param ... <[`tidy-select`][tidyselect::language]> Columns to check. If
 #'   empty, the `balance` and `exact` columns stored in `x` are used.
 #' @param max_n The largest number of rows per set for the energy distance.
@@ -51,7 +54,7 @@ balance_check <- function(x, ..., max_n = 2000) {
 #' @export
 balance_check.default <- function(x, ..., max_n = 2000) {
   cli::cli_abort(
-    "{.arg x} must be an {.cls rset} or an {.cls rsplit}, not {.obj_type_friendly {x}}."
+    "{.arg x} must be an {.cls rset}, an {.cls rsplit}, or a {.cls three_way_split}, not {.obj_type_friendly {x}}."
   )
 }
 
@@ -84,6 +87,26 @@ balance_check.rsplit <- function(x, ..., max_n = 2000) {
   new_balance_check(cbind(tibble::tibble(id = rep("Split", nrow(out))), out))
 }
 
+#' @rdname balance_check
+#' @export
+balance_check.three_way_split <- function(x, ..., max_n = 2000) {
+  check_whole(max_n, min = 2)
+  cols <- check_columns(x$data, x, ...)
+  test_id <- setdiff(seq_len(nrow(x$data)), c(x$train_id, x$val_id))
+  res <- lapply(
+    list(Validation = x$val_id, Testing = test_id),
+    function(out_id) {
+      split <- rsample::make_splits(
+        list(analysis = x$train_id, assessment = out_id),
+        data = x$data
+      )
+      split_balance(split, cols, max_n)
+    }
+  )
+  ids <- rep(names(res), vapply(res, nrow, integer(1)))
+  new_balance_check(cbind(tibble::tibble(id = ids), do.call(rbind, res)))
+}
+
 check_columns <- function(data, x, ..., call = rlang::caller_env()) {
   pos <- tidyselect::eval_select(
     rlang::expr(c(!!!rlang::enquos(...))),
@@ -93,7 +116,9 @@ check_columns <- function(data, x, ..., call = rlang::caller_env()) {
   )
   cols <- names(pos)
   if (length(cols) == 0) {
-    cols <- unique(c(attr(x, "balance"), attr(x, "exact")))
+    # Three-way splits keep their arguments in `val_att`.
+    stored <- attr(x, "val_att") %||% attributes(x)
+    cols <- unique(c(stored$balance, stored$exact))
   }
   if (length(cols) == 0) {
     cli::cli_abort(
