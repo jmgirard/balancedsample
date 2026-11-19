@@ -36,6 +36,38 @@ test_that("exact strata are balanced to within one row", {
   }
 })
 
+test_that("exact strata follow the actual fold sizes", {
+  d <- data.frame(s = factor(rep(letters[1:3], c(2, 5, 3))))
+  for (seed in 1:20) {
+    set.seed(seed)
+    folds <- balanced_vfold_cv(d, v = 4, exact = s, method = "interaction")
+    expect_true(shares_respected(folds, d$s))
+    expect_true(strata_exact(folds, d$s))
+  }
+})
+
+test_that("exact levels that contain the separator stay distinct", {
+  d <- data.frame(
+    a = rep(c("a:b", "a"), each = 2),
+    b = rep(c("c", "b:c"), each = 2)
+  )
+  for (seed in 1:10) {
+    set.seed(seed)
+    folds <- balanced_vfold_cv(d, v = 2, exact = c(a, b), method = "interaction")
+    expect_equal(sort(rsample::assessment(folds$splits[[1]])$a), c("a", "a:b"))
+  }
+})
+
+test_that("column names that match paste() arguments work", {
+  for (nm in c("sep", "collapse")) {
+    d <- data.frame(rep(c("a", "b"), each = 4), rep(1:2, 4))
+    names(d) <- c(nm, "other")
+    set.seed(1)
+    folds <- balanced_vfold_cv(d, v = 2, exact = c(all_of(nm), other), method = "interaction")
+    expect_true(assessed_once(folds, nrow(d)), info = nm)
+  }
+})
+
 test_that("exact alone works without balance columns", {
   d <- sim_data()
   set.seed(3)
@@ -61,11 +93,17 @@ test_that("groups and exact strata work together", {
     folds <- balanced_vfold_cv(d, v = 4, balance = x1, exact = site, group = id, method = m)
     expect_true(groups_intact(folds, d$id), info = m)
     # Exactness holds for groups (not rows) per stratum.
+    n_assess <- vapply(folds$splits, function(s) {
+      length(unique(d$id[rsample::complement(s)]))
+    }, integer(1))
     n_groups <- vapply(folds$splits, function(s) {
       out <- rsample::complement(s)
       tapply(d$id[out], site[out], function(z) length(unique(z)))
     }, numeric(2))
     expect_true(all(apply(n_groups, 1, function(r) max(r) - min(r) <= 1)), info = m)
+    m_groups <- tapply(d$id, site, function(z) length(unique(z)))
+    share <- outer(as.vector(m_groups), n_assess) / sum(m_groups)
+    expect_true(all(n_groups >= floor(share + 1e-9) & n_groups <= ceiling(share - 1e-9)), info = m)
   }
 })
 
@@ -112,19 +150,136 @@ test_that("method options are checked", {
     balanced_vfold_cv(d, balance = x1, method = "nope")
     balanced_vfold_cv(d, balance = x1, method = "interaction", options = list(1))
   })
+})
+
+test_that("anticlust options work and are checked", {
   skip_if_not_installed("anticlust")
-  expect_snapshot(
-    balanced_vfold_cv(d, balance = x1, options = list(K = 3)),
-    error = TRUE
+  d <- sim_data(n = 60)
+  opts <- list(
+    list(moments = 1),
+    list(moments = 4, covariances = TRUE),
+    list(k_neighbours = 5),
+    list(local_maximum = FALSE),
+    list(repetitions = 3)
+  )
+  for (o in opts) {
+    set.seed(8)
+    folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, x2), exact = sex, options = o)
+    expect_true(assessed_once(folds, nrow(d)), info = names(o))
+    expect_true(strata_exact(folds, factor(d$sex)), info = names(o))
+  }
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(d, balance = x1, options = list(moments = 5))
+    balanced_vfold_cv(d, balance = x1, options = list(k_neighbours = 0.5))
+    balanced_vfold_cv(d, balance = x1, options = list(objective = "diversity"))
+  })
+})
+
+test_that("anticlust accepts square categorical balance data", {
+  skip_if_not_installed("anticlust")
+  d <- data.frame(x = factor(letters[1:4]))
+  set.seed(1)
+  folds <- balanced_vfold_cv(d, v = 2, balance = x, options = list(moments = 1))
+  expect_true(assessed_once(folds, 4))
+})
+
+test_that("kplus_features() builds each moment from the centered input", {
+  x <- matrix(c(1, 2, 4, 8, 16, 32))
+  cx <- x - mean(x)
+  expected <- standardize_matrix(cbind(x, cx^2, cx^3, cx^4))
+  expect_equal(kplus_features(x, 4, FALSE), expected)
+  expect_equal(ncol(kplus_features(x, 3, FALSE)), 3)
+})
+
+test_that("rerandomize accepts close to p_accept with tied imbalance", {
+  # Every split of four rows into two pairs has one of two imbalance values,
+  # and the smaller one has probability 1/3.
+  # With one draw allowed, the warning shows how often that draw was not
+  # accepted: about 0.9 for an acceptance rate of 0.1, and 1/3 if every tie
+  # with the threshold were accepted.
+  x <- scale(matrix(c(0, 0, 1, 1)))
+  set.seed(1)
+  warned <- replicate(400, {
+    w <- FALSE
+    withCallingHandlers(
+      method_rerandomize(x, c(2L, 2L), p_accept = 0.1, max_draws = 1),
+      warning = function(cnd) {
+        w <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    )
+    w
+  })
+  expect_gt(mean(warned), 0.8)
+  expect_lt(mean(warned), 0.97)
+})
+
+test_that("local_maximum balances at least as well as one pass", {
+  skip_if_not_installed("anticlust")
+  d <- sim_data(n = 120)
+  x <- build_balance_matrix(d[c("x1", "x2", "x3")])
+  f <- kplus_features(x, 2, FALSE)
+  sizes <- sizes_from_props(nrow(d), rep(1 / 4, 4))
+  for (seed in 1:5) {
+    set.seed(seed)
+    one <- method_anticlust(x, sizes, local_maximum = FALSE)
+    set.seed(seed)
+    many <- method_anticlust(x, sizes)
+    expect_gte(anticlust::variance_objective(f, many), anticlust::variance_objective(f, one))
+  }
+})
+
+test_that("anticlust repetitions keep the exact counts", {
+  skip_if_not_installed("anticlust")
+  d <- withr::with_seed(1, data.frame(x = stats::rnorm(19), s = factor(rep(1:3, c(5, 6, 8)))))
+  set.seed(1)
+  folds <- balanced_vfold_cv(d, 4, balance = x, exact = s, options = list(repetitions = 20))
+  expect_true(shares_respected(folds, d$s))
+  expect_true(strata_exact(folds, d$s))
+})
+
+test_that("anticlust handles factor-only and one-row-per-fold data", {
+  skip_if_not_installed("anticlust")
+  set.seed(1)
+  folds <- balanced_vfold_cv(data.frame(g = factor(1:6)), 3, balance = g)
+  expect_true(assessed_once(folds, 6))
+  folds <- balanced_vfold_cv(data.frame(x = 1:2), 2, balance = x)
+  expect_true(assessed_once(folds, 2))
+})
+
+test_that("twinning falls back to random folds for small data", {
+  skip_if_not_installed("twinning")
+  set.seed(1)
+  folds <- balanced_vfold_cv(data.frame(x = 1:5), 3, balance = x, method = "twinning")
+  expect_true(assessed_once(folds, 5))
+})
+
+test_that("twinning checks strategy for two folds", {
+  skip_if_not_installed("twinning")
+  expect_error(
+    balanced_vfold_cv(mtcars, 2, balance = mpg, method = "twinning", options = list(strategy = 99)),
+    "strategy"
+  )
+  set.seed(1)
+  folds <- balanced_vfold_cv(mtcars, 2, balance = mpg, method = "twinning", options = list(strategy = 3))
+  expect_true(assessed_once(folds, nrow(mtcars)))
+})
+
+test_that("rerandomize calibrates its threshold under exact strata", {
+  d <- data.frame(s = rep(0:1, each = 5))
+  set.seed(1)
+  expect_no_warning(
+    balanced_initial_split(d, 0.5, balance = s, exact = s, method = "rerandomize",
+                           options = list(max_draws = 5))
   )
 })
 
-test_that("anticlust options pass through", {
-  skip_if_not_installed("anticlust")
-  d <- sim_data(n = 60)
-  set.seed(8)
-  folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, x2), options = list(objective = "diversity"))
-  expect_true(assessed_once(folds, nrow(d)))
+test_that("reshuffle_rset() works when balancesample is attached", {
+  set.seed(1)
+  folds <- balanced_vfold_cv(mtcars, 3, balance = mpg, method = "interaction")
+  re <- rsample::reshuffle_rset(folds)
+  expect_s3_class(re, "balanced_vfold_cv")
+  expect_true(assessed_once(re, nrow(mtcars)))
 })
 
 test_that("twinning strategy 2 needs a power of two", {
@@ -152,6 +307,8 @@ test_that("bad inputs give clear errors", {
   })
   d$x1[3] <- NA
   expect_snapshot(balanced_vfold_cv(d, balance = x1), error = TRUE)
+  m <- data.frame(x = I(cbind(1:6, 7:12)))
+  expect_snapshot(balanced_vfold_cv(m, 3, balance = x), error = TRUE)
 })
 
 test_that("results are reproducible with a seed", {

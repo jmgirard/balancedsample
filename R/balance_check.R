@@ -18,7 +18,12 @@
 #' minus analysis) divided by the pooled standard deviation,
 #' `sqrt((var_assessment + var_analysis) / 2)`. For a categorical variable,
 #' there is one SMD per level, from the proportions of that level. Values
-#' under 0.1 in absolute size are often taken as good balance.
+#' under 0.1 in absolute size are often taken as good balance. If both sets
+#' have zero variance but different means, the SMD is `Inf` or `-Inf`; the
+#' plot shows these values at the edge of the panel.
+#'
+#' Missing values are dropped variable by variable for the SMD. The energy
+#' distance uses the rows that have no missing values in any checked column.
 #'
 #' The energy distance is the V-statistic
 #' `2 E|X - Y| - E|X - X'| - E|Y - Y'|` on the standardized variables (one
@@ -125,17 +130,31 @@ split_balance <- function(split, cols, max_n) {
     )
   })
 
-  xs <- build_balance_matrix(data[cols])
+  keep <- which(stats::complete.cases(data[cols]))
+  pos <- integer(nrow(data))
+  pos[keep] <- seq_along(keep)
+  as_k <- pos[as][pos[as] > 0]
+  an_k <- pos[an][pos[an] > 0]
+  en <- NA_real_
+  if (length(as_k) > 0 && length(an_k) > 0) {
+    xs <- build_balance_matrix(data[keep, cols, drop = FALSE])
+    en <- energy_distance(xs[as_k, , drop = FALSE], xs[an_k, , drop = FALSE], max_n)
+  }
   energy <- tibble::tibble(
     variable = NA_character_,
     level = NA_character_,
     statistic = "energy",
-    value = energy_distance(xs[as, , drop = FALSE], xs[an, , drop = FALSE], max_n)
+    value = en
   )
   do.call(rbind, c(smd, list(energy)))
 }
 
 smd_value <- function(a, b, binary = FALSE) {
+  a <- a[!is.na(a)]
+  b <- b[!is.na(b)]
+  if (length(a) == 0 || length(b) == 0) {
+    return(NA_real_)
+  }
   diff <- mean(a) - mean(b)
   if (binary) {
     pa <- mean(a)
@@ -146,8 +165,11 @@ smd_value <- function(a, b, binary = FALSE) {
     vb <- if (length(b) > 1) stats::var(b) else 0
     den <- sqrt((va + vb) / 2)
   }
-  if (den < 1e-12) {
-    return(if (abs(diff) < 1e-12) 0 else NA_real_)
+  # Tolerances are relative to the size of the values, so the result does not
+  # depend on the units.
+  tol <- 1e-12 * max(abs(c(a, b)))
+  if (den <= tol) {
+    return(if (abs(diff) <= tol) 0 else sign(diff) * Inf)
   }
   out <- diff / den
   if (abs(out) < 1e-12) 0 else out
@@ -178,10 +200,13 @@ print.balance_check <- function(x, ...) {
   smd <- x$value[x$statistic == "smd"]
   en <- x$value[x$statistic == "energy"]
   n_split <- length(en)
+  smd <- abs(smd[!is.na(smd)])
+  max_smd <- if (length(smd) > 0) max(smd) else NA_real_
+  mean_en <- if (any(!is.na(en))) mean(en, na.rm = TRUE) else NA_real_
   cat(
     "# Balance check: ", n_split, " split", if (n_split != 1) "s", ", ",
-    "max |SMD| = ", format(signif(max(abs(smd), na.rm = TRUE), 3)), ", ",
-    "mean energy distance = ", format(signif(mean(en), 3)), "\n",
+    "max |SMD| = ", format(signif(max_smd, 3)), ", ",
+    "mean energy distance = ", format(signif(mean_en, 3)), "\n",
     sep = ""
   )
   class(x) <- setdiff(class(x), "balance_check")

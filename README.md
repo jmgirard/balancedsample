@@ -20,7 +20,7 @@ balancesample fills this gap with four methods:
 
 | Method | What it does | Package |
 |----|----|----|
-| `"anticlust"` (default) | Anticlustering with the k-plus objective, which matches the means and variances of the sets. | [anticlust](https://cran.r-project.org/package=anticlust) |
+| `"anticlust"` (default) | Anticlustering with the k-plus objective (`anticlust::fast_anticlustering()`), which matches the means and variances of the sets. | [anticlust](https://cran.r-project.org/package=anticlust) |
 | `"twinning"` | Data twinning, which splits the data into sets with similar distributions. | [twinning](https://cran.r-project.org/package=twinning) |
 | `"rerandomize"` | Draws random splits and keeps the first one with a small Mahalanobis imbalance (Morgan and Rubin, 2012). | none |
 | `"interaction"` | Crosses quantile bins of all variables and stratifies at random. This is a baseline. | none |
@@ -59,8 +59,9 @@ d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + rnorm(n)
 
 `balanced_vfold_cv()` takes the columns to balance in `balance`.
 Categorical columns in `exact` are stratified exactly: in each fold, the
-count of each level combination is the floor or the ceiling of its fair
-share.
+count of each level combination is the floor or the ceiling of its
+proportional share of that fold. With `group`, these are counts of
+groups, not rows.
 
 ``` r
 folds <- balanced_vfold_cv(
@@ -89,20 +90,20 @@ object, so you can compare balanced folds with ordinary folds.
 
 ``` r
 balance_check(folds)
-#> # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.022
+#> # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.0203
 #> # A tibble: 40 × 5
 #>    id    variable  level  statistic     value
 #>    <chr> <chr>     <chr>  <chr>         <dbl>
-#>  1 Fold1 age       <NA>   smd       -0.000217
-#>  2 Fold1 income    <NA>   smd       -0.000270
+#>  1 Fold1 age       <NA>   smd       -0.000600
+#>  2 Fold1 income    <NA>   smd       -0.000770
 #>  3 Fold1 diagnosis mild   smd        0       
 #>  4 Fold1 diagnosis none   smd        0       
 #>  5 Fold1 diagnosis severe smd        0       
 #>  6 Fold1 site      A      smd       -0.00625 
 #>  7 Fold1 site      B      smd        0.00625 
-#>  8 Fold1 <NA>      <NA>   energy     0.0248  
-#>  9 Fold2 age       <NA>   smd        0.000749
-#> 10 Fold2 income    <NA>   smd        0.000681
+#>  8 Fold1 <NA>      <NA>   energy     0.0180  
+#>  9 Fold2 age       <NA>   smd        0.000412
+#> 10 Fold2 income    <NA>   smd       -0.000580
 #> # ℹ 30 more rows
 
 random_folds <- rsample::vfold_cv(d, v = 5)
@@ -151,8 +152,8 @@ collect_metrics(res)
 #> # A tibble: 2 × 6
 #>   .metric .estimator  mean     n std_err .config        
 #>   <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1 rmse    standard   1.01      5  0.0172 pre0_mod0_post0
-#> 2 rsq     standard   0.510     5  0.0278 pre0_mod0_post0
+#> 1 rmse    standard   1.01      5 0.00969 pre0_mod0_post0
+#> 2 rsq     standard   0.504     5 0.0191  pre0_mod0_post0
 ```
 
 `balanced_initial_split()` makes one balanced training/testing split.
@@ -188,10 +189,10 @@ grouped
 #> # A tibble: 5 × 2
 #>   splits           id   
 #>   <list>           <chr>
-#> 1 <split [319/81]> Fold1
+#> 1 <split [320/80]> Fold1
 #> 2 <split [321/79]> Fold2
 #> 3 <split [319/81]> Fold3
-#> 4 <split [321/79]> Fold4
+#> 4 <split [320/80]> Fold4
 #> 5 <split [320/80]> Fold5
 ```
 
@@ -201,18 +202,21 @@ and it was slow in tests.
 
 ## Options
 
-Pass method options in `options`. For `"anticlust"`, all options go to
-`anticlust::anticlustering()`.
+Pass method options in `options`. See `?balanced_vfold_cv` for the
+options of each method.
 
 ``` r
-balanced_vfold_cv(d, balance = c(age, income), options = list(objective = "diversity"))
+balanced_vfold_cv(d, balance = c(age, income), options = list(moments = 4, k_neighbours = 20))
 balanced_vfold_cv(d, v = 4, balance = c(age, income), method = "twinning", options = list(strategy = 2))
 balanced_vfold_cv(d, balance = c(age, income), method = "rerandomize", options = list(p_accept = 0.01))
 ```
 
-The anticlust exchange method gets slow on large data. In one test with
-10 folds and four variables, it took 0.7 seconds for 1,000 rows and 18
-seconds for 3,000 rows. Twinning took less than 0.1 seconds for both.
+By default, anticlust tries every swap, so its run time grows quickly
+with the number of rows. In one test with 10 folds and four variables,
+it took 0.8 seconds for 1,000 rows, 2.3 seconds for 3,000 rows, and 8.3
+seconds for 10,000 rows. With `k_neighbours = 20`, the same runs took
+0.2, 0.6, and 1.1 seconds. Twinning took less than 0.2 seconds for all
+three.
 
 ## Background
 
@@ -243,6 +247,10 @@ problem next to the other methods.
 Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve
 covariate balance in experiments. *The Annals of Statistics, 40*(2),
 1263-1282.
+
+Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+criterion for maximizing between-group similarity. *British Journal of
+Mathematical and Statistical Psychology, 77*(1), 80-102.
 
 Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 data sets into equivalent parts. *Psychological Methods, 26*(2),

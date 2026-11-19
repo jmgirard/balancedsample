@@ -28,7 +28,10 @@ logical columns become one indicator column per level.}
 \item{exact}{<\code{\link[tidyselect:language]{tidy-select}}> Categorical columns to
 stratify exactly. Each combination of levels is one stratum. In each
 stratum, the count in every set is the floor or the ceiling of its
-proportional share.}
+proportional share, based on the actual size of that set. For folds,
+the counts of a stratum also differ by at most one over the folds
+whenever both rules can hold at once. With \code{group}, these counts are
+numbers of groups, not rows.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}

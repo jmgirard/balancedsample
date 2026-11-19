@@ -8,7 +8,8 @@ shuffle <- function(x) {
 }
 
 # Integer set sizes that sum to `n` and follow `props` (largest remainder,
-# random tie breaks).
+# random tie breaks). When `n` is at least the number of sets, every set gets
+# at least one unit, taken from the largest set.
 sizes_from_props <- function(n, props) {
   raw <- n * props / sum(props)
   out <- floor(raw + 1e-9)
@@ -19,74 +20,125 @@ sizes_from_props <- function(n, props) {
     pick <- ord[seq_len(left)]
     out[pick] <- out[pick] + 1
   }
+  while (n >= length(out) && any(out == 0)) {
+    big <- which.max(out)
+    out[big] <- out[big] - 1
+    out[which(out == 0)[1]] <- 1
+  }
   as.integer(out)
 }
 
-# Count matrix (strata x sets). Row sums are the stratum sizes and column sums
-# are `sizes`. When the set sizes differ by at most one (v-fold CV) or there
-# are two sets (initial split), every cell is the floor or the ceiling of its
-# proportional share.
+# Count matrix (strata x sets). Row sums are the stratum sizes, column sums
+# are `sizes`, and every cell is the floor or the ceiling of its proportional
+# share `m_j * sizes_k / n`. Such a controlled rounding always exists for a
+# two-way table (Cox, 1987). When the set sizes differ by at most one (v-fold
+# CV), each cell is also kept to the floor or the ceiling of `m_j / k`, so the
+# counts of a stratum differ by at most one over the folds; if both bounds
+# can't hold at once, only the first is used.
 allocate_strata <- function(strata, sizes) {
   strata <- droplevels(as.factor(strata))
-  n_lvl <- nlevels(strata)
   k <- length(sizes)
-  m <- tabulate(as.integer(strata), n_lvl)
+  m <- tabulate(as.integer(strata), nlevels(strata))
   n <- sum(m)
   if (n != sum(sizes)) {
     cli::cli_abort("Internal error: strata and set sizes do not match.", .internal = TRUE)
   }
 
+  share <- outer(m, sizes) / n
+  lo <- floor(share + 1e-9)
+  hi <- ceiling(share - 1e-9)
   if (max(sizes) - min(sizes) <= 1) {
-    # Cyclic labels over strata laid end to end. Any run of length m_j holds
-    # each label floor(m_j / k) or ceiling(m_j / k) times.
-    if (all(sizes == sizes[1])) {
-      perm <- shuffle(seq_len(k))
-    } else {
-      big <- which(sizes == max(sizes))
-      perm <- c(shuffle(big), shuffle(which(sizes != max(sizes))))
+    even <- matrix(m / k, length(m), k)
+    counts <- round_shares(share, pmax(lo, floor(even + 1e-9)), pmin(hi, ceiling(even - 1e-9)), m, sizes)
+    if (!is.null(counts)) {
+      return(counts)
     }
-    ord <- shuffle(seq_len(n_lvl))
-    rows <- rep(ord, m[ord])
-    labels <- rep_len(perm, n)
-    counts <- unclass(table(
-      factor(rows, levels = seq_len(n_lvl)),
-      factor(labels, levels = seq_len(k))
-    ))
-    dimnames(counts) <- NULL
-    return(counts)
   }
-
-  if (k == 2) {
-    raw <- m * sizes[1] / n
-    c1 <- floor(raw + 1e-9)
-    extra <- sizes[1] - sum(c1)
-    if (extra > 0) {
-      frac <- round(raw - c1, 9)
-      ord <- order(-frac, stats::runif(n_lvl))
-      pick <- ord[seq_len(extra)]
-      c1[pick] <- c1[pick] + 1
-    }
-    return(cbind(c1, m - c1, deparse.level = 0))
-  }
-
-  # General case: sequential proportional allocation on remaining capacity.
-  counts <- matrix(0L, n_lvl, k)
-  cap <- sizes
-  for (j in shuffle(seq_len(n_lvl))) {
-    raw <- m[j] * cap / sum(cap)
-    cnt <- pmin(floor(raw + 1e-9), cap)
-    left <- m[j] - sum(cnt)
-    if (left > 0) {
-      frac <- round(raw - cnt, 9)
-      frac[cnt >= cap] <- -Inf
-      ord <- order(-frac, stats::runif(k))
-      pick <- ord[seq_len(left)]
-      cnt[pick] <- cnt[pick] + 1
-    }
-    counts[j, ] <- cnt
-    cap <- cap - cnt
+  counts <- round_shares(share, lo, hi, m, sizes)
+  if (is.null(counts)) {
+    cli::cli_abort("Internal error: no controlled rounding found.", .internal = TRUE)
   }
   counts
+}
+
+# Integer matrix between `lo` and `hi` (which differ by at most one) with row
+# sums `m` and column sums `sizes`, or NULL if there is none. Start from `lo`
+# and hand out the remaining units one at a time. A unit goes to a random open
+# cell, weighted by how far the share is above `lo`. When a stratum has no
+# open cell left in a set with spare room, an augmenting path moves earlier
+# units along to make room.
+round_shares <- function(share, lo, hi, m, sizes) {
+  need <- m - rowSums(lo)
+  cap <- sizes - colSums(lo)
+  if (any(need < 0) || any(cap < 0)) {
+    return(NULL)
+  }
+  open <- hi > lo
+  weight <- pmax(share - lo, 1e-6)
+  up <- matrix(FALSE, nrow(lo), ncol(lo))
+
+  for (j in shuffle(which(need > 0))) {
+    for (t in seq_len(need[j])) {
+      cand <- which(open[j, ] & !up[j, ] & cap > 0)
+      if (length(cand) > 0) {
+        to <- cand[sample.int(length(cand), 1, prob = weight[j, cand])]
+        up[j, to] <- TRUE
+        cap[to] <- cap[to] - 1
+      } else {
+        res <- augment_rounding(up, open, cap, j)
+        if (is.null(res)) {
+          return(NULL)
+        }
+        up <- res$up
+        cap[res$end] <- cap[res$end] - 1
+      }
+    }
+  }
+  counts <- lo + up
+  storage.mode(counts) <- "integer"
+  dimnames(counts) <- NULL
+  counts
+}
+
+# Breadth-first search over sets for a path that gives stratum `j` one more
+# unit: `j` takes an open cell in a full set, a stratum that holds a unit in
+# that set moves it to another of its open cells, and so on until a set with
+# spare room is reached. Returns NULL if there is no such path.
+augment_rounding <- function(up, open, cap, j) {
+  k <- ncol(up)
+  prev <- rep(NA_integer_, k)
+  via <- rep(NA_integer_, k)
+  start <- which(open[j, ] & !up[j, ])
+  prev[start] <- 0L
+  queue <- start
+  end <- NA_integer_
+  while (length(queue) > 0 && is.na(end)) {
+    from <- queue[1]
+    queue <- queue[-1]
+    for (r in which(up[, from])) {
+      nxt <- which(open[r, ] & !up[r, ] & is.na(prev))
+      prev[nxt] <- from
+      via[nxt] <- r
+      queue <- c(queue, nxt)
+      done <- nxt[cap[nxt] > 0]
+      if (length(done) > 0) {
+        end <- done[1]
+        break
+      }
+    }
+  }
+  if (is.na(end)) {
+    return(NULL)
+  }
+  col <- end
+  while (prev[col] != 0L) {
+    r <- via[col]
+    up[r, prev[col]] <- FALSE
+    up[r, col] <- TRUE
+    col <- prev[col]
+  }
+  up[j, col] <- TRUE
+  list(up = up, end = end)
 }
 
 # Random assignment with exact strata. `fine` gives optional sub-strata that
@@ -117,10 +169,10 @@ stratified_random <- function(sizes, strata = NULL, fine = NULL) {
 
 # Run `fun(x, sizes)` inside each exact stratum, using the exact counts from
 # allocate_strata(). Strata that are too small for the method get a random
-# assignment.
+# assignment. Without exact strata, all rows form one stratum.
 within_strata <- function(x, sizes, exact, fun, min_rows = 1L) {
   if (is.null(exact)) {
-    return(fun(x, sizes))
+    exact <- factor(rep.int(1L, nrow(x)))
   }
   exact <- droplevels(as.factor(exact))
   counts <- allocate_strata(exact, sizes)
