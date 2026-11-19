@@ -6,6 +6,8 @@
   : Balanced V-fold cross-validation
 - [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
   : Balanced training/testing split
+- [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  : Balanced training/validation/testing split
 
 ## Check balance
 

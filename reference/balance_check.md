@@ -1,10 +1,11 @@
 # Check the balance of a split or of a set of resamples
 
 `balance_check()` compares the assessment set of each split with its
-analysis set. It reports a standardized mean difference (SMD) for each
-variable and the energy distance for all variables together. It works
-with any `rset` or `rsplit`, so you can compare balanced folds with
-ordinary
+analysis set. For a three-way split, it compares the validation set and
+the testing set each with the training set. It reports a standardized
+mean difference (SMD) for each variable and the energy distance for all
+variables together. It works with any `rset` or `rsplit`, so you can
+compare balanced folds with ordinary
 [`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html)
 folds.
 
@@ -18,6 +19,9 @@ balance_check(x, ..., max_n = 2000)
 
 # S3 method for class 'rsplit'
 balance_check(x, ..., max_n = 2000)
+
+# S3 method for class 'three_way_split'
+balance_check(x, ..., max_n = 2000)
 ```
 
 ## Arguments
@@ -25,9 +29,13 @@ balance_check(x, ..., max_n = 2000)
 - x:
 
   An `rset` (for example from
-  [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md))
-  or an `rsplit` (for example from
-  [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)).
+  [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)),
+  an `rsplit` (for example from
+  [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)),
+  or a three-way split (from
+  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  or
+  [`rsample::initial_validation_split()`](https://rsample.tidymodels.org/reference/initial_validation_split.html)).
 
 - ...:
 

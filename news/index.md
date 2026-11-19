@@ -30,3 +30,21 @@
   [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
   now reject unknown arguments. If you pass `strata`, the error tells
   you to use `exact`.
+
+- New
+  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  makes a training/validation/testing split. All three sets are balanced
+  in one pass. It works with
+  [`rsample::validation_set()`](https://rsample.tidymodels.org/reference/validation_set.html),
+  [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html),
+  and
+  [`tune::last_fit()`](https://tune.tidymodels.org/reference/last_fit.html).
+
+- [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+  now works on three-way splits, including those from
+  [`rsample::initial_validation_split()`](https://rsample.tidymodels.org/reference/initial_validation_split.html).
+  It compares the validation and testing sets each with the training
+  set.
+
+- `method = "twinning"` can now make sets of unequal size from whole
+  numbers of similar parts.

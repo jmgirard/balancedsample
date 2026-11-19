@@ -174,6 +174,30 @@ balance_check(split)
 #> 3 Split <NA>     <NA>  energy     0.00206
 ```
 
+[`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+makes one balanced training/validation/testing split. Pass it to
+[`rsample::validation_set()`](https://rsample.tidymodels.org/reference/validation_set.html)
+to tune on the validation set.
+
+``` r
+
+split3 <- balanced_initial_validation_split(d, prop = c(0.6, 0.2), balance = c(age, income))
+split3
+#> <Training/Validation/Testing/Total>
+#> <240/80/80/400>
+balance_check(split3)
+#> # Balance check: 2 splits, max |SMD| = 6.82e-05, mean energy distance = 0.0158
+#> # A tibble: 6 × 5
+#>   id         variable level statistic       value
+#>   <chr>      <chr>    <chr> <chr>           <dbl>
+#> 1 Validation age      <NA>  smd        0.0000184 
+#> 2 Validation income   <NA>  smd       -0.00000979
+#> 3 Validation <NA>     <NA>  energy     0.0192    
+#> 4 Testing    age      <NA>  smd        0.0000682 
+#> 5 Testing    income   <NA>  smd       -0.0000322 
+#> 6 Testing    <NA>     <NA>  energy     0.0124
+```
+
 ## Groups
 
 Use `group` to keep all rows of a group (for example, a participant or a
@@ -192,10 +216,10 @@ grouped
 #>   splits           id   
 #>   <list>           <chr>
 #> 1 <split [320/80]> Fold1
-#> 2 <split [321/79]> Fold2
+#> 2 <split [319/81]> Fold2
 #> 3 <split [319/81]> Fold3
 #> 4 <split [320/80]> Fold4
-#> 5 <split [320/80]> Fold5
+#> 5 <split [322/78]> Fold5
 ```
 
 anticlust has a `must_link` argument for groups. balancesample does not
@@ -274,6 +298,8 @@ Analysis and Data Mining, 15*(5), 598-610.
   : Balanced V-fold cross-validation
 - [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
   : Balanced training/testing split
+- [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  : Balanced training/validation/testing split
 
 ## Check balance
 
