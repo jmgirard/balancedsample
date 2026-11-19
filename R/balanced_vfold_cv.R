@@ -13,7 +13,10 @@
 #' @param exact <[`tidy-select`][tidyselect::language]> Categorical columns to
 #'   stratify exactly. Each combination of levels is one stratum. In each
 #'   stratum, the count in every set is the floor or the ceiling of its
-#'   proportional share.
+#'   proportional share, based on the actual size of that set. For folds,
+#'   the counts of a stratum also differ by at most one over the folds
+#'   whenever both rules can hold at once. With `group`, these counts are
+#'   numbers of groups, not rows.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
 #' @param method The balancing method: `"anticlust"`, `"twinning"`,
@@ -23,20 +26,39 @@
 #' @details
 #' # Methods
 #'
-#' * `"anticlust"` (default) uses [anticlust::anticlustering()] with
-#'   `objective = "kplus"` and `standardize = TRUE`. The k-plus objective
-#'   makes the means and the variances of the sets similar. `options` go to
-#'   `anticlustering()`, for example `list(objective = "diversity")` or
-#'   `list(method = "local-maximum", repetitions = 5)`. The anticlust package
-#'   is required.
+#' * `"anticlust"` (default) uses k-plus anticlustering (Papenberg, 2024)
+#'   with [anticlust::fast_anticlustering()]. It makes the means and the
+#'   variances of the sets similar. Options are:
+#'   * `moments` (default 2): the highest moment to balance. 1 balances
+#'     means only, 3 adds skewness, and 4 adds kurtosis.
+#'   * `covariances` (default `FALSE`): also balance the product of each
+#'     pair of `balance` columns.
+#'   * `k_neighbours` (default `Inf`): the number of nearest neighbours each
+#'     row may swap with. `Inf` tries every swap. A small number, such as
+#'     20, is faster on large data.
+#'   * `local_maximum` (default `TRUE`): repeat the exchange passes until a
+#'     pass makes no swap (at most 100 passes). `FALSE` runs one pass.
+#'   * `repetitions` (default 1): the number of random starts. The best
+#'     result is kept.
+#'
+#'   The anticlust package is required.
 #' * `"twinning"` uses [twinning::multiplet()] for folds. Options are
 #'   `strategy` (1, 2, or 3; strategy 2 needs `v` to be a power of 2) and
-#'   `leaf_size`. The twinning package is required.
+#'   `leaf_size`. For `v = 2`, strategies 1 and 2 give the same result.
+#'   Strata with fewer than `2 * v` rows are assigned at random. The
+#'   twinning package is required.
 #' * `"rerandomize"` draws stratified random splits and keeps the first one
 #'   whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
-#'   2012). Options are `p_accept`, the target acceptance rate (default 0.1),
-#'   and `max_draws` (default 1000). If no draw meets the threshold, the best
-#'   draw is used with a warning.
+#'   2012). For folds, the imbalance is the largest over the "one fold versus
+#'   the rest" comparisons. The threshold is the `p_accept` quantile of the
+#'   imbalance over pilot draws made with the same `exact` and `group`
+#'   constraints (`max(100, min(10 / p_accept, max_draws))` draws). Draws
+#'   that tie with the threshold are accepted at random, so that the
+#'   acceptance rate is close to `p_accept` even for discrete data. If
+#'   `p_accept` is below `1 / max(100, max_draws)`, the pilot draws can't
+#'   resolve it, and the threshold is the best pilot draw. Options are `p_accept`, the target acceptance rate
+#'   (default 0.1), and `max_draws` (default 1000). If no draw meets the
+#'   threshold, the best draw is used with a warning.
 #' * `"interaction"` cuts numeric columns into quantile bins, crosses all
 #'   bins, and stratifies at random. It is a baseline that shows how crossed
 #'   strata become sparse. Options are `n_bins` (default 4) and `pool`
@@ -51,12 +73,22 @@
 #' proportions, so the number of rows per set is only approximate. `exact`
 #' columns must be constant within each group.
 #'
+#' # Reshuffling
+#'
+#' [rsample::reshuffle_rset()] finds the function that made an `rset` by
+#' its class name, so it only works on these folds when balancesample is
+#' attached with `library(balancesample)`.
+#'
 #' @return A tibble with class `balanced_vfold_cv` and `rset`. It has a
 #'   `splits` column of `rsplit` objects and one or two ID columns.
 #'
 #' @references
 #' Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate
 #' balance in experiments. *The Annals of Statistics, 40*(2), 1263-1282.
+#'
+#' Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+#' criterion for maximizing between-group similarity. *British Journal of
+#' Mathematical and Statistical Psychology, 77*(1), 80-102.
 #'
 #' Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 #' data sets into equivalent parts. *Psychological Methods, 26*(2), 161-174.

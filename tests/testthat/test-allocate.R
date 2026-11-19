@@ -30,6 +30,41 @@ test_that("allocate_strata() gives floor or ceiling shares", {
   expect_true(all(counts[, 1] >= floor(share) & counts[, 1] <= ceiling(share)))
 })
 
+test_that("allocate_strata() uses the actual set sizes", {
+  # Sets of 3, 3, 2, 2 rows: the 5-row stratum has a share of exactly 1 in
+  # each 2-row set.
+  strata <- factor(rep(letters[1:3], c(2, 5, 3)))
+  for (seed in 1:20) {
+    set.seed(seed)
+    counts <- allocate_strata(strata, c(3L, 3L, 2L, 2L))
+    expect_equal(counts[2, 3:4], c(1L, 1L))
+  }
+})
+
+test_that("allocate_strata() rounds every cell for any set sizes", {
+  set.seed(5)
+  for (i in 1:200) {
+    n <- sample(5:150, 1)
+    k <- sample(2:min(8, n), 1)
+    strata <- factor(sample(letters[1:sample(1:10, 1)], n, TRUE))
+    sizes <- as.vector(stats::rmultinom(1, n - k, stats::rexp(k))) + 1L
+    counts <- allocate_strata(strata, sizes)
+    m <- as.vector(table(droplevels(strata)))
+    share <- outer(m, sizes) / n
+    expect_equal(colSums(counts), sizes)
+    expect_equal(rowSums(counts), m)
+    expect_true(all(counts >= floor(share + 1e-9) & counts <= ceiling(share - 1e-9)))
+  }
+})
+
+test_that("sizes_from_props() leaves no set empty when it can", {
+  for (seed in 1:10) {
+    set.seed(seed)
+    expect_equal(sizes_from_props(2, c(0.75, 0.25)), c(1L, 1L))
+    expect_equal(sizes_from_props(32, c(0.999, 0.001)), c(31L, 1L))
+  }
+})
+
 test_that("stratified_random() respects nested strata", {
   set.seed(3)
   outer <- factor(sample(c("a", "b"), 120, TRUE))
@@ -46,4 +81,11 @@ test_that("fix_sizes() and relabel_to_sizes() hit the targets", {
   a <- sample(1:3, 50, TRUE)
   expect_equal(tabulate(fix_sizes(a, c(20L, 20L, 10L)), 3), c(20L, 20L, 10L))
   expect_equal(tabulate(relabel_to_sizes(a, c(17L, 17L, 16L)), 3), c(17L, 17L, 16L))
+})
+
+test_that("bin_column() keeps a heavily tied value in its own bin", {
+  bins <- bin_column(c(rep(0, 100), 1:4), 4)
+  expect_equal(nlevels(bins), 2)
+  expect_equal(as.vector(table(bins)), c(100L, 4L))
+  expect_equal(nlevels(bin_column(1:100, 4)), 4)
 })

@@ -53,3 +53,15 @@ test_that("bad prop values give clear errors", {
     balanced_initial_split(d, prop = "a", balance = x1)
   })
 })
+
+test_that("small and extreme splits don't depend on the seed", {
+  d <- data.frame(x = 1:6, g = rep(1:2, each = 3))
+  for (seed in 1:10) {
+    set.seed(seed)
+    s <- balanced_initial_split(d, 0.75, balance = x, group = g, method = "interaction")
+    expect_equal(length(s$in_id), 3)
+  }
+  set.seed(1)
+  s <- balanced_initial_split(mtcars, 0.999, balance = mpg, method = "rerandomize")
+  expect_equal(nrow(rsample::testing(s)), 1)
+})

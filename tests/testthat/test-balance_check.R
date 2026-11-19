@@ -43,6 +43,26 @@ test_that("balance_check() works on repeats and on splits", {
   expect_output(print(bc), "Balance check: 1 split")
 })
 
+test_that("balance_check() drops missing values", {
+  d <- data.frame(z = c(1, 2, 3, NA, 5, 6), w = c("a", NA, "b", "a", "b", "a"))
+  s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
+  bc <- balance_check(s, z, w)
+  expect_equal(bc$value[bc$variable %in% "z"], (5.5 - 2) / sqrt((0.5 + 1) / 2))
+  expect_false(anyNA(bc$value))
+})
+
+test_that("balance_check() reports complete separation as Inf", {
+  d <- data.frame(g = rep(c("A", "B"), each = 4))
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  bc <- balance_check(s, g)
+  expect_equal(bc$value[bc$statistic == "smd"], c(-Inf, Inf))
+  expect_output(print(bc), "max \\|SMD\\| = Inf")
+
+  d <- data.frame(x = c(0, 0, 1e-13, 1e-13))
+  s <- rsample::make_splits(list(analysis = 1:2, assessment = 3:4), d)
+  expect_equal(balance_check(s, x)$value[1], Inf)
+})
+
 test_that("balance_check() needs columns for plain rsample objects", {
   d <- sim_data()
   expect_snapshot(balance_check(rsample::vfold_cv(d, v = 3)), error = TRUE)

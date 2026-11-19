@@ -2,25 +2,100 @@
 
 # anticlust -------------------------------------------------------------------
 
-# The exchange step only swaps rows that share a category, so a stratified
-# random start keeps the exact counts from allocate_strata(). Groups are
-# handled by aggregation: anticlust's `must_link` needs fold sizes that groups
-# can fill exactly and, for the k-plus objective, equal fold sizes, which
-# real grouped data rarely allows.
+# k-plus anticlustering (Papenberg, 2024) with anticlust::fast_anticlustering():
+# the k-means criterion on the balance columns plus their higher moments (and,
+# optionally, pairwise products), so that set means, variances, and so on are
+# similar. The exchange step only swaps rows that share a category, so a
+# stratified random start keeps the exact counts from allocate_strata(). With
+# `local_maximum = TRUE`, exchange passes repeat until a pass makes no swap. Each repetition starts from a new stratified assignment. Groups
+# are handled by aggregation: anticlust's `must_link` needs fold sizes that
+# groups can fill exactly, which real grouped data rarely allows.
 method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
-                             objective = "kplus", standardize = TRUE, ...) {
+                             moments = 2L, covariances = FALSE,
+                             k_neighbours = Inf, local_maximum = TRUE,
+                             repetitions = 1L) {
   rlang::check_installed("anticlust", reason = "to use `method = \"anticlust\"`.")
-  init <- stratified_random(sizes, exact)
+  if (!rlang::is_scalar_integerish(moments, finite = TRUE) || moments < 1 || moments > 4) {
+    cli::cli_abort("{.arg moments} must be 1, 2, 3, or 4.", call = NULL)
+  }
+  if (!rlang::is_bool(covariances)) {
+    cli::cli_abort("{.arg covariances} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+  }
+  if (!is.numeric(k_neighbours) || length(k_neighbours) != 1 || is.na(k_neighbours) ||
+      k_neighbours < 1 || (is.finite(k_neighbours) && k_neighbours != round(k_neighbours))) {
+    cli::cli_abort("{.arg k_neighbours} must be a whole number of at least 1, or {.code Inf}.", call = NULL)
+  }
+  if (!rlang::is_bool(local_maximum)) {
+    cli::cli_abort("{.arg local_maximum} must be {.code TRUE} or {.code FALSE}.", call = NULL)
+  }
+  if (!rlang::is_scalar_integerish(repetitions, finite = TRUE) || repetitions < 1) {
+    cli::cli_abort("{.arg repetitions} must be a whole number of at least 1.", call = NULL)
+  }
+
+  k <- length(sizes)
+  # With one row per set, an exchange can only relabel the sets.
+  if (all(sizes == 1L)) {
+    return(stratified_random(sizes, exact))
+  }
+  features <- kplus_features(x_scaled, moments, covariances)
   categories <- if (is.null(exact)) NULL else as.integer(exact)
-  out <- anticlust::anticlustering(
-    x_scaled,
-    K = init,
-    objective = objective,
-    standardize = standardize,
-    categories = categories,
-    ...
-  )
-  as.integer(out)
+  stratum_counts <- function(a) table(exact, factor(a, levels = seq_len(k)), dnn = NULL)
+
+  # A data frame is never mistaken for a distance matrix.
+  features_df <- as.data.frame(features)
+
+  # An exchange pass only makes swaps that improve the objective, so a pass
+  # with no swaps means a local maximum. The pass limit guards against
+  # cycling from rounding error.
+  run <- function() {
+    init <- stratified_random(sizes, exact)
+    a <- init
+    for (pass in seq_len(if (local_maximum) 100L else 1L)) {
+      b <- as.integer(anticlust::fast_anticlustering(
+        features_df,
+        K = a,
+        k_neighbours = k_neighbours,
+        categories = categories
+      ))
+      done <- identical(b, a)
+      a <- b
+      if (done) {
+        break
+      }
+    }
+    obj <- anticlust::variance_objective(features, a)
+    if (!is.null(exact) && !identical(stratum_counts(a), stratum_counts(init))) {
+      cli::cli_abort("Internal error: anticlust changed the exact counts.", .internal = TRUE)
+    }
+    list(assign = a, objective = obj)
+  }
+
+  best <- run()
+  for (r in seq_len(repetitions - 1)) {
+    res <- run()
+    if (res$objective > best$objective) {
+      best <- res
+    }
+  }
+  best$assign
+}
+
+# Balance columns, their moments 2 to `moments` (squared, cubed, ... deviations
+# from the mean), and, if `covariances`, the products of each pair of columns,
+# all standardized. Constant columns are dropped. The powers are built here
+# because anticlust::kplus_moment_variables() raises its growing output, not
+# the input, to each power in anticlust 0.8.18.
+kplus_features <- function(x, moments, covariances) {
+  centered <- sweep(x, 2, colMeans(x), "-")
+  f <- x
+  for (p in seq_len(moments)[-1]) {
+    f <- cbind(f, centered^p)
+  }
+  if (covariances && ncol(x) > 1) {
+    pairs <- which(upper.tri(diag(ncol(x))), arr.ind = TRUE)
+    f <- cbind(f, x[, pairs[, 1], drop = FALSE] * x[, pairs[, 2], drop = FALSE])
+  }
+  standardize_matrix(unname(as.matrix(f)))
 }
 
 # twinning --------------------------------------------------------------------
@@ -36,7 +111,13 @@ method_twinning <- function(x_scaled, sizes, exact = NULL, group = NULL,
     x_scaled <- cbind(x_scaled, 0)
   }
 
-  if (k == 2) {
+  if (!strategy %in% 1:3) {
+    cli::cli_abort("{.arg strategy} must be 1, 2, or 3.", call = NULL)
+  }
+
+  # For two sets, strategies 1 and 2 of multiplet() reduce to twin(r = 2).
+  # Strategy 3 builds a different sequence, so it uses multiplet().
+  if (k == 2 && strategy != 3) {
     small <- which.min(sizes)
     other <- 3L - small
     r <- round(n / sizes[small])
@@ -58,9 +139,6 @@ method_twinning <- function(x_scaled, sizes, exact = NULL, group = NULL,
     return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * r))
   }
 
-  if (!strategy %in% 1:3) {
-    cli::cli_abort("{.arg strategy} must be 1, 2, or 3.", call = NULL)
-  }
   if (strategy == 2 && !is_power_of_two(k)) {
     cli::cli_abort(
       c(
@@ -92,9 +170,11 @@ is_power_of_two <- function(k) {
 
 # Morgan and Rubin (2012): draw stratified random splits and keep the first
 # whose Mahalanobis imbalance is under a threshold. For more than two sets the
-# statistic is the largest value over "one set versus the rest" comparisons,
-# and the per-set threshold is raised so that the acceptance rate is about
-# `p_accept` when the comparisons are treated as independent.
+# statistic is the largest value over "one set versus the rest" comparisons.
+# The threshold is the `p_accept` quantile of the statistic over pilot draws
+# (at least 100, more for small `p_accept`, up to `max_draws`) made under the
+# same constraints, so it accounts for exact strata, unequal
+# set sizes, and the dependence between the comparisons.
 method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
                                p_accept = 0.1, max_draws = 1000L) {
   if (!is.numeric(p_accept) || length(p_accept) != 1 || p_accept <= 0 || p_accept > 1) {
@@ -108,19 +188,29 @@ method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
   if (inv$rank == 0) {
     return(stratified_random(sizes, exact))
   }
-  k_eff <- if (k == 2) 1 else k
-  threshold <- stats::qchisq(p_accept^(1 / k_eff), df = inv$rank)
+  imbalance <- function(a) max_mahalanobis(x_scaled, a, k, inv$inverse)
+
+  n_pilot <- max(100L, min(ceiling(10 / p_accept), max_draws))
+  pilot <- vapply(seq_len(n_pilot), function(i) imbalance(stratified_random(sizes, exact)), numeric(1))
+  threshold <- stats::quantile(pilot, p_accept, names = FALSE, type = 1)
+  # With discrete data many draws can tie at the threshold. Draws at the
+  # threshold are accepted with the probability that brings the estimated
+  # acceptance rate to `p_accept`.
+  tol <- 1e-9 * max(1, abs(threshold))
+  p_below <- mean(pilot < threshold - tol)
+  p_at <- mean(abs(pilot - threshold) <= tol)
+  p_tie <- min(1, (p_accept - p_below) / p_at)
 
   best <- NULL
   best_val <- Inf
   for (d in seq_len(max_draws)) {
     a <- stratified_random(sizes, exact)
-    val <- max_mahalanobis(x_scaled, a, k, inv$inverse)
+    val <- imbalance(a)
     if (val < best_val) {
       best <- a
       best_val <- val
     }
-    if (val <= threshold) {
+    if (val < threshold - tol || (val <= threshold + tol && stats::runif(1) < p_tie)) {
       return(a)
     }
   }
@@ -170,17 +260,20 @@ method_interaction <- function(x_scaled, sizes, exact = NULL, group = NULL,
     cli::cli_abort("{.arg pool} must be a number from 0 up to (not including) 1.", call = NULL)
   }
   bins <- lapply(seq_len(ncol(x_scaled)), function(j) bin_column(x_scaled[, j], n_bins))
-  fine <- interaction(bins, drop = TRUE)
+  fine <- combine_levels(bins)
   fine <- pool_strata(fine, exact, min_size = pool * nrow(x_scaled))
   stratified_random(sizes, exact, fine)
 }
 
+# Quantile bins from ranks. Tied values share a rank, so they stay in one
+# bin, and a heavily tied value no longer collapses all the bins into one. It
+# can still share its bin with other values.
 bin_column <- function(v, n_bins) {
   if (length(unique(v)) <= n_bins) {
     return(factor(v))
   }
-  br <- unique(stats::quantile(v, probs = seq(0, 1, length.out = n_bins + 1), names = FALSE))
-  cut(v, br, include.lowest = TRUE)
+  r <- rank(v, ties.method = "average")
+  factor(ceiling(r * n_bins / length(v)))
 }
 
 pool_strata <- function(fine, exact, min_size) {
