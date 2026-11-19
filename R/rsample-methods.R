@@ -71,7 +71,7 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
   split_args$prop <- split_args$prop[[1]] / sum(split_args$prop)
-  if (identical(split_args$method, "twinning")) {
+  if (isTRUE(split_args$method == "twinning")) {
     split_args$prop <- nearest_twin_prop(split_args$prop)
   }
   balanced_calibration_split(
@@ -86,8 +86,18 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   )
 }
 
+# The shares 1/r are not evenly spaced, so compare the two nearest ones. Other
+# values are left for balanced_calibration_split() to reject.
 nearest_twin_prop <- function(prop) {
-  r <- max(2, round(1 / min(prop, 1 - prop)))
+  if (!is.numeric(prop) || length(prop) != 1 || !is.finite(prop)) {
+    return(prop)
+  }
+  small <- min(prop, 1 - prop)
+  if (small <= 0) {
+    return(prop)
+  }
+  r <- unique(pmax(2, c(floor(1 / small), ceiling(1 / small))))
+  r <- r[which.min(abs(1 / r - small))]
   if (prop >= 0.5) 1 - 1 / r else 1 / r
 }
 

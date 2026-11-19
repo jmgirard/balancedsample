@@ -72,8 +72,10 @@ test_that("twin_split_parts() depends on prop only", {
   expect_equal(twin_split_parts(0.9), c(9L, 1L))
   expect_equal(twin_split_parts(0.5), c(1L, 1L))
   expect_equal(twin_split_parts(0.25), c(1L, 3L))
+  expect_equal(twin_split_parts(1 - 1 / 100000), c(99999, 1))
   expect_null(twin_split_parts(0.7))
   expect_null(twin_split_parts(0.67))
+  expect_null(twin_split_parts(1e-310))
 })
 
 test_that("twinning accepts or rejects the same prop for any size", {

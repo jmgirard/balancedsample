@@ -210,6 +210,8 @@ test_that("calibration splits of a validation split balance the training set", {
 test_that("twinning calibration splits use the nearest share twinning can make", {
   skip_if_not_installed("twinning")
   expect_equal(nearest_twin_prop(14 / 17), 5 / 6)
+  # 1/r is not evenly spaced: 7/17 is nearer 1/3 than 1/2.
+  expect_equal(nearest_twin_prop(10 / 17), 2 / 3)
   expect_equal(nearest_twin_prop(3 / 4), 3 / 4)
   expect_equal(nearest_twin_prop(0.5), 0.5)
   expect_equal(nearest_twin_prop(0.2), 0.2)
@@ -227,4 +229,19 @@ test_that("twinning calibration splits use the nearest share twinning can make",
     cal <- rsample::internal_calibration_split(s, split_args = list())
   )
   expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
+
+  # A named method string is still twinning.
+  attr(s, "val_att")$method <- c(chosen = "twinning")
+  cal <- rsample::internal_calibration_split(s, split_args = list())
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
+
+  # Bad shares still reach the fallback.
+  expect_warning(
+    cal <- rsample::internal_calibration_split(
+      s,
+      split_args = list(prop = c(NA_real_, 1))
+    ),
+    "empty calibration set"
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 0)
 })
