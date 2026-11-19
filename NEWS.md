@@ -27,3 +27,13 @@
 
 * `method = "twinning"` can now make sets of unequal size from whole numbers
   of similar parts.
+
+* With `method = "twinning"`, `balanced_initial_split()` now decides from
+  `prop` alone whether it can make the split, so the same `prop` is accepted
+  or rejected for any data size. Before, a `prop` such as 0.7 could pass on
+  small data because of rounding. Write `prop` as an exact fraction, such as
+  `2 / 3`, not `0.67`.
+
+* For twinning three-way splits, the calibration split now uses the nearest
+  training share that twinning can make (for example 5/6 instead of 14/17),
+  instead of falling back to an empty calibration set.

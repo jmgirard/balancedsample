@@ -75,7 +75,26 @@ balanced_initial_split <- function(
     cli::cli_abort("{.arg group} must have at least two groups.", call = call)
   }
 
-  a <- assign_balanced(prep, c(prop, 1 - prop), entry, options, call = call)
+  method_options <- options
+  if (method == "twinning") {
+    method_options$parts <- twin_split_parts(prop)
+    if (is.null(method_options$parts)) {
+      cli::cli_abort(
+        c(
+          "{.code method = \"twinning\"} can only split off 1/r of the data, where r is a whole number.",
+          i = "Use {.arg prop} = 1/2, 2/3, 3/4, 4/5, 9/10, or another value of 1 - 1/r."
+        ),
+        call = call
+      )
+    }
+  }
+  a <- assign_balanced(
+    prep,
+    c(prop, 1 - prop),
+    entry,
+    method_options,
+    call = call
+  )
   res <- rsample::make_splits(
     list(analysis = which(a == 1L), assessment = which(a == 2L)),
     data = data,

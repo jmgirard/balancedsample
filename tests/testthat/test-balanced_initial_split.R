@@ -66,6 +66,41 @@ test_that("twinning needs prop = 1 - 1/r", {
   expect_equal(nrow(rsample::training(s)), 50)
 })
 
+test_that("twin_split_parts() depends on prop only", {
+  expect_equal(twin_split_parts(3 / 4), c(3L, 1L))
+  expect_equal(twin_split_parts(1 - 1 / 3), c(2L, 1L))
+  expect_equal(twin_split_parts(0.9), c(9L, 1L))
+  expect_equal(twin_split_parts(0.5), c(1L, 1L))
+  expect_equal(twin_split_parts(0.25), c(1L, 3L))
+  expect_null(twin_split_parts(0.7))
+  expect_null(twin_split_parts(0.67))
+})
+
+test_that("twinning accepts or rejects the same prop for any size", {
+  skip_if_not_installed("twinning")
+  d <- data.frame(x = 1:200)
+  # With 10 rows, 0.7 gives sets of 7 and 3, which once passed as 1/r.
+  for (n in c(10, 100, 200)) {
+    expect_error(
+      balanced_initial_split(
+        d[seq_len(n), , drop = FALSE],
+        prop = 0.7,
+        balance = x,
+        method = "twinning"
+      ),
+      "1/r of the data"
+    )
+    set.seed(n)
+    s <- balanced_initial_split(
+      d[seq_len(n), , drop = FALSE],
+      prop = 2 / 3,
+      balance = x,
+      method = "twinning"
+    )
+    expect_equal(nrow(rsample::testing(s)), round(n / 3))
+  }
+})
+
 test_that("bad prop values give clear errors", {
   d <- sim_data()
   expect_snapshot(error = TRUE, {
