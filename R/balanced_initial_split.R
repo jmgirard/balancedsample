@@ -14,6 +14,10 @@
 #' [balanced_vfold_cv()]. With `method = "twinning"`, the split uses
 #' [twinning::twin()], and the options are `leaf_size` only.
 #'
+#' If a workflow has a postprocessor that must be trained, [tune::last_fit()]
+#' splits the training set again with `balanced_initial_split()`, using the
+#' same arguments.
+#'
 #' @return An `rsplit` object with class `balanced_initial_split` and
 #'   `initial_split`.
 #'
@@ -31,15 +35,23 @@
 #' split
 #' rsample::training(split)
 #' @export
-balanced_initial_split <- function(data,
-                                   prop = 3 / 4,
-                                   balance = NULL,
-                                   exact = NULL,
-                                   group = NULL,
-                                   method = "anticlust",
-                                   options = list()) {
+balanced_initial_split <- function(
+  data,
+  prop = 3 / 4,
+  balance = NULL,
+  exact = NULL,
+  group = NULL,
+  method = "anticlust",
+  options = list()
+) {
   call <- rlang::current_env()
-  if (!is.numeric(prop) || length(prop) != 1 || is.na(prop) || prop <= 0 || prop >= 1) {
+  if (
+    !is.numeric(prop) ||
+      length(prop) != 1 ||
+      is.na(prop) ||
+      prop <= 0 ||
+      prop >= 1
+  ) {
     cli::cli_abort("{.arg prop} must be a number between 0 and 1.", call = call)
   }
   entry <- get_balance_method(method, call = call)

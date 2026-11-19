@@ -1,0 +1,16 @@
+url: https://jmgirard.github.io/balancesample/
+template:
+  bootstrap: 5
+
+reference:
+  - title: Make balanced resamples
+    contents:
+      - balanced_vfold_cv
+      - balanced_initial_split
+  - title: Check balance
+    contents:
+      - balance_check
+      - autoplot.balance_check
+  - title: Package
+    contents:
+      - balancesample-package
