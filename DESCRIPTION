@@ -29,6 +29,7 @@ Suggests:
     parsnip,
     probably,
     rmarkdown,
+    rpart,
     tailor,
     testthat (>= 3.0.0),
     tune,
@@ -36,6 +37,7 @@ Suggests:
     withr,
     workflows
 Config/testthat/edition: 3
+VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.1
 URL: https://github.com/jmgirard/balancesample,
     https://jmgirard.github.io/balancesample/
