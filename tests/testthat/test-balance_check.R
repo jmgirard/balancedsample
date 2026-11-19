@@ -1,7 +1,13 @@
 test_that("balance_check() returns one SMD per variable and level", {
   d <- sim_data()
   set.seed(1)
-  folds <- balanced_vfold_cv(d, v = 4, balance = c(x1, cat), exact = sex, method = "rerandomize")
+  folds <- balanced_vfold_cv(
+    d,
+    v = 4,
+    balance = c(x1, cat),
+    exact = sex,
+    method = "rerandomize"
+  )
   bc <- balance_check(folds)
   expect_s3_class(bc, "balance_check")
   expect_named(bc, c("id", "variable", "level", "statistic", "value"))
@@ -33,7 +39,13 @@ test_that("energy distance is near zero for identical sets and grows with a shif
 test_that("balance_check() works on repeats and on splits", {
   d <- sim_data()
   set.seed(4)
-  folds <- balanced_vfold_cv(d, v = 3, repeats = 2, balance = x1, method = "rerandomize")
+  folds <- balanced_vfold_cv(
+    d,
+    v = 3,
+    repeats = 2,
+    balance = x1,
+    method = "rerandomize"
+  )
   bc <- balance_check(folds)
   expect_true(all(c("id", "id2") %in% names(bc)))
 
@@ -73,7 +85,13 @@ test_that("autoplot() returns ggplot objects", {
   skip_if_not_installed("ggplot2")
   d <- sim_data()
   set.seed(5)
-  folds <- balanced_vfold_cv(d, v = 3, repeats = 2, balance = c(x1, cat), method = "rerandomize")
+  folds <- balanced_vfold_cv(
+    d,
+    v = 3,
+    repeats = 2,
+    balance = c(x1, cat),
+    method = "rerandomize"
+  )
   bc <- balance_check(folds)
   expect_s3_class(ggplot2::autoplot(bc), "ggplot")
   expect_s3_class(ggplot2::autoplot(bc, type = "energy"), "ggplot")

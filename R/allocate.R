@@ -41,7 +41,10 @@ allocate_strata <- function(strata, sizes) {
   m <- tabulate(as.integer(strata), nlevels(strata))
   n <- sum(m)
   if (n != sum(sizes)) {
-    cli::cli_abort("Internal error: strata and set sizes do not match.", .internal = TRUE)
+    cli::cli_abort(
+      "Internal error: strata and set sizes do not match.",
+      .internal = TRUE
+    )
   }
 
   share <- outer(m, sizes) / n
@@ -49,14 +52,23 @@ allocate_strata <- function(strata, sizes) {
   hi <- ceiling(share - 1e-9)
   if (max(sizes) - min(sizes) <= 1) {
     even <- matrix(m / k, length(m), k)
-    counts <- round_shares(share, pmax(lo, floor(even + 1e-9)), pmin(hi, ceiling(even - 1e-9)), m, sizes)
+    counts <- round_shares(
+      share,
+      pmax(lo, floor(even + 1e-9)),
+      pmin(hi, ceiling(even - 1e-9)),
+      m,
+      sizes
+    )
     if (!is.null(counts)) {
       return(counts)
     }
   }
   counts <- round_shares(share, lo, hi, m, sizes)
   if (is.null(counts)) {
-    cli::cli_abort("Internal error: no controlled rounding found.", .internal = TRUE)
+    cli::cli_abort(
+      "Internal error: no controlled rounding found.",
+      .internal = TRUE
+    )
   }
   counts
 }

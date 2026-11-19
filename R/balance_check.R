@@ -50,7 +50,9 @@ balance_check <- function(x, ..., max_n = 2000) {
 
 #' @export
 balance_check.default <- function(x, ..., max_n = 2000) {
-  cli::cli_abort("{.arg x} must be an {.cls rset} or an {.cls rsplit}, not {.obj_type_friendly {x}}.")
+  cli::cli_abort(
+    "{.arg x} must be an {.cls rset} or an {.cls rsplit}, not {.obj_type_friendly {x}}."
+  )
 }
 
 #' @rdname balance_check
@@ -112,15 +114,28 @@ split_balance <- function(split, cols, max_n) {
 
   smd <- lapply(cols, function(nm) {
     v <- data[[nm]]
-    if (is.logical(v)) v <- factor(v, levels = c(FALSE, TRUE))
-    if (is.character(v)) v <- factor(v)
+    if (is.logical(v)) {
+      v <- factor(v, levels = c(FALSE, TRUE))
+    }
+    if (is.character(v)) {
+      v <- factor(v)
+    }
     if (is.factor(v)) {
       lv <- levels(droplevels(v))
-      vals <- vapply(lv, function(l) {
-        z <- as.numeric(v == l)
-        smd_value(z[as], z[an], binary = TRUE)
-      }, numeric(1))
-      return(tibble::tibble(variable = nm, level = lv, statistic = "smd", value = unname(vals)))
+      vals <- vapply(
+        lv,
+        function(l) {
+          z <- as.numeric(v == l)
+          smd_value(z[as], z[an], binary = TRUE)
+        },
+        numeric(1)
+      )
+      return(tibble::tibble(
+        variable = nm,
+        level = lv,
+        statistic = "smd",
+        value = unname(vals)
+      ))
     }
     tibble::tibble(
       variable = nm,
@@ -138,7 +153,11 @@ split_balance <- function(split, cols, max_n) {
   en <- NA_real_
   if (length(as_k) > 0 && length(an_k) > 0) {
     xs <- build_balance_matrix(data[keep, cols, drop = FALSE])
-    en <- energy_distance(xs[as_k, , drop = FALSE], xs[an_k, , drop = FALSE], max_n)
+    en <- energy_distance(
+      xs[as_k, , drop = FALSE],
+      xs[an_k, , drop = FALSE],
+      max_n
+    )
   }
   energy <- tibble::tibble(
     variable = NA_character_,
@@ -179,8 +198,12 @@ energy_distance <- function(a, b, max_n = 2000) {
   if (ncol(a) == 0) {
     return(0)
   }
-  if (nrow(a) > max_n) a <- a[sample.int(nrow(a), max_n), , drop = FALSE]
-  if (nrow(b) > max_n) b <- b[sample.int(nrow(b), max_n), , drop = FALSE]
+  if (nrow(a) > max_n) {
+    a <- a[sample.int(nrow(a), max_n), , drop = FALSE]
+  }
+  if (nrow(b) > max_n) {
+    b <- b[sample.int(nrow(b), max_n), , drop = FALSE]
+  }
   2 * mean_dist(a, b) - mean_dist(a, a) - mean_dist(b, b)
 }
 
@@ -204,9 +227,17 @@ print.balance_check <- function(x, ...) {
   max_smd <- if (length(smd) > 0) max(smd) else NA_real_
   mean_en <- if (any(!is.na(en))) mean(en, na.rm = TRUE) else NA_real_
   cat(
-    "# Balance check: ", n_split, " split", if (n_split != 1) "s", ", ",
-    "max |SMD| = ", format(signif(max_smd, 3)), ", ",
-    "mean energy distance = ", format(signif(mean_en, 3)), "\n",
+    "# Balance check: ",
+    n_split,
+    " split",
+    if (n_split != 1) "s",
+    ", ",
+    "max |SMD| = ",
+    format(signif(max_smd, 3)),
+    ", ",
+    "mean energy distance = ",
+    format(signif(mean_en, 3)),
+    "\n",
     sep = ""
   )
   class(x) <- setdiff(class(x), "balance_check")
