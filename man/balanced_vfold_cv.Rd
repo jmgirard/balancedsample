@@ -31,7 +31,8 @@ stratify exactly. Each combination of levels is one stratum. In each
 stratum, the count in every set is the floor or the ceiling of its
 proportional share, based on the actual size of that set. For folds,
 the counts of a stratum also differ by at most one over the folds
-whenever both rules can hold at once.}
+whenever both rules can hold at once. With \code{group}, these counts are
+numbers of groups, not rows.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}
@@ -63,8 +64,8 @@ pair of \code{balance} columns.
 \item \code{k_neighbours} (default \code{Inf}): the number of nearest neighbours each
 row may swap with. \code{Inf} tries every swap. A small number, such as
 20, is faster on large data.
-\item \code{local_maximum} (default \code{TRUE}): repeat the exchange passes until no
-swap improves the balance. \code{FALSE} runs one pass.
+\item \code{local_maximum} (default \code{TRUE}): repeat the exchange passes until a
+pass makes no swap (at most 100 passes). \code{FALSE} runs one pass.
 \item \code{repetitions} (default 1): the number of random starts. The best
 result is kept.
 }
@@ -80,7 +81,11 @@ whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
 2012). For folds, the imbalance is the largest over the "one fold versus
 the rest" comparisons. The threshold is the \code{p_accept} quantile of the
 imbalance over pilot draws made with the same \code{exact} and \code{group}
-constraints (\code{max(100, min(10 / p_accept, max_draws))} draws). Options are \code{p_accept}, the target acceptance rate
+constraints (\code{max(100, min(10 / p_accept, max_draws))} draws). Draws
+that tie with the threshold are accepted at random, so that the
+acceptance rate is close to \code{p_accept} even for discrete data. If
+\code{p_accept} is below \code{1 / max(100, max_draws)}, the pilot draws can't
+resolve it, and the threshold is the best pilot draw. Options are \code{p_accept}, the target acceptance rate
 (default 0.1), and \code{max_draws} (default 1000). If no draw meets the
 threshold, the best draw is used with a warning.
 \item \code{"interaction"} cuts numeric columns into quantile bins, crosses all

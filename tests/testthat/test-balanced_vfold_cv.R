@@ -58,6 +58,16 @@ test_that("exact levels that contain the separator stay distinct", {
   }
 })
 
+test_that("column names that match paste() arguments work", {
+  for (nm in c("sep", "collapse")) {
+    d <- data.frame(rep(c("a", "b"), each = 4), rep(1:2, 4))
+    names(d) <- c(nm, "other")
+    set.seed(1)
+    folds <- balanced_vfold_cv(d, v = 2, exact = c(all_of(nm), other), method = "interaction")
+    expect_true(assessed_once(folds, nrow(d)), info = nm)
+  }
+})
+
 test_that("exact alone works without balance columns", {
   d <- sim_data()
   set.seed(3)
@@ -83,11 +93,17 @@ test_that("groups and exact strata work together", {
     folds <- balanced_vfold_cv(d, v = 4, balance = x1, exact = site, group = id, method = m)
     expect_true(groups_intact(folds, d$id), info = m)
     # Exactness holds for groups (not rows) per stratum.
+    n_assess <- vapply(folds$splits, function(s) {
+      length(unique(d$id[rsample::complement(s)]))
+    }, integer(1))
     n_groups <- vapply(folds$splits, function(s) {
       out <- rsample::complement(s)
       tapply(d$id[out], site[out], function(z) length(unique(z)))
     }, numeric(2))
     expect_true(all(apply(n_groups, 1, function(r) max(r) - min(r) <= 1)), info = m)
+    m_groups <- tapply(d$id, site, function(z) length(unique(z)))
+    share <- outer(as.vector(m_groups), n_assess) / sum(m_groups)
+    expect_true(all(n_groups >= floor(share + 1e-9) & n_groups <= ceiling(share - 1e-9)), info = m)
   }
 })
 
@@ -157,6 +173,45 @@ test_that("anticlust options work and are checked", {
     balanced_vfold_cv(d, balance = x1, options = list(k_neighbours = 0.5))
     balanced_vfold_cv(d, balance = x1, options = list(objective = "diversity"))
   })
+})
+
+test_that("anticlust accepts square categorical balance data", {
+  skip_if_not_installed("anticlust")
+  d <- data.frame(x = factor(letters[1:4]))
+  set.seed(1)
+  folds <- balanced_vfold_cv(d, v = 2, balance = x, options = list(moments = 1))
+  expect_true(assessed_once(folds, 4))
+})
+
+test_that("kplus_features() builds each moment from the centered input", {
+  x <- matrix(c(1, 2, 4, 8, 16, 32))
+  cx <- x - mean(x)
+  expected <- standardize_matrix(cbind(x, cx^2, cx^3, cx^4))
+  expect_equal(kplus_features(x, 4, FALSE), expected)
+  expect_equal(ncol(kplus_features(x, 3, FALSE)), 3)
+})
+
+test_that("rerandomize accepts close to p_accept with tied imbalance", {
+  # Every split of four rows into two pairs has one of two imbalance values,
+  # and the smaller one has probability 1/3.
+  # With one draw allowed, the warning shows how often that draw was not
+  # accepted: about 0.9 for an acceptance rate of 0.1, and 1/3 if every tie
+  # with the threshold were accepted.
+  x <- scale(matrix(c(0, 0, 1, 1)))
+  set.seed(1)
+  warned <- replicate(400, {
+    w <- FALSE
+    withCallingHandlers(
+      method_rerandomize(x, c(2L, 2L), p_accept = 0.1, max_draws = 1),
+      warning = function(cnd) {
+        w <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    )
+    w
+  })
+  expect_gt(mean(warned), 0.8)
+  expect_lt(mean(warned), 0.97)
 })
 
 test_that("local_maximum balances at least as well as one pass", {

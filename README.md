@@ -60,7 +60,8 @@ d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + rnorm(n)
 `balanced_vfold_cv()` takes the columns to balance in `balance`.
 Categorical columns in `exact` are stratified exactly: in each fold, the
 count of each level combination is the floor or the ceiling of its
-proportional share of that fold.
+proportional share of that fold. With `group`, these are counts of
+groups, not rows.
 
 ``` r
 folds <- balanced_vfold_cv(
