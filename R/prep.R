@@ -95,7 +95,7 @@ prepare_balance_data <- function(data, balance, exact, group, call = rlang::call
 # can't make two combinations collide.
 combine_levels <- function(cols) {
   codes <- lapply(cols, function(v) as.integer(as.factor(v)))
-  factor(do.call(paste, c(codes, sep = "_")))
+  factor(do.call(paste, c(unname(codes), sep = "_")))
 }
 
 # Numeric matrix with one standardized column per numeric variable and one

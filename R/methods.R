@@ -7,8 +7,7 @@
 # optionally, pairwise products), so that set means, variances, and so on are
 # similar. The exchange step only swaps rows that share a category, so a
 # stratified random start keeps the exact counts from allocate_strata(). With
-# `local_maximum = TRUE`, exchange passes repeat until the objective stops
-# improving. Each repetition starts from a new stratified assignment. Groups
+# `local_maximum = TRUE`, exchange passes repeat until a pass makes no swap. Each repetition starts from a new stratified assignment. Groups
 # are handled by aggregation: anticlust's `must_link` needs fold sizes that
 # groups can fill exactly, which real grouped data rarely allows.
 method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
@@ -42,27 +41,29 @@ method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
   categories <- if (is.null(exact)) NULL else as.integer(exact)
   stratum_counts <- function(a) table(exact, factor(a, levels = seq_len(k)), dnn = NULL)
 
+  # A data frame is never mistaken for a distance matrix.
+  features_df <- as.data.frame(features)
+
+  # An exchange pass only makes swaps that improve the objective, so a pass
+  # with no swaps means a local maximum. The pass limit guards against
+  # cycling from rounding error.
   run <- function() {
     init <- stratified_random(sizes, exact)
     a <- init
-    obj <- -Inf
-    for (pass in seq_len(100)) {
+    for (pass in seq_len(if (local_maximum) 100L else 1L)) {
       b <- as.integer(anticlust::fast_anticlustering(
-        features,
+        features_df,
         K = a,
         k_neighbours = k_neighbours,
         categories = categories
       ))
-      ob <- anticlust::variance_objective(features, b)
-      if (ob - obj <= 1e-9 * abs(ob)) {
-        break
-      }
+      done <- identical(b, a)
       a <- b
-      obj <- ob
-      if (!local_maximum) {
+      if (done) {
         break
       }
     }
+    obj <- anticlust::variance_objective(features, a)
     if (!is.null(exact) && !identical(stratum_counts(a), stratum_counts(init))) {
       cli::cli_abort("Internal error: anticlust changed the exact counts.", .internal = TRUE)
     }
@@ -81,11 +82,14 @@ method_anticlust <- function(x_scaled, sizes, exact = NULL, group = NULL,
 
 # Balance columns, their moments 2 to `moments` (squared, cubed, ... deviations
 # from the mean), and, if `covariances`, the products of each pair of columns,
-# all standardized. Constant columns are dropped.
+# all standardized. Constant columns are dropped. The powers are built here
+# because anticlust::kplus_moment_variables() raises its growing output, not
+# the input, to each power in anticlust 0.8.18.
 kplus_features <- function(x, moments, covariances) {
+  centered <- sweep(x, 2, colMeans(x), "-")
   f <- x
-  if (moments >= 2) {
-    f <- anticlust::kplus_moment_variables(x, moments, FALSE)
+  for (p in seq_len(moments)[-1]) {
+    f <- cbind(f, centered^p)
   }
   if (covariances && ncol(x) > 1) {
     pairs <- which(upper.tri(diag(ncol(x))), arr.ind = TRUE)
@@ -189,6 +193,13 @@ method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
   n_pilot <- max(100L, min(ceiling(10 / p_accept), max_draws))
   pilot <- vapply(seq_len(n_pilot), function(i) imbalance(stratified_random(sizes, exact)), numeric(1))
   threshold <- stats::quantile(pilot, p_accept, names = FALSE, type = 1)
+  # With discrete data many draws can tie at the threshold. Draws at the
+  # threshold are accepted with the probability that brings the estimated
+  # acceptance rate to `p_accept`.
+  tol <- 1e-9 * max(1, abs(threshold))
+  p_below <- mean(pilot < threshold - tol)
+  p_at <- mean(abs(pilot - threshold) <= tol)
+  p_tie <- min(1, (p_accept - p_below) / p_at)
 
   best <- NULL
   best_val <- Inf
@@ -199,7 +210,7 @@ method_rerandomize <- function(x_scaled, sizes, exact = NULL, group = NULL,
       best <- a
       best_val <- val
     }
-    if (val <= threshold) {
+    if (val < threshold - tol || (val <= threshold + tol && stats::runif(1) < p_tie)) {
       return(a)
     }
   }
@@ -254,8 +265,9 @@ method_interaction <- function(x_scaled, sizes, exact = NULL, group = NULL,
   stratified_random(sizes, exact, fine)
 }
 
-# Quantile bins from ranks. Tied values share a rank, so they stay in one bin,
-# and a heavily tied value gets its own bin instead of absorbing the others.
+# Quantile bins from ranks. Tied values share a rank, so they stay in one
+# bin, and a heavily tied value no longer collapses all the bins into one. It
+# can still share its bin with other values.
 bin_column <- function(v, n_bins) {
   if (length(unique(v)) <= n_bins) {
     return(factor(v))

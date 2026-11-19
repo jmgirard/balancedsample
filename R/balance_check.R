@@ -165,8 +165,11 @@ smd_value <- function(a, b, binary = FALSE) {
     vb <- if (length(b) > 1) stats::var(b) else 0
     den <- sqrt((va + vb) / 2)
   }
-  if (den < 1e-12) {
-    return(if (abs(diff) < 1e-12) 0 else sign(diff) * Inf)
+  # Tolerances are relative to the size of the values, so the result does not
+  # depend on the units.
+  tol <- 1e-12 * max(abs(c(a, b)))
+  if (den <= tol) {
+    return(if (abs(diff) <= tol) 0 else sign(diff) * Inf)
   }
   out <- diff / den
   if (abs(out) < 1e-12) 0 else out

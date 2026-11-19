@@ -57,6 +57,10 @@ test_that("balance_check() reports complete separation as Inf", {
   bc <- balance_check(s, g)
   expect_equal(bc$value[bc$statistic == "smd"], c(-Inf, Inf))
   expect_output(print(bc), "max \\|SMD\\| = Inf")
+
+  d <- data.frame(x = c(0, 0, 1e-13, 1e-13))
+  s <- rsample::make_splits(list(analysis = 1:2, assessment = 3:4), d)
+  expect_equal(balance_check(s, x)$value[1], Inf)
 })
 
 test_that("balance_check() needs columns for plain rsample objects", {
