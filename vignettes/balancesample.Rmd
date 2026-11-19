@@ -18,11 +18,11 @@ needed <- c("anticlust", "twinning", "ggplot2", "parsnip", "rpart", "tune", "wor
 knitr::opts_chunk$set(eval = all(vapply(needed, requireNamespace, logical(1), quietly = TRUE)))
 ```
 
-This article walks through a full modeling project with balancesample: a balanced training/testing split, balanced folds on the training set, tuning with tune, and a final fit. Along the way, it shows how to choose the columns to balance, how to check the result, and how the four methods compare.
+This article walks through a modeling project with balancesample: a balanced training/testing split, balanced folds on the training set, tuning with tune, and a final fit. It also shows how to choose the columns to balance, how to check the result, and how to choose a method.
 
 ## The data
 
-The example uses simulated data from 300 patients at three sites. Age and income are skewed, diagnosis has a rare level, and the outcome depends on all of them.
+The example uses simulated data from 300 patients at three sites. Age and income are skewed, and diagnosis has a rare level. The outcome depends on age, income, and diagnosis.
 
 ```{r data}
 library(balancesample)
@@ -40,7 +40,9 @@ d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + 1.5 * (d$diagnosis == "severe"
 
 ## Why balance?
 
-With 300 rows and 10 folds, each assessment set has 30 rows. Random folds of that size can differ quite a bit from the rest of the data. `balance_check()` measures this with the standardized mean difference (SMD) of each variable in each fold. This helper keeps the largest absolute SMD in each fold:
+`rsample::vfold_cv(strata = diagnosis)` keeps the mix of diagnoses about the same in every fold. Suppose you also want every fold to have similar ages, incomes, and sites. With 300 rows and 10 folds, each held-out fold has only about 30 rows, so random folds can differ quite a bit from the rest of the data.
+
+`balance_check()` measures this with the standardized mean difference (SMD). For each fold, it takes the held-out rows minus the other rows: the difference in means for a numeric variable, or in proportions for each level of a categorical variable. It then divides by the pooled standard deviation. An absolute SMD under 0.1 is a common rule of thumb for good balance. This helper keeps the largest absolute SMD in each fold:
 
 ```{r helper}
 worst_smd <- function(check) {
@@ -49,7 +51,7 @@ worst_smd <- function(check) {
 }
 ```
 
-Here are ordinary folds from rsample, stratified on diagnosis:
+Here are ordinary folds from rsample. For these, you list the columns to check:
 
 ```{r random}
 random_folds <- rsample::vfold_cv(d, v = 10, strata = diagnosis)
@@ -57,7 +59,7 @@ random_smd <- worst_smd(balance_check(random_folds, age, income, diagnosis, site
 round(random_smd, 2)
 ```
 
-And here are balanced folds:
+And here are balanced folds. `balance` lists the columns to make similar, and `exact` takes the place of `strata`. The next section explains both. Balanced folds remember these columns, so `balance_check()` needs no column list:
 
 ```{r balanced}
 folds <- balanced_vfold_cv(d, v = 10, balance = c(age, income, site), exact = diagnosis)
@@ -65,37 +67,56 @@ balanced_smd <- worst_smd(balance_check(folds))
 round(balanced_smd, 2)
 ```
 
-An SMD under 0.1 is often taken as good balance. In the random folds, the worst SMD ranges from `r round(min(random_smd), 2)` to `r round(max(random_smd), 2)`. In the balanced folds, it is at most `r round(max(balanced_smd), 2)`. With 30 rows per fold, one row more or less of a level moves its SMD by about 0.05, so that is about as close as whole rows allow.
+The largest absolute SMD in any fold fell from `r round(max(random_smd), 2)` to `r round(max(balanced_smd), 3)`. What is left is mostly in the category proportions. These can't come out exactly equal when a level's count doesn't divide evenly into 10 folds.
 
 ## Choosing columns: `balance` and `exact`
 
-Both constructors take two kinds of columns.
-
 `balance` takes numeric and categorical columns. Numeric columns are standardized, and categorical columns become one 0/1 column per level. The method then makes the sets as similar as it can on all of these columns at once. This is a goal, not a rule, so the method may trade a little balance on one column for more balance on another.
 
-`exact` takes categorical columns and is a rule. Each combination of levels is one stratum, and the count of each stratum in each set is the floor or the ceiling of its share of that set. This is fixed before the method runs, so it holds for every method.
+`exact` takes categorical columns and is a rule. Each combination of levels is one stratum. In each set, the count of each stratum is its share of that set, rounded up or down to a whole row. This is fixed before the method runs, so it holds for every method.
 
-`exact` does the job of `strata` in `rsample::vfold_cv()`, with two differences. It can take several columns, which it crosses, and its counts are exact rather than approximate. If you are used to rsample and write `strata`, balancesample stops and tells you to use `exact` instead.
+`exact` does the job of `strata` in rsample, with two differences. It can take several columns, which it crosses, and its counts are exact rather than approximate. If you write `strata` out of habit, balancesample stops and tells you to use `exact`.
 
-A categorical column can go in either argument. Use `exact` when its counts must be right, such as an outcome class or a study site. Use `balance` when close is enough. Continuous columns belong in `balance`. If you need exact counts within ranges of a continuous column, make a factor with `cut()` and put that in `exact`.
+A categorical column can go in either argument. Use `exact` when you need the counts as close as whole rows allow. Use `balance` when close is enough. In the folds above, diagnosis is in `exact` because the outcome depends on it, and severe cases are rare. Site is in `balance` because a slightly uneven mix of sites is fine. Continuous columns belong in `balance`. If you need exact counts within ranges of a continuous column, make a factor with `cut()` and put that in `exact`.
 
-Crossing many columns in `exact` makes small strata, and small strata leave the method less room to balance the other columns. Here diagnosis and site together make 9 strata:
+Each column you add to `exact` splits the strata further. Here diagnosis and site together make 9 strata:
 
 ```{r crossed}
-table(d$diagnosis, d$site)
+tab <- table(d$diagnosis, d$site)
+tab
 ```
+
+```{r smallest, include = FALSE}
+small <- which(tab == min(tab), arr.ind = TRUE)[1, ]
+small_train <- round(0.8 * min(tab))
+```
+
+The smallest stratum is `r rownames(tab)[small[1]]` cases at site `r colnames(tab)[small[2]]`, with `r min(tab)` patients. After an 80% training split, `r small_train` of them are spread over 5 folds, so each fold gets `r floor(small_train / 5)` or `r ceiling(small_train / 5)`. A stratum with fewer rows than folds is missing from some folds. Small strata also leave the method less room to balance the other columns.
 
 ## A full tidymodels workflow
 
-Start with a balanced training/testing split. Then make balanced folds from the training set only, so the test set plays no part in tuning.
+Start with a balanced training/testing split. This time, site goes in `exact` too, so that every site is represented in proportion in the test set. Then make balanced folds from the training set only, so the test set plays no part in tuning.
 
 ```{r split}
 split <- balanced_initial_split(d, prop = 0.8, balance = c(age, income), exact = c(diagnosis, site))
 train <- rsample::training(split)
 balance_check(split)
+```
 
+The last row is the energy distance. It compares the whole joint distribution of the checked columns in the two sets, so it also picks up differences in spread and shape that the SMD misses. It is 0 when the two sets have the same distribution, and smaller is better. Use it to compare splits of the same data on the same columns. Its size has no fixed cutoff like 0.1.
+
+```{r folds}
 folds <- balanced_vfold_cv(train, v = 5, balance = c(age, income), exact = c(diagnosis, site))
 ```
+
+Use `autoplot()` to see the SMD of every variable in every fold. The dashed lines are at -0.1 and 0.1.
+
+```{r plot}
+library(ggplot2)
+autoplot(balance_check(folds))
+```
+
+A diagnosis level can land outside the lines even though diagnosis is in `exact`. The counts are exact for each diagnosis and site combination. A fold can be one row off in each of the three sites, and these rows add up for the diagnosis as a whole. Rare levels show this most, because one row is a large share of a small level.
 
 The folds work with tune like any other `rset`. Attach balancesample with `library()` before tuning. tune finds the function that made the folds by its name, so it fails if you only call `balancesample::balanced_vfold_cv()`.
 
@@ -114,7 +135,7 @@ res <- tune_grid(wf, resamples = folds, grid = 6)
 show_best(res, metric = "rmse", n = 3)
 ```
 
-Finalize the workflow with the best value, then fit it on the whole training set and evaluate it on the test set with `last_fit()`:
+Finalize the workflow with the settings that had the lowest cross-validated RMSE. Then `last_fit()` fits it on the whole training set and evaluates it on the test set:
 
 ```{r last-fit}
 final <- finalize_workflow(wf, select_best(res, metric = "rmse"))
@@ -122,20 +143,9 @@ final_fit <- last_fit(final, split)
 collect_metrics(final_fit)
 ```
 
-## Plotting balance
-
-Use `autoplot()` on the result of `balance_check()` to see the SMD of every variable in every fold. The dashed lines are at -0.1 and 0.1.
-
-```{r plot}
-library(ggplot2)
-autoplot(balance_check(folds))
-```
-
-A rare level can still land outside the lines. With few rows in a level, one row more or less in a fold moves its SMD a lot, and the exact counts already put each fold within one row of its share.
-
 ## Choosing a method
 
-The four methods differ in speed and in how close they get. This compares them on the full data with 10 folds. The energy distance compares the whole distribution of the assessment set with the analysis set, so it also catches differences in spread and shape that the means miss.
+balancesample has four methods. `"anticlust"` (the default) and `"twinning"` need the anticlust and twinning packages. `"rerandomize"` and `"interaction"` need no extra packages. This compares all four on the full data with 10 folds:
 
 ```{r methods}
 methods <- c("anticlust", "twinning", "rerandomize", "interaction")
@@ -153,11 +163,13 @@ by_method[-1] <- round(by_method[-1], 3)
 by_method
 ```
 
-These numbers come from one run of each method, so treat small differences as noise. anticlust is the default. It is usually the closest on means and variances, but its run time grows quickly with the number of rows. Set `options = list(k_neighbours = 20)` to speed it up on large data. twinning is fast at any size. rerandomize needs no extra packages. interaction is a baseline that shows how crossed strata become sparse. See `?balanced_vfold_cv` for the options of each method.
+In this run, `r by_method$method[which.min(by_method$worst_smd)]` had the smallest worst SMD (`r min(by_method$worst_smd)`), and `r by_method$method[which.min(by_method$mean_energy)]` had the smallest mean energy distance (`r min(by_method$mean_energy)`). These come from one run of each method, so treat small differences as noise.
+
+Start with anticlust. Its run time grows quickly with the number of rows. On large data, set `options = list(k_neighbours = 20)` or try twinning, then check the balance again. The README lists run times for both. Use rerandomize if you can't install the extra packages. interaction is a baseline that shows how crossed strata become sparse. See `?balanced_vfold_cv` for the options of each method.
 
 ## Groups
 
-If the data have several rows per person, put the person ID in `group` to keep all of a person's rows in the same set. Columns in `exact` must then be constant within each person, and the exact counts are counts of people, not rows.
+If the data have several rows per person, put the person ID in `group`. All of a person's rows then go to the same set. Columns in `exact` must be constant within each person, and the exact counts are counts of people, not rows. `group` works the same way in `balanced_initial_split()`.
 
 ```{r groups}
 d$person <- seq_len(n)
@@ -165,3 +177,5 @@ long <- d[rep(seq_len(n), times = sample(1:4, n, TRUE)), ]
 grouped <- balanced_vfold_cv(long, v = 5, balance = c(age, income), exact = diagnosis, group = person)
 grouped
 ```
+
+The split sizes are numbers of rows. Each fold gets about the same number of people, so the number of rows per fold varies with how many rows each person has. `balance_check()` also compares rows.
