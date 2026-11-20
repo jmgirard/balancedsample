@@ -250,7 +250,9 @@ header_parts <- function(x) {
     res <- paste(res, "repeated", details$repeats, "times")
   }
   if (length(details$exact) > 0) {
-    res <- c(res, paste("stratified by", paste(details$exact, collapse = ", ")))
+    # One part per column, so a long list can wrap between column names.
+    exact <- details$exact
+    res <- c(res, paste("stratified by", exact[1]), exact[-1])
   }
   if (length(details$group) > 0) {
     res <- c(res, paste("grouped by", details$group))
@@ -259,17 +261,21 @@ header_parts <- function(x) {
 }
 
 # Print a "# " header that joins `parts` with commas. A new line starts
-# between parts when the next part would pass the console width.
+# between parts when the next part, with its comma, would pass the console
+# width. Widths are display widths, so wide characters count twice.
 cat_header <- function(parts) {
-  width <- getOption("width") - 3
+  width <- getOption("width") - 2
+  size <- function(x) nchar(x, type = "width")
   lines <- parts[1]
-  for (part in parts[-1]) {
+  n <- length(parts)
+  for (i in seq_len(n)[-1]) {
     last <- length(lines)
-    if (nchar(lines[last]) + 2 + nchar(part) <= width) {
-      lines[last] <- paste0(lines[last], ", ", part)
+    comma <- if (i < n) 1 else 0
+    if (size(lines[last]) + 2 + size(parts[i]) + comma <= width) {
+      lines[last] <- paste0(lines[last], ", ", parts[i])
     } else {
       lines[last] <- paste0(lines[last], ",")
-      lines <- c(lines, part)
+      lines <- c(lines, parts[i])
     }
   }
   cat(paste0("# ", lines, "\n"), sep = "")
