@@ -102,14 +102,26 @@ test_that("calibration splits of an initial split use the same prop", {
   expect_equal(attr(cal, "balance"), c("x1", "cat"))
 
   # The inner split is balanced_initial_split() on the training set, with the
-  # outer split's arguments.
+  # outer split's arguments. These differ from the defaults and from the
+  # fold test above, so each argument has to be passed on.
+  split <- balanced_initial_split(
+    d,
+    prop = 2 / 3,
+    balance = c(x1, cat),
+    exact = site,
+    group = id,
+    method = "interaction"
+  )
   set.seed(40)
   cal <- rsample::internal_calibration_split(split, split_args = list())
   set.seed(40)
   direct <- balanced_initial_split(
     rsample::training(split),
-    prop = 4 / 5,
-    balance = c(x1, cat)
+    prop = 2 / 3,
+    balance = c(x1, cat),
+    exact = site,
+    group = id,
+    method = "interaction"
   )
   expect_identical(cal$in_id, direct$in_id)
 })
@@ -203,19 +215,21 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
       split
     }
   )
-  # The model in a fitted workflow was fit on one of the recorded inner
-  # analysis sets.
-  fit_on_inner <- function(fitted) {
-    engine <- workflows::extract_fit_engine(fitted)
-    fitted_coef <- unname(stats::coef(engine))
-    any(vapply(
+  # The model in a fitted workflow was fit on the analysis set of the one
+  # inner split made from `outer`, the outer analysis set.
+  fit_on_inner <- function(fitted, outer) {
+    from_outer <- vapply(
       inner,
-      function(split) {
-        refit <- stats::lm(mpg ~ hp + wt, data = rsample::analysis(split))
-        isTRUE(all.equal(unname(stats::coef(refit)), fitted_coef))
-      },
+      function(split) identical(rownames(split$data), rownames(outer)),
       logical(1)
-    ))
+    )
+    if (sum(from_outer) != 1) {
+      return(FALSE)
+    }
+    split <- inner[[which(from_outer)]]
+    refit <- stats::lm(mpg ~ hp + wt, data = rsample::analysis(split))
+    engine <- workflows::extract_fit_engine(fitted)
+    isTRUE(all.equal(unname(stats::coef(refit)), unname(stats::coef(engine))))
   }
 
   set.seed(7)
@@ -239,7 +253,8 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
       unname(stats::predict(fitted, new_data)$.pred)
     )
     expect_gt(max(abs(fold_pred$.pred - raw_predict(fitted, new_data))), 1e-6)
-    expect_true(fit_on_inner(fitted), info = id)
+    outer <- rsample::analysis(folds$splits[[which(folds$id == id)]])
+    expect_true(fit_on_inner(fitted, outer), info = id)
   }
 
   inner <- list()
@@ -257,7 +272,7 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     unname(stats::predict(fitted, new_data)$.pred)
   )
   expect_gt(max(abs(pred$.pred - raw_predict(fitted, new_data))), 1e-6)
-  expect_true(fit_on_inner(fitted))
+  expect_true(fit_on_inner(fitted, rsample::training(split)))
 })
 
 test_that("labels() of repeated folds combine both IDs", {
