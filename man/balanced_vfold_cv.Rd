@@ -90,9 +90,10 @@ constraints (\code{max(100, min(10 / p_accept, max_draws))} draws). Draws
 that tie with the threshold are accepted at random, so that the
 acceptance rate is close to \code{p_accept} even for discrete data. If
 \code{p_accept} is below \code{1 / max(100, max_draws)}, the pilot draws can't
-resolve it, and the threshold is the best pilot draw. Options are \code{p_accept}, the target acceptance rate
-(default 0.1), and \code{max_draws} (default 1000). If no draw meets the
-threshold, the best draw is used with a warning.
+resolve it, and the threshold is the best pilot draw. Options are
+\code{p_accept}, the target acceptance rate (default 0.1), and \code{max_draws}
+(default 1000). If no draw meets the threshold, the best draw is used
+with a warning.
 \item \code{"interaction"} cuts numeric columns into quantile bins, crosses all
 bins, and stratifies at random. It is a baseline that shows how crossed
 strata become sparse. Options are \code{n_bins} (default 4) and \code{pool}
@@ -130,25 +131,34 @@ folds <- balanced_vfold_cv(
   mtcars,
   v = 4,
   balance = c(mpg, hp, wt),
-  exact = am,
-  method = "rerandomize"
+  exact = am
 )
 folds
 balance_check(folds)
+
+# Other methods
+balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "rerandomize")
+\dontshow{if (rlang::is_installed("twinning")) withAutoprint(\{ # examplesIf}
+balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
+\dontshow{\}) # examplesIf}
 }
 \references{
 Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate
 balance in experiments. \emph{The Annals of Statistics, 40}(2), 1263-1282.
+\doi{10.1214/12-AOS1008}
 
 Papenberg, M. (2024). K-plus anticlustering: An improved k-means
 criterion for maximizing between-group similarity. \emph{British Journal of
 Mathematical and Statistical Psychology, 77}(1), 80-102.
+\doi{10.1111/bmsp.12315}
 
 Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 data sets into equivalent parts. \emph{Psychological Methods, 26}(2), 161-174.
+\doi{10.1037/met0000301}
 
 Vakayil, A., & Joseph, V. R. (2022). Data twinning. \emph{Statistical Analysis
 and Data Mining, 15}(5), 598-610.
+\doi{10.1002/sam.11574}
 }
 \seealso{
 \code{\link[=balanced_initial_split]{balanced_initial_split()}}, \code{\link[=balance_check]{balance_check()}}

@@ -59,9 +59,10 @@
 #'   that tie with the threshold are accepted at random, so that the
 #'   acceptance rate is close to `p_accept` even for discrete data. If
 #'   `p_accept` is below `1 / max(100, max_draws)`, the pilot draws can't
-#'   resolve it, and the threshold is the best pilot draw. Options are `p_accept`, the target acceptance rate
-#'   (default 0.1), and `max_draws` (default 1000). If no draw meets the
-#'   threshold, the best draw is used with a warning.
+#'   resolve it, and the threshold is the best pilot draw. Options are
+#'   `p_accept`, the target acceptance rate (default 0.1), and `max_draws`
+#'   (default 1000). If no draw meets the threshold, the best draw is used
+#'   with a warning.
 #' * `"interaction"` cuts numeric columns into quantile bins, crosses all
 #'   bins, and stratifies at random. It is a baseline that shows how crossed
 #'   strata become sparse. Options are `n_bins` (default 4) and `pool`
@@ -97,16 +98,20 @@
 #' @references
 #' Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve covariate
 #' balance in experiments. *The Annals of Statistics, 40*(2), 1263-1282.
+#' \doi{10.1214/12-AOS1008}
 #'
 #' Papenberg, M. (2024). K-plus anticlustering: An improved k-means
 #' criterion for maximizing between-group similarity. *British Journal of
 #' Mathematical and Statistical Psychology, 77*(1), 80-102.
+#' \doi{10.1111/bmsp.12315}
 #'
 #' Papenberg, M., & Klau, G. W. (2021). Using anticlustering to partition
 #' data sets into equivalent parts. *Psychological Methods, 26*(2), 161-174.
+#' \doi{10.1037/met0000301}
 #'
 #' Vakayil, A., & Joseph, V. R. (2022). Data twinning. *Statistical Analysis
 #' and Data Mining, 15*(5), 598-610.
+#' \doi{10.1002/sam.11574}
 #'
 #' @seealso [balanced_initial_split()], [balance_check()]
 #'
@@ -116,11 +121,15 @@
 #'   mtcars,
 #'   v = 4,
 #'   balance = c(mpg, hp, wt),
-#'   exact = am,
-#'   method = "rerandomize"
+#'   exact = am
 #' )
 #' folds
 #' balance_check(folds)
+#'
+#' # Other methods
+#' balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "rerandomize")
+#' @examplesIf rlang::is_installed("twinning")
+#' balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
 #' @export
 balanced_vfold_cv <- function(
   data,
