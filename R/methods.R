@@ -224,14 +224,13 @@ method_twinning <- function(
   within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * m)
 }
 
-# Twinning parts for a two-way split with training proportion `prop`: one
-# part for the smaller set and r - 1 for the other, where the smaller set is
-# 1/r of the data. Returns NULL if r is not a whole number. Like
-# twin_parts(), it depends on `prop` only, not on the data size. `prop` is
-# compared with 1 - 1/r (or 1/r) directly, because 1 - prop and 1/x add
-# rounding error. `prop` may differ from the fraction by 1e-8 times the
-# fraction, which allows for proportions computed by subtraction, such as
-# 1 - 0.9875, and values rounded to eight or more digits.
+# Twinning parts for a two-way split with training proportion `prop`. r is
+# the whole number nearest 1 / min(prop, 1 - prop), and `prop` must be within
+# 1e-8 times 1 - 1/r (or 1/r, below 1/2) of that fraction. The comparison is
+# with `prop` itself, because 1 - prop adds rounding error. The tolerance
+# allows for proportions computed by subtraction, such as 1 - 0.9875.
+# Returns c(r - 1, 1) or c(1, r - 1), or NULL. Like twin_parts(), it depends
+# on `prop` only, not on the data size.
 twin_split_parts <- function(prop) {
   r <- round(1 / min(prop, 1 - prop))
   if (!is.finite(r)) {
