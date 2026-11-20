@@ -61,7 +61,8 @@ and \code{\link[rsample:testing]{rsample::testing()}} to get the two data sets.
 \details{
 The methods, options, and group handling are the same as for
 \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}. With \code{method = "twinning"}, the split uses
-\code{\link[twinning:twin]{twinning::twin()}}, and the options are \code{leaf_size} only.
+\code{\link[twinning:twin]{twinning::twin()}}, and the options are \code{leaf_size} only. Strata with
+fewer than \code{2 * r} rows (or groups) are split at random.
 
 If a workflow has a postprocessor that must be trained, \code{\link[tune:last_fit]{tune::last_fit()}}
 splits the training set again with \code{balanced_initial_split()}, using the

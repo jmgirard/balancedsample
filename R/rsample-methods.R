@@ -70,9 +70,15 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   stored <- attr(x, "val_att")
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
-  split_args$prop <- split_args$prop[[1]] / sum(split_args$prop)
-  if (isTRUE(split_args$method == "twinning")) {
-    split_args$prop <- nearest_twin_prop(split_args$prop)
+  p <- split_args$prop
+  if (is.numeric(p) && length(p) == 2 && all(is.finite(p)) && all(p > 0)) {
+    split_args$prop <- p[[1]] / sum(p)
+    if (rlang::is_string(split_args$method, "twinning")) {
+      split_args$prop <- nearest_twin_prop(split_args$prop)
+    }
+  } else {
+    # balanced_initial_split() rejects this, so the fallback applies.
+    split_args$prop <- NA_real_
   }
   balanced_calibration_split(
     rsample::training(x),
@@ -86,12 +92,9 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   )
 }
 
-# The shares 1/r are not evenly spaced, so compare the two nearest ones. Other
-# values are left for balanced_calibration_split() to reject.
+# The shares 1/r are not evenly spaced, so compare the two nearest ones. A
+# share that rounds to 1 is left for balanced_calibration_split() to reject.
 nearest_twin_prop <- function(prop) {
-  if (!is.numeric(prop) || length(prop) != 1 || !is.finite(prop)) {
-    return(prop)
-  }
   small <- min(prop, 1 - prop)
   if (small <= 0) {
     return(prop)

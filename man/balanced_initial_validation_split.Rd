@@ -89,7 +89,8 @@ gives a balanced split of the training set. As in rsample,
 \code{prop[1] / sum(prop)} of the training set goes to the first part and the
 rest to the calibration set. With \code{method = "twinning"}, this share is
 rounded to the nearest \code{1 - 1/r} (or \code{1/r}, below 1/2) for a whole number
-\code{r}, for example 14/17 to 5/6.
+\code{r}, for example 14/17 to 5/6. As in rsample, if the training set can't
+be split, you get a warning and an empty calibration set.
 }
 
 \examples{

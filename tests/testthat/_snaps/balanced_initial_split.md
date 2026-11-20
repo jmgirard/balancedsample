@@ -5,7 +5,7 @@
     Condition
       Error in `balanced_initial_split()`:
       ! `method = "twinning"` can only split off 1/r of the data, where r is a whole number.
-      i Use `prop` = 1/2, 2/3, 3/4, 9/10, or another value of 1 - 1/r or 1/r.
+      i Use `prop` = 1/2, 2/3, 3/4, 9/10, 1/4, or another value of 1 - 1/r or 1/r.
 
 # bad prop values give clear errors
 
