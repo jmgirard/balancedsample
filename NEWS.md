@@ -5,9 +5,11 @@
   `"rerandomize"`, `"interaction"`).
 
 * Workflows with a postprocessor that must be trained (for example, a tailor
-  calibration) now work with `tune::fit_resamples()`, `tune::tune_grid()`, and
-  `tune::last_fit()`. The inner calibration split is balanced with the same
-  settings as the outer split. This needs rsample 1.3.1 or later.
+  calibration) now work with `tune::fit_resamples()` and `tune::tune_grid()`
+  on balanced folds, and with `tune::last_fit()` on balanced training/testing
+  splits. The inner calibration split uses the same balance columns, exact
+  strata, groups, method, and options as the outer split, without twinning's
+  `strategy` option. This needs rsample 1.3.1 or later.
 
 * `labels()` of repeated folds now combines the repeat and fold IDs, as it
   does for `rsample::vfold_cv()`.
@@ -27,3 +29,16 @@
 
 * `method = "twinning"` can now make sets of unequal size from whole numbers
   of similar parts.
+
+* With `method = "twinning"`, `balanced_initial_split()` now checks that
+  `prop` is a fraction twinning can make before it rounds the set sizes, so
+  the check no longer depends on the data size. Before, a `prop` such as 0.7
+  could pass on small data because of rounding. Write `prop` as a fraction,
+  such as `2 / 3`, not `0.67`. A value within a relative 1e-8 of a fraction
+  counts as that fraction.
+
+* `rsample::internal_calibration_split()` on a twinning three-way split now
+  uses the nearest training share that twinning can make (for example 5/6
+  instead of 14/17). Before, such shares gave a warning and an empty
+  calibration set. That still happens when the training set can't be split,
+  for example when it has fewer than two groups.

@@ -150,7 +150,6 @@ method_twinning <- function(
   parts = NULL
 ) {
   rlang::check_installed("twinning", reason = "to use `method = \"twinning\"`.")
-  n <- sum(sizes)
   k <- length(sizes)
   # twinning drops matrix dimensions for one column; a zero column does not
   # change any distance.
@@ -162,25 +161,22 @@ method_twinning <- function(
     cli::cli_abort("{.arg strategy} must be 1, 2, or 3.", call = NULL)
   }
 
-  # For two sets, strategies 1 and 2 of multiplet() reduce to twin(r = 2).
-  # Strategy 3 builds a different sequence, so it uses multiplet().
+  # `parts` (set by balanced_initial_split() and
+  # balanced_initial_validation_split()) gives the number of parts for each
+  # set. Folds get one part each.
+  blocks <- parts %||% rep.int(1L, k)
+  m <- sum(blocks)
+
+  # For two sets, strategies 1 and 2 of multiplet() reduce to twin(r = m),
+  # which splits off one of `m` parts. Strategy 3 builds a different
+  # sequence, so it uses multiplet().
   if (k == 2 && strategy != 3) {
     small <- which.min(sizes)
     other <- 3L - small
-    r <- round(n / sizes[small])
-    if (r < 2 || abs(sizes[small] - n / r) >= 1) {
-      cli::cli_abort(
-        c(
-          "{.code method = \"twinning\"} can only split off 1/r of the data, where r is a whole number.",
-          i = "Use {.arg prop} = 1/2, 2/3, 3/4, 4/5, 9/10, or another value of 1 - 1/r."
-        ),
-        call = NULL
-      )
-    }
     split_fun <- function(x, sz) {
       idx <- twinning::twin(
         x,
-        r = r,
+        r = m,
         format_data = FALSE,
         leaf_size = leaf_size
       )
@@ -188,13 +184,9 @@ method_twinning <- function(
       a[idx] <- small
       fix_sizes(a, sz)
     }
-    return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * r))
+    return(within_strata(x_scaled, sizes, exact, split_fun, min_rows = 2 * m))
   }
 
-  # `parts` (set by balanced_initial_validation_split()) gives the number of
-  # multiplet() parts for each set. Folds get one part each.
-  blocks <- parts %||% rep.int(1L, k)
-  m <- sum(blocks)
   if (strategy == 2 && !is_power_of_two(m)) {
     if (m == k) {
       cli::cli_abort(
@@ -230,6 +222,25 @@ method_twinning <- function(
     fix_sizes(target[a], sz)
   }
   within_strata(x_scaled, sizes, exact, fold_fun, min_rows = 2 * m)
+}
+
+# Twinning parts for a two-way split with training proportion `prop`. r is
+# the whole number nearest 1 / min(prop, 1 - prop), and `prop` must be within
+# 1e-8 times 1 - 1/r (or 1/r, below 1/2) of that fraction. The comparison is
+# with `prop` itself, because 1 - prop adds rounding error. The tolerance
+# allows for proportions computed by subtraction, such as 1 - 0.9875.
+# Returns c(r - 1, 1) or c(1, r - 1), or NULL. Like twin_parts(), it depends
+# on `prop` only, not on the data size.
+twin_split_parts <- function(prop) {
+  r <- round(1 / min(prop, 1 - prop))
+  if (!is.finite(r)) {
+    return(NULL)
+  }
+  target <- if (prop >= 0.5) 1 - 1 / r else 1 / r
+  if (abs(prop - target) > 1e-8 * target) {
+    return(NULL)
+  }
+  if (prop >= 0.5) c(r - 1, 1) else c(1, r - 1)
 }
 
 # Number of twinning parts for each set: the smallest whole number `m` up to

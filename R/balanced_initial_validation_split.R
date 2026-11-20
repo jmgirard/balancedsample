@@ -37,6 +37,14 @@
 #' train such a postprocessor on any three-way split, including those from
 #' [rsample::initial_validation_split()] (as of tune 2.1.0).
 #'
+#' Calling [rsample::internal_calibration_split()] on this split yourself
+#' gives a balanced split of the training set. As in rsample,
+#' `prop[1] / sum(prop)` of the training set goes to the first part and the
+#' rest to the calibration set. With `method = "twinning"`, this share is
+#' rounded to the nearest `1 - 1/r` (or `1/r`, below 1/2) for a whole number
+#' `r`, for example 14/17 to 5/6. As in rsample, if the training set can't
+#' be split, you get a warning and an empty calibration set.
+#'
 #' @return A `three_way_split` object with class
 #'   `balanced_initial_validation_split` and `initial_validation_split`.
 #'
@@ -108,6 +116,8 @@ balanced_initial_validation_split <- function(
         call = call
       )
     }
+    # Near misses give the same set sizes as the fractions they match.
+    props <- method_options$parts / sum(method_options$parts)
   }
   a <- assign_balanced(prep, props, entry, method_options, call = call)
   res <- list(

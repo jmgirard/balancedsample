@@ -122,7 +122,8 @@ function".
 If a workflow has a postprocessor that must be trained, such as a
 calibration from the tailor package, tune splits each analysis set again.
 That inner split is a \code{\link[=balanced_initial_split]{balanced_initial_split()}} with the same \code{balance},
-\code{exact}, \code{group}, \code{method}, and \code{options}, and with \code{prop = 1 - 1/v}.
+\code{exact}, \code{group}, \code{method}, and \code{options} (without twinning's
+\code{strategy}), and with \code{prop = 1 - 1/v}.
 }
 
 \examples{

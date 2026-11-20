@@ -83,6 +83,14 @@ training set again. Through \code{\link[rsample:validation_set]{rsample::validat
 that inner split at random, without balancing. \code{\link[tune:last_fit]{tune::last_fit()}} can't
 train such a postprocessor on any three-way split, including those from
 \code{\link[rsample:initial_validation_split]{rsample::initial_validation_split()}} (as of tune 2.1.0).
+
+Calling \code{\link[rsample:internal_calibration_split]{rsample::internal_calibration_split()}} on this split yourself
+gives a balanced split of the training set. As in rsample,
+\code{prop[1] / sum(prop)} of the training set goes to the first part and the
+rest to the calibration set. With \code{method = "twinning"}, this share is
+rounded to the nearest \code{1 - 1/r} (or \code{1/r}, below 1/2) for a whole number
+\code{r}, for example 14/17 to 5/6. As in rsample, if the training set can't
+be split, you get a warning and an empty calibration set.
 }
 
 \examples{

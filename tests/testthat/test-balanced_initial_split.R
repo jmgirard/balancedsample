@@ -66,6 +66,93 @@ test_that("twinning needs prop = 1 - 1/r", {
   expect_equal(nrow(rsample::training(s)), 50)
 })
 
+test_that("two-way twinning splits reject `strategy`", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  expect_snapshot(
+    balanced_initial_split(
+      d,
+      balance = x1,
+      method = "twinning",
+      options = list(strategy = 2)
+    ),
+    error = TRUE
+  )
+})
+
+test_that("twin_split_parts() depends on prop only", {
+  expect_equal(twin_split_parts(3 / 4), c(3L, 1L))
+  expect_equal(twin_split_parts(1 - 1 / 3), c(2L, 1L))
+  expect_equal(twin_split_parts(0.9), c(9L, 1L))
+  expect_equal(twin_split_parts(0.5), c(1L, 1L))
+  expect_equal(twin_split_parts(0.25), c(1L, 3L))
+  expect_equal(twin_split_parts(1 - 1 / 100000), c(99999, 1))
+  expect_null(twin_split_parts(0.7))
+  expect_null(twin_split_parts(0.67))
+  expect_null(twin_split_parts(1e-310))
+  expect_null(twin_split_parts(0.5001))
+  # Typed decimals and proportions computed by subtraction pass.
+  for (p in c(0.95, 0.99, 0.875, 0.05, 1 - 1 / 7, 1 / 7, 5 / 6, 1 - 0.9875)) {
+    expect_false(is.null(twin_split_parts(p)))
+  }
+  expect_equal(twin_split_parts(1 - (1 - 1 / 100000)), c(1, 99999))
+  # Values within the relative tolerance of 1e-8 count as the fraction.
+  expect_equal(twin_split_parts(0.500000003), c(1, 1))
+})
+
+test_that("near misses give the same twinning split as the fraction", {
+  skip_if_not_installed("twinning")
+  d <- data.frame(x = stats::rnorm(199))
+  sizes <- vapply(
+    c(0.5, 0.500000003),
+    function(p) {
+      set.seed(4)
+      s <- balanced_initial_split(d, prop = p, balance = x, method = "twinning")
+      nrow(rsample::training(s))
+    },
+    numeric(1)
+  )
+  expect_equal(sizes[[1]], sizes[[2]])
+})
+
+test_that("twinning splits with a very large r fall back to random", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  set.seed(5)
+  s <- balanced_initial_split(
+    d,
+    prop = 1 / 2^32,
+    balance = x1,
+    method = "twinning"
+  )
+  expect_equal(nrow(rsample::training(s)), 1)
+})
+
+test_that("twinning accepts or rejects the same prop for any size", {
+  skip_if_not_installed("twinning")
+  d <- data.frame(x = 1:200)
+  # With 10 rows, 0.7 gives sets of 7 and 3, which once passed as 1/r.
+  for (n in c(10, 100, 200)) {
+    expect_error(
+      balanced_initial_split(
+        d[seq_len(n), , drop = FALSE],
+        prop = 0.7,
+        balance = x,
+        method = "twinning"
+      ),
+      "1/r of the data"
+    )
+    set.seed(n)
+    s <- balanced_initial_split(
+      d[seq_len(n), , drop = FALSE],
+      prop = 2 / 3,
+      balance = x,
+      method = "twinning"
+    )
+    expect_equal(nrow(rsample::testing(s)), round(n / 3))
+  }
+})
+
 test_that("bad prop values give clear errors", {
   d <- sim_data()
   expect_snapshot(error = TRUE, {

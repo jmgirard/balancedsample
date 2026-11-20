@@ -187,6 +187,20 @@ test_that("validation sets work with tune", {
   expect_equal(nrow(tune::collect_predictions(res)), nrow(rsample::testing(s)))
 })
 
+test_that("calibration splits accept classed numeric proportions", {
+  set.seed(11)
+  s <- balanced_initial_validation_split(
+    mtcars,
+    prop = I(c(0.5, 0.35)),
+    balance = hp,
+    method = "rerandomize"
+  )
+  expect_no_warning(
+    cal <- rsample::internal_calibration_split(s, split_args = list())
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 7)
+})
+
 test_that("calibration splits of a validation split balance the training set", {
   d <- sim_data()
   set.seed(7)
@@ -205,4 +219,128 @@ test_that("calibration splits of a validation split balance the training set", {
   expect_length(intersect(fit_set$id, cal_set$id), 0)
   # 19 training groups, 1/3 of them for calibration
   expect_equal(length(unique(cal_set$id)), 19 / 3, tolerance = 1)
+})
+
+test_that("twinning calibration splits use the nearest share twinning can make", {
+  skip_if_not_installed("twinning")
+  expect_equal(nearest_twin_share(14, 3), 5 / 6)
+  # 1/r is not evenly spaced: 7/17 is nearer 1/3 than 1/2.
+  expect_equal(nearest_twin_share(10, 7), 2 / 3)
+  expect_equal(nearest_twin_share(3, 1), 3 / 4)
+  expect_equal(nearest_twin_share(1, 1), 0.5)
+  expect_equal(nearest_twin_share(1, 4), 0.2)
+  # 5/12 is exactly between 1/2 and 1/3. The tie goes to the larger r.
+  expect_equal(nearest_twin_share(7, 5), 2 / 3)
+  expect_equal(nearest_twin_share(5, 7), 1 / 3)
+  # Large values don't overflow.
+  expect_equal(nearest_twin_share(1e308, 6e307), 2 / 3)
+  # 7/24 is exactly between 1/3 and 1/4, and stays a tie when scaled.
+  expect_equal(nearest_twin_share(17 * 2^500, 7 * 2^500), 3 / 4)
+  expect_equal(
+    three_way_fit_share(list(
+      prop = c(1500000000L, 1000000000L),
+      method = "twinning"
+    )),
+    2 / 3
+  )
+
+  d <- sim_data()
+  set.seed(9)
+  s <- balanced_initial_validation_split(
+    d,
+    prop = c(0.7, 0.15),
+    balance = c(x1, x2),
+    method = "twinning"
+  )
+  # 140 training rows; 14/17 can't be twinned, so 1/6 go to calibration.
+  expect_no_warning(
+    cal <- rsample::internal_calibration_split(s, split_args = list())
+  )
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
+
+  # A share exactly between two twinning shares rounds as plain arithmetic
+  # does. 7/12 is between 1/2 and 2/3.
+  set.seed(10)
+  s7 <- balanced_initial_validation_split(
+    sim_data(320),
+    prop = c(7, 5) / 16,
+    balance = x1,
+    method = "twinning"
+  )
+  cal <- rsample::internal_calibration_split(s7, split_args = list())
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 3))
+
+  # A near miss gives the same calibration split as the fraction it matches.
+  cal_rows <- vapply(
+    list(c(7, 5) / 13, c(7, 5) / 13 + c(1, -1) * 1e-10),
+    function(p) {
+      set.seed(4)
+      s13 <- balanced_initial_validation_split(
+        sim_data(199),
+        prop = p,
+        balance = x1,
+        method = "twinning"
+      )
+      set.seed(5)
+      cal <- rsample::internal_calibration_split(s13, split_args = list())
+      nrow(rsample::calibration(cal))
+    },
+    numeric(1)
+  )
+  expect_equal(cal_rows[[1]], cal_rows[[2]])
+
+  # Very large values don't overflow.
+  cal <- rsample::internal_calibration_split(
+    s,
+    split_args = list(prop = rep(.Machine$double.xmax, 2))
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 70)
+
+  # A named method string is still twinning.
+  attr(s, "val_att")$method <- c(chosen = "twinning")
+  cal <- rsample::internal_calibration_split(s, split_args = list())
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
+
+  # Bad shares still reach the fallback.
+  expect_warning(
+    cal <- rsample::internal_calibration_split(
+      s,
+      split_args = list(prop = c(NA_real_, 1))
+    ),
+    "empty calibration set"
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 0)
+  bad <- list(
+    list(prop = c("0.5", "0.35")),
+    list(prop = numeric(0)),
+    list(prop = c(-1, -1)),
+    list(prop = c(0.3, 0.2, 0.1)),
+    list(options = identity),
+    list(method = new.env())
+  )
+  for (args in bad) {
+    expect_warning(
+      cal <- rsample::internal_calibration_split(s, split_args = args),
+      "empty calibration set"
+    )
+    expect_equal(nrow(rsample::calibration(cal)), 0)
+  }
+
+  # Errors from classed prop and options values reach the fallback too.
+  local_mocked_s3_method("Ops", "bad_prop", function(e1, e2) stop("no math"))
+  local_mocked_s3_method("$<-", "bad_options", function(x, name, value) {
+    stop("read only")
+  })
+  classed <- list(
+    "no math" = list(prop = structure(c(0.5, 0.35), class = "bad_prop")),
+    "read only" = list(options = structure(list(), class = "bad_options"))
+  )
+  for (cause in names(classed)) {
+    w <- expect_warning(
+      cal <- rsample::internal_calibration_split(s, classed[[cause]]),
+      "empty calibration set"
+    )
+    expect_match(conditionMessage(w$parent), cause)
+    expect_equal(nrow(rsample::calibration(cal)), 0)
+  }
 })
