@@ -159,8 +159,8 @@ If a workflow has a postprocessor that must be trained, such as a
 calibration from the tailor package, tune splits each analysis set
 again. That inner split is a
 [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
-with the same `balance`, `exact`, `group`, `method`, and `options`, and
-with `prop = 1 - 1/v`.
+with the same `balance`, `exact`, `group`, `method`, and `options`
+(without twinning's `strategy`), and with `prop = 1 - 1/v`.
 
 ## References
 

@@ -177,7 +177,8 @@ function".</p>
 <p>If a workflow has a postprocessor that must be trained, such as a
 calibration from the tailor package, tune splits each analysis set again.
 That inner split is a <code><a href="balanced_initial_split.html">balanced_initial_split()</a></code> with the same <code>balance</code>,
-<code>exact</code>, <code>group</code>, <code>method</code>, and <code>options</code>, and with <code>prop = 1 - 1/v</code>.</p>
+<code>exact</code>, <code>group</code>, <code>method</code>, and <code>options</code> (without twinning's
+<code>strategy</code>), and with <code>prop = 1 - 1/v</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

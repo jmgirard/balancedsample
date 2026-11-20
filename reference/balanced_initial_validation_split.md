@@ -123,6 +123,16 @@ from
 [`rsample::initial_validation_split()`](https://rsample.tidymodels.org/reference/initial_validation_split.html)
 (as of tune 2.1.0).
 
+Calling
+[`rsample::internal_calibration_split()`](https://rsample.tidymodels.org/reference/internal_calibration_split.html)
+on this split yourself gives a balanced split of the training set. As in
+rsample, `prop[1] / sum(prop)` of the training set goes to the first
+part and the rest to the calibration set. With `method = "twinning"`,
+this share is rounded to the nearest `1 - 1/r` (or `1/r`, below 1/2) for
+a whole number `r`, for example 14/17 to 5/6. As in rsample, if the
+training set can't be split, you get a warning and an empty calibration
+set.
+
 ## See also
 
 [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md),

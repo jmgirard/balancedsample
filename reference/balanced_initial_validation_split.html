@@ -145,6 +145,13 @@ training set again. Through <code><a href="https://rsample.tidymodels.org/refere
 that inner split at random, without balancing. <code><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">tune::last_fit()</a></code> can't
 train such a postprocessor on any three-way split, including those from
 <code><a href="https://rsample.tidymodels.org/reference/initial_validation_split.html" class="external-link">rsample::initial_validation_split()</a></code> (as of tune 2.1.0).</p>
+<p>Calling <code><a href="https://rsample.tidymodels.org/reference/internal_calibration_split.html" class="external-link">rsample::internal_calibration_split()</a></code> on this split yourself
+gives a balanced split of the training set. As in rsample,
+<code>prop[1] / sum(prop)</code> of the training set goes to the first part and the
+rest to the calibration set. With <code>method = "twinning"</code>, this share is
+rounded to the nearest <code>1 - 1/r</code> (or <code>1/r</code>, below 1/2) for a whole number
+<code>r</code>, for example 14/17 to 5/6. As in rsample, if the training set can't
+be split, you get a warning and an empty calibration set.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

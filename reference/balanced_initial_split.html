@@ -69,7 +69,10 @@ and <code><a href="https://rsample.tidymodels.org/reference/initial_split.html" 
 <dt id="arg-prop">prop<a class="anchor" aria-label="anchor" href="#arg-prop"></a></dt>
 <dd><p>The proportion of data (or of groups, if you use <code>group</code>) for
 the training set. With <code>method = "twinning"</code>, <code>prop</code> must be <code>1 - 1/r</code>
-for a whole number <code>r</code>, for example 1/2, 2/3, 3/4, 4/5, or 9/10.</p></dd>
+or <code>1/r</code> for a whole number <code>r</code>, for example 1/2, 2/3, 3/4, 9/10, or
+1/4. Write it as a fraction such as <code>2 / 3</code>, not a rounded decimal such
+as <code>0.67</code>. A value within a relative 1e-8 of such a fraction counts as
+that fraction.</p></dd>
 
 
 <dt id="arg-balance">balance<a class="anchor" aria-label="anchor" href="#arg-balance"></a></dt>
@@ -119,7 +122,8 @@ IDs. All rows of a group go to the same set. See Details.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The methods, options, and group handling are the same as for
 <code><a href="balanced_vfold_cv.html">balanced_vfold_cv()</a></code>. With <code>method = "twinning"</code>, the split uses
-<code><a href="https://rdrr.io/pkg/twinning/man/twin.html" class="external-link">twinning::twin()</a></code>, and the options are <code>leaf_size</code> only.</p>
+<code><a href="https://rdrr.io/pkg/twinning/man/twin.html" class="external-link">twinning::twin()</a></code>, and the options are <code>leaf_size</code> only. Strata with
+fewer than <code>2 * r</code> rows (or groups) are split at random.</p>
 <p>If a workflow has a postprocessor that must be trained, <code><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">tune::last_fit()</a></code>
 splits the training set again with <code>balanced_initial_split()</code>, using the
 same arguments.</p>
