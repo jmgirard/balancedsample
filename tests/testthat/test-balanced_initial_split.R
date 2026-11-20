@@ -78,6 +78,10 @@ test_that("twin_split_parts() depends on prop only", {
   expect_null(twin_split_parts(1e-310))
   # Only rounding error is allowed for.
   expect_null(twin_split_parts(0.500000003))
+  expect_null(twin_split_parts(0.5000000000004))
+  for (p in c(0.95, 0.99, 0.875, 0.05, 1 - 1 / 7, 1 / 7, 5 / 6)) {
+    expect_false(is.null(twin_split_parts(p)))
+  }
   expect_null(twin_split_parts(1 / (1e8 + 0.49)))
 })
 
