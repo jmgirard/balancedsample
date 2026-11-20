@@ -143,14 +143,31 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
 
   set.seed(7)
   folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+  # A linear calibration without smoothing fits on small calibration sets.
+  # With smoothing, older probably versions skip the calibration.
   wf <- workflows::workflow(
     mpg ~ hp + wt,
     parsnip::linear_reg(),
-    tailor::adjust_numeric_calibration(tailor::tailor())
+    tailor::adjust_numeric_calibration(
+      tailor::tailor(),
+      method = "linear",
+      smooth = FALSE
+    )
   )
-  res <- tune::fit_resamples(wf, resamples = folds)
+  ctrl <- tune::control_resamples(save_pred = TRUE)
+  res <- tune::fit_resamples(wf, resamples = folds, control = ctrl)
   expect_s3_class(res, "resample_results")
   expect_true(all(tune::collect_metrics(res)$n == 4))
+  # The calibration changes the predictions.
+  plain <- tune::fit_resamples(
+    workflows::workflow(mpg ~ hp + wt, parsnip::linear_reg()),
+    resamples = folds,
+    control = ctrl
+  )
+  pred <- tune::collect_predictions(res)
+  plain_pred <- tune::collect_predictions(plain)
+  expect_equal(pred$.row, plain_pred$.row)
+  expect_gt(max(abs(pred$.pred - plain_pred$.pred)), 1e-6)
 
   split <- balanced_initial_split(mtcars, balance = c(mpg, hp, wt))
   res <- tune::last_fit(wf, split = split)
