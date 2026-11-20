@@ -162,7 +162,8 @@ test_that("bad validation split inputs give clear errors", {
 })
 
 test_that("validation sets work with tune", {
-  skip_if_not_installed("tune")
+  # tune 1.1.2 is the first version whose last_fit() takes three-way splits.
+  skip_if_not_installed("tune", "1.1.2")
   skip_if_not_installed("parsnip")
 
   set.seed(6)

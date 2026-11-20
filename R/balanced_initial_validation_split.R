@@ -27,9 +27,9 @@
 #' # Use with tune
 #'
 #' [rsample::validation_set()] turns the split into an `rset` for
-#' [tune::tune_grid()] and [tune::fit_resamples()]. [tune::last_fit()] takes
-#' the split itself and fits on the training set, or on the training and
-#' validation sets with `add_validation_set = TRUE`.
+#' [tune::tune_grid()] and [tune::fit_resamples()]. [tune::last_fit()] (tune
+#' 1.1.2 or later) takes the split itself and fits on the training set, or on
+#' the training and validation sets with `add_validation_set = TRUE`.
 #'
 #' If a workflow has a postprocessor that must be trained, tune splits the
 #' training set again. Through [rsample::validation_set()], rsample makes

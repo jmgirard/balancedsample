@@ -74,9 +74,9 @@ whole number of parts. \code{strategy} 2 needs \code{m} to be a power of 2.
 }
 \section{Use with tune}{
 \code{\link[rsample:validation_set]{rsample::validation_set()}} turns the split into an \code{rset} for
-\code{\link[tune:tune_grid]{tune::tune_grid()}} and \code{\link[tune:fit_resamples]{tune::fit_resamples()}}. \code{\link[tune:last_fit]{tune::last_fit()}} takes
-the split itself and fits on the training set, or on the training and
-validation sets with \code{add_validation_set = TRUE}.
+\code{\link[tune:tune_grid]{tune::tune_grid()}} and \code{\link[tune:fit_resamples]{tune::fit_resamples()}}. \code{\link[tune:last_fit]{tune::last_fit()}} (tune
+1.1.2 or later) takes the split itself and fits on the training set, or on
+the training and validation sets with \code{add_validation_set = TRUE}.
 
 If a workflow has a postprocessor that must be trained, tune splits the
 training set again. Through \code{\link[rsample:validation_set]{rsample::validation_set()}}, rsample makes
