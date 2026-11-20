@@ -30,7 +30,7 @@
     Condition
       Error in `summary()`:
       ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
-      i Summarize the full output of `balance_check()`.
+      i Summarize the output of `balance_check()`.
 
 ---
 
@@ -39,7 +39,7 @@
     Condition
       Error in `summary()`:
       ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
-      i Summarize the full output of `balance_check()`.
+      i Summarize the output of `balance_check()`.
 
 ---
 
@@ -48,5 +48,22 @@
     Condition
       Error in `summary()`:
       ! Each split in `object` must have its own ID.
-      x Some IDs have more than one energy distance.
+      x Some IDs have more than one energy row.
+
+---
+
+    Code
+      summary(noted[-1])
+    Condition
+      Error in `summary()`:
+      ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
+      i Summarize the output of `balance_check()`.
+
+---
+
+    Code
+      summary(bc[c(NA, seq_len(nrow(bc))), ])
+    Condition
+      Error in `summary()`:
+      ! `statistic` must be "smd" or "energy" in every row of `object`.
 

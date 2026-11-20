@@ -45,7 +45,9 @@
 #'   columns, `max_abs_smd` (the largest absolute SMD in the split), the
 #'   `variable` and `level` with that SMD (the first one if several tie), and
 #'   `energy`. If the split has no SMD that isn't missing, `max_abs_smd`,
-#'   `variable`, and `level` are `NA`. Each split must have its own ID.
+#'   `variable`, and `level` are `NA`. If it has no energy row, `energy` is
+#'   `NA`. Each split must have its own ID, so no ID may have more than one
+#'   energy row.
 #'
 #' @examples
 #' set.seed(1)
@@ -277,13 +279,19 @@ summary.balance_check <- function(object, ...) {
   rlang::check_dots_empty()
   x <- unclass_balance(object)
   stat_cols <- c("variable", "level", "statistic", "value")
-  id_cols <- setdiff(names(x), stat_cols)
+  # ID columns are named as in balance_check(), so other columns are ignored.
+  id_cols <- grep("^id", names(x), value = TRUE)
   if (!all(stat_cols %in% names(x)) || length(id_cols) == 0) {
     cli::cli_abort(
       c(
         "{.arg object} must have ID columns and the columns {.code {stat_cols}}.",
-        i = "Summarize the full output of {.fn balance_check}."
+        i = "Summarize the output of {.fn balance_check}."
       )
+    )
+  }
+  if (!all(x$statistic %in% c("smd", "energy"))) {
+    cli::cli_abort(
+      "{.code statistic} must be {.val smd} or {.val energy} in every row of {.arg object}."
     )
   }
   # Integer codes keep `NA` apart from "NA" and can't collide when pasted.
@@ -295,7 +303,7 @@ summary.balance_check <- function(object, ...) {
     cli::cli_abort(
       c(
         "Each split in {.arg object} must have its own ID.",
-        x = "Some IDs have more than one energy distance."
+        x = "Some IDs have more than one energy row."
       )
     )
   }

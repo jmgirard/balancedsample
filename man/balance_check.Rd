@@ -42,7 +42,9 @@ and \code{value}. Energy rows have \code{NA} in \code{variable} and \code{level}
 columns, \code{max_abs_smd} (the largest absolute SMD in the split), the
 \code{variable} and \code{level} with that SMD (the first one if several tie), and
 \code{energy}. If the split has no SMD that isn't missing, \code{max_abs_smd},
-\code{variable}, and \code{level} are \code{NA}. Each split must have its own ID.
+\code{variable}, and \code{level} are \code{NA}. If it has no energy row, \code{energy} is
+\code{NA}. Each split must have its own ID, so no ID may have more than one
+energy row.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its
