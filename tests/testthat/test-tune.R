@@ -1,5 +1,6 @@
 test_that("balanced folds work with tune::fit_resamples()", {
-  skip_if_not_installed("tune")
+  # The floor in DESCRIPTION; much older tune can't take a model spec here.
+  skip_if_not_installed("tune", "2.0.0")
   skip_if_not_installed("parsnip")
 
   set.seed(1)
@@ -22,7 +23,7 @@ test_that("balanced folds work with tune::fit_resamples()", {
 })
 
 test_that("balanced initial splits work with tune::last_fit()", {
-  skip_if_not_installed("tune")
+  skip_if_not_installed("tune", "2.0.0")
   skip_if_not_installed("parsnip")
 
   set.seed(2)
@@ -134,15 +135,14 @@ test_that("twinning calibration falls back to an empty set for a bad share", {
 })
 
 test_that("tune trains a postprocessor on a balanced calibration split", {
-  # tune 2.0.0 is the first version that trains postprocessors.
+  # tune 2.0.0 is the first version that trains postprocessors, and probably
+  # 1.0.0 the first with the linear calibration.
   skip_if_not_installed("tune", "2.0.0")
   skip_if_not_installed("parsnip")
   skip_if_not_installed("workflows")
   skip_if_not_installed("tailor")
-  skip_if_not_installed("probably")
+  skip_if_not_installed("probably", "1.0.0")
 
-  set.seed(7)
-  folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
   # A linear calibration without smoothing fits on small calibration sets.
   # With smoothing, older probably versions skip the calibration.
   wf <- workflows::workflow(
@@ -154,24 +154,47 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
       smooth = FALSE
     )
   )
-  ctrl <- tune::control_resamples(save_pred = TRUE)
+  # Predictions of the fitted model alone, without the postprocessor. The
+  # formula uses the numeric columns as they are.
+  raw_predict <- function(fitted, new_data) {
+    model <- workflows::extract_fit_parsnip(fitted)
+    stats::predict(model, new_data[c("hp", "wt")])$.pred
+  }
+
+  set.seed(7)
+  folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+  ctrl <- tune::control_resamples(save_pred = TRUE, extract = function(x) x)
   res <- tune::fit_resamples(wf, resamples = folds, control = ctrl)
   expect_s3_class(res, "resample_results")
   expect_true(all(tune::collect_metrics(res)$n == 4))
-  # The calibration changes the predictions.
-  plain <- tune::fit_resamples(
-    workflows::workflow(mpg ~ hp + wt, parsnip::linear_reg()),
-    resamples = folds,
-    control = ctrl
-  )
+  # In each fold, the collected predictions are the calibrated predictions
+  # of the workflow that tune fitted, and the calibration changed them.
   pred <- tune::collect_predictions(res)
-  plain_pred <- tune::collect_predictions(plain)
-  expect_equal(pred$.row, plain_pred$.row)
-  expect_gt(max(abs(pred$.pred - plain_pred$.pred)), 1e-6)
+  for (i in seq_len(nrow(folds))) {
+    fitted <- res$.extracts[[i]]$.extracts[[1]]
+    new_data <- rsample::assessment(folds$splits[[i]])
+    fold_pred <- pred[pred$id == folds$id[[i]], ]
+    fold_pred <- fold_pred[order(fold_pred$.row), ]
+    expect_equal(
+      unname(fold_pred$.pred),
+      unname(stats::predict(fitted, new_data)$.pred)
+    )
+    expect_gt(max(abs(fold_pred$.pred - raw_predict(fitted, new_data))), 1e-6)
+  }
 
+  set.seed(8)
   split <- balanced_initial_split(mtcars, balance = c(mpg, hp, wt))
   res <- tune::last_fit(wf, split = split)
-  expect_equal(nrow(tune::collect_predictions(res)), 8)
+  pred <- tune::collect_predictions(res)
+  expect_equal(nrow(pred), 8)
+  fitted <- tune::extract_workflow(res)
+  new_data <- rsample::testing(split)
+  pred <- pred[order(pred$.row), ]
+  expect_equal(
+    unname(pred$.pred),
+    unname(stats::predict(fitted, new_data)$.pred)
+  )
+  expect_gt(max(abs(pred$.pred - raw_predict(fitted, new_data))), 1e-6)
 })
 
 test_that("labels() of repeated folds combine both IDs", {
