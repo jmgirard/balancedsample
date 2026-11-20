@@ -87,7 +87,10 @@ internal_calibration_split.balanced_initial_validation_split <- function(
 three_way_fit_share <- function(split_args) {
   p <- split_args$prop
   if (!is.numeric(p) || length(p) != 2 || !all(is.finite(p) & p > 0)) {
-    cli::cli_abort("{.arg prop} must be two numbers above 0.", call = NULL)
+    cli::cli_abort(
+      "{.arg prop} must be two finite numbers above 0.",
+      call = NULL
+    )
   }
   total <- sum(p)
   # Scale only if the sum overflows, so that other shares are unchanged.
