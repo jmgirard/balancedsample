@@ -115,12 +115,23 @@ test_that("balance_check() handles logical and missing columns", {
 })
 
 test_that("balance_check() subsamples large sets for the energy distance", {
+  a <- matrix(stats::rnorm(60), ncol = 2)
+  b <- matrix(stats::rnorm(80, mean = 1), ncol = 2)
+  set.seed(6)
+  sub <- energy_distance(a, b, max_n = 10)
+  set.seed(6)
+  a_rows <- sample.int(nrow(a), 10)
+  b_rows <- sample.int(nrow(b), 10)
+  expect_equal(sub, energy_distance(a[a_rows, ], b[b_rows, ]))
+
   d <- sim_data()
   set.seed(6)
   folds <- balanced_vfold_cv(d, v = 2, balance = c(x1, x2))
-  bc <- balance_check(folds, max_n = 20)
-  energy <- bc$value[bc$statistic == "energy"]
-  expect_length(energy, 2)
-  expect_true(all(is.finite(energy) & energy >= 0))
+  expect_error(balance_check(folds, max_n = 1), "at least 2")
   expect_snapshot(balance_check(folds, max_n = 1), error = TRUE)
+})
+
+test_that("balance_check() needs at least one split", {
+  empty <- rsample::manual_rset(list(), character())
+  expect_error(balance_check(empty, mpg), "no splits", class = "rlang_error")
 })
