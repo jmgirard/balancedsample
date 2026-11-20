@@ -258,20 +258,11 @@ print.balance_check <- function(x, ...) {
   smd <- abs(smd[!is.na(smd)])
   max_smd <- if (length(smd) > 0) max(smd) else NA_real_
   mean_en <- if (any(!is.na(en))) mean(en, na.rm = TRUE) else NA_real_
-  cat(
-    "# Balance check: ",
-    n_split,
-    " split",
-    if (n_split != 1) "s",
-    ", ",
-    "max |SMD| = ",
-    format(signif(max_smd, 3)),
-    ", ",
-    "mean energy distance = ",
-    format(signif(mean_en, 3)),
-    "\n",
-    sep = ""
-  )
+  cat_header(c(
+    paste0("Balance check: ", n_split, " split", if (n_split != 1) "s"),
+    paste0("max |SMD| = ", format(signif(max_smd, 3))),
+    paste0("mean energy distance = ", format(signif(mean_en, 3)))
+  ))
   class(x) <- setdiff(class(x), "balance_check")
   print(x, ...)
   invisible(x)
