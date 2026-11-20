@@ -13,9 +13,9 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
     # Most runs take 2 to 5 minutes. The slowest successful runs so far took
-    # 4 minutes on macOS, 5 on Windows, 14 on Ubuntu release and oldrel (slow
-    # downloads in setup-r and setup-r-dependencies), and 32 on devel, which
-    # also builds packages from source.
+    # 4 minutes on macOS, 5 on Windows, 13 to 14 on Ubuntu release and oldrel
+    # (slow downloads in setup-r and setup-r-dependencies), and 32 on devel
+    # (slow downloads, a cache miss, and packages built from source).
     timeout-minutes: ${{ matrix.config.timeout }}
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
