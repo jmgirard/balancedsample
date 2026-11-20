@@ -244,4 +244,18 @@ test_that("twinning calibration splits use the nearest share twinning can make",
     "empty calibration set"
   )
   expect_equal(nrow(rsample::calibration(cal)), 0)
+  bad <- list(
+    list(prop = c("0.5", "0.35")),
+    list(prop = numeric(0)),
+    list(prop = c(-1, -1)),
+    list(prop = c(0.3, 0.2, 0.1)),
+    list(method = new.env())
+  )
+  for (args in bad) {
+    expect_warning(
+      cal <- rsample::internal_calibration_split(s, split_args = args),
+      "empty calibration set"
+    )
+    expect_equal(nrow(rsample::calibration(cal)), 0)
+  }
 })

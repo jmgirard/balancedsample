@@ -227,11 +227,16 @@ method_twinning <- function(
 # Twinning parts for a two-way split with training proportion `prop`: one
 # part for the smaller set and r - 1 for the other, where the smaller set is
 # 1/r of the data. Returns NULL if r is not a whole number. Like
-# twin_parts(), it depends on `prop` only, not on the data size. The
-# tolerance is relative, because 1/x magnifies rounding error in a small x.
+# twin_parts(), it depends on `prop` only, not on the data size. `prop` is
+# compared with 1 - 1/r (or 1/r) directly, because 1 - prop and 1/x add
+# rounding error, and the tolerance only allows for rounding error.
 twin_split_parts <- function(prop) {
   r <- round(1 / min(prop, 1 - prop))
-  if (!is.finite(r) || abs(1 / r - min(prop, 1 - prop)) > 1e-8 / r) {
+  if (!is.finite(r)) {
+    return(NULL)
+  }
+  target <- if (prop >= 0.5) 1 - 1 / r else 1 / r
+  if (abs(prop - target) > 1e-12 * target) {
     return(NULL)
   }
   if (prop >= 0.5) c(r - 1, 1) else c(1, r - 1)

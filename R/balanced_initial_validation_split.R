@@ -42,7 +42,8 @@
 #' `prop[1] / sum(prop)` of the training set goes to the first part and the
 #' rest to the calibration set. With `method = "twinning"`, this share is
 #' rounded to the nearest `1 - 1/r` (or `1/r`, below 1/2) for a whole number
-#' `r`, for example 14/17 to 5/6.
+#' `r`, for example 14/17 to 5/6. As in rsample, if the training set can't
+#' be split, you get a warning and an empty calibration set.
 #'
 #' @return A `three_way_split` object with class
 #'   `balanced_initial_validation_split` and `initial_validation_split`.

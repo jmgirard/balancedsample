@@ -76,6 +76,22 @@ test_that("twin_split_parts() depends on prop only", {
   expect_null(twin_split_parts(0.7))
   expect_null(twin_split_parts(0.67))
   expect_null(twin_split_parts(1e-310))
+  # Only rounding error is allowed for.
+  expect_null(twin_split_parts(0.500000003))
+  expect_null(twin_split_parts(1 / (1e8 + 0.49)))
+})
+
+test_that("twinning splits with a very large r fall back to random", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  set.seed(5)
+  s <- balanced_initial_split(
+    d,
+    prop = 1 / 2^32,
+    balance = x1,
+    method = "twinning"
+  )
+  expect_equal(nrow(rsample::training(s)), 1)
 })
 
 test_that("twinning accepts or rejects the same prop for any size", {

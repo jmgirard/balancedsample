@@ -13,7 +13,8 @@
 #' @details
 #' The methods, options, and group handling are the same as for
 #' [balanced_vfold_cv()]. With `method = "twinning"`, the split uses
-#' [twinning::twin()], and the options are `leaf_size` only.
+#' [twinning::twin()], and the options are `leaf_size` only. Strata with
+#' fewer than `2 * r` rows (or groups) are split at random.
 #'
 #' If a workflow has a postprocessor that must be trained, [tune::last_fit()]
 #' splits the training set again with `balanced_initial_split()`, using the
@@ -83,7 +84,7 @@ balanced_initial_split <- function(
       cli::cli_abort(
         c(
           "{.code method = \"twinning\"} can only split off 1/r of the data, where r is a whole number.",
-          i = "Use {.arg prop} = 1/2, 2/3, 3/4, 9/10, or another value of 1 - 1/r or 1/r."
+          i = "Use {.arg prop} = 1/2, 2/3, 3/4, 9/10, 1/4, or another value of 1 - 1/r or 1/r."
         ),
         call = call
       )
