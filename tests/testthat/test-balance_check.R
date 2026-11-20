@@ -95,4 +95,32 @@ test_that("autoplot() returns ggplot objects", {
   bc <- balance_check(folds)
   expect_s3_class(ggplot2::autoplot(bc), "ggplot")
   expect_s3_class(ggplot2::autoplot(bc, type = "energy"), "ggplot")
+
+  s <- balanced_initial_split(d, balance = x1, method = "rerandomize")
+  p <- ggplot2::autoplot(balance_check(s), type = "energy")
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("balance_check() handles logical and missing columns", {
+  d <- data.frame(
+    flag = c(TRUE, FALSE, TRUE, FALSE, TRUE, TRUE),
+    z = c(NA, NA, NA, 1, 2, 3)
+  )
+  s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
+  bc <- balance_check(s, flag, z)
+  expect_equal(bc$level[bc$variable %in% "flag"], c("FALSE", "TRUE"))
+  # z is missing in the whole analysis set, so no row there is complete.
+  expect_true(is.na(bc$value[bc$variable %in% "z"]))
+  expect_true(is.na(bc$value[bc$statistic == "energy"]))
+})
+
+test_that("balance_check() subsamples large sets for the energy distance", {
+  d <- sim_data()
+  set.seed(6)
+  folds <- balanced_vfold_cv(d, v = 2, balance = c(x1, x2))
+  bc <- balance_check(folds, max_n = 20)
+  energy <- bc$value[bc$statistic == "energy"]
+  expect_length(energy, 2)
+  expect_true(all(is.finite(energy) & energy >= 0))
+  expect_snapshot(balance_check(folds, max_n = 1), error = TRUE)
 })

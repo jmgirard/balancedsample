@@ -154,7 +154,7 @@ method_twinning <- function(
     x_scaled <- cbind(x_scaled, 0)
   }
 
-  if (!strategy %in% 1:3) {
+  if (!rlang::is_scalar_integerish(strategy) || !strategy %in% 1:3) {
     cli::cli_abort("{.arg strategy} must be 1, 2, or 3.", call = NULL)
   }
 
@@ -277,6 +277,7 @@ method_rerandomize <- function(
   if (
     !is.numeric(p_accept) ||
       length(p_accept) != 1 ||
+      is.na(p_accept) ||
       p_accept <= 0 ||
       p_accept > 1
   ) {
@@ -285,7 +286,7 @@ method_rerandomize <- function(
       call = NULL
     )
   }
-  if (!is.numeric(max_draws) || length(max_draws) != 1 || max_draws < 1) {
+  if (!rlang::is_scalar_integerish(max_draws, finite = TRUE) || max_draws < 1) {
     cli::cli_abort(
       "{.arg max_draws} must be a whole number of at least 1.",
       call = NULL
@@ -378,13 +379,19 @@ method_interaction <- function(
   n_bins = 4L,
   pool = 0.1
 ) {
-  if (!is.numeric(n_bins) || length(n_bins) != 1 || n_bins < 2) {
+  if (!rlang::is_scalar_integerish(n_bins, finite = TRUE) || n_bins < 2) {
     cli::cli_abort(
       "{.arg n_bins} must be a whole number of at least 2.",
       call = NULL
     )
   }
-  if (!is.numeric(pool) || length(pool) != 1 || pool < 0 || pool >= 1) {
+  if (
+    !is.numeric(pool) ||
+      length(pool) != 1 ||
+      is.na(pool) ||
+      pool < 0 ||
+      pool >= 1
+  ) {
     cli::cli_abort(
       "{.arg pool} must be a number from 0 up to (not including) 1.",
       call = NULL

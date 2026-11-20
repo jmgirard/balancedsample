@@ -29,6 +29,7 @@ test_that("repeats give two ID columns and fresh partitions", {
   )
   expect_equal(nrow(folds), 15)
   expect_named(folds, c("splits", "id", "id2"))
+  expect_match(pretty(folds), "repeated 3 times")
   expect_true(assessed_once(folds, nrow(d)))
   first <- rsample::complement(folds$splits[[1]])
   others <- lapply(folds$splits[6:10], rsample::complement)
@@ -363,6 +364,16 @@ test_that("twinning checks strategy for two folds", {
     ),
     "strategy"
   )
+  expect_error(
+    balanced_vfold_cv(
+      mtcars,
+      2,
+      balance = mpg,
+      method = "twinning",
+      options = list(strategy = 1:2)
+    ),
+    "strategy"
+  )
   set.seed(1)
   folds <- balanced_vfold_cv(
     mtcars,
@@ -479,4 +490,92 @@ test_that("print shows the method and design", {
   )
   expect_match(pretty(folds), "stratified by site, grouped by id")
   expect_output(print(folds), "balanced cross-validation")
+})
+
+test_that("bad data give clear errors", {
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(1:10, balance = x)
+    balanced_vfold_cv(data.frame(x = 1), balance = x)
+    balanced_vfold_cv(data.frame(x = c(1, Inf, 3, 4)), v = 2, balance = x)
+    balanced_vfold_cv(
+      data.frame(x = as.Date("2026-01-01") + 0:3),
+      v = 2,
+      balance = x
+    )
+  })
+})
+
+test_that("more anticlust options are checked", {
+  d <- sim_data(n = 60)
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(d, balance = x1, options = list(covariances = "yes"))
+    balanced_vfold_cv(d, balance = x1, options = list(local_maximum = NA))
+    balanced_vfold_cv(d, balance = x1, options = list(repetitions = 0))
+  })
+})
+
+test_that("rerandomize and interaction options are checked", {
+  d <- sim_data(n = 60)
+  bad <- list(
+    rerandomize = list(
+      list(p_accept = NA_real_),
+      list(max_draws = NA_real_),
+      list(max_draws = 2.5)
+    ),
+    interaction = list(
+      list(n_bins = NA_real_),
+      list(n_bins = 2.5),
+      list(pool = NA_real_)
+    )
+  )
+  for (m in names(bad)) {
+    for (o in bad[[m]]) {
+      err <- expect_error(
+        balanced_vfold_cv(d, balance = x1, method = m, options = o),
+        "failed"
+      )
+      expect_match(conditionMessage(err$parent), names(o), info = m)
+    }
+  }
+  expect_snapshot(error = TRUE, {
+    balanced_vfold_cv(
+      d,
+      balance = x1,
+      method = "rerandomize",
+      options = list(p_accept = 0)
+    )
+    balanced_vfold_cv(
+      d,
+      balance = x1,
+      method = "rerandomize",
+      options = list(max_draws = 0)
+    )
+    balanced_vfold_cv(
+      d,
+      balance = x1,
+      method = "interaction",
+      options = list(n_bins = 1)
+    )
+    balanced_vfold_cv(
+      d,
+      balance = x1,
+      method = "interaction",
+      options = list(pool = 1)
+    )
+  })
+})
+
+test_that("logical balance columns and exact-only groups work", {
+  d <- sim_data()
+  d$flag <- d$x1 > 0
+  set.seed(12)
+  folds <- balanced_vfold_cv(d, v = 4, balance = c(flag, x2))
+  expect_true(assessed_once(folds, nrow(d)))
+  bc <- balance_check(folds)
+  expect_equal(unique(bc$level[bc$variable %in% "flag"]), c("FALSE", "TRUE"))
+
+  set.seed(13)
+  folds <- balanced_vfold_cv(d, v = 4, exact = site, group = id)
+  expect_true(groups_intact(folds, d$id))
+  expect_true(assessed_once(folds, nrow(d)))
 })
