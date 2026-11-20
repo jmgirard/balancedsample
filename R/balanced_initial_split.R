@@ -9,8 +9,7 @@
 #'   the training set. With `method = "twinning"`, `prop` must be `1 - 1/r`
 #'   or `1/r` for a whole number `r`, for example 1/2, 2/3, 3/4, 9/10, or
 #'   1/4. Write it as a fraction such as `2 / 3`, not a rounded decimal such
-#'   as `0.67`. Write a small share directly: `1 / 80` works, but
-#'   `1 - 0.9875` may not, because the subtraction adds rounding error.
+#'   as `0.67`.
 #'
 #' @details
 #' The methods, options, and group handling are the same as for

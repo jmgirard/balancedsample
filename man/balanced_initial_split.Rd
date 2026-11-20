@@ -22,8 +22,7 @@ balanced_initial_split(
 the training set. With \code{method = "twinning"}, \code{prop} must be \code{1 - 1/r}
 or \code{1/r} for a whole number \code{r}, for example 1/2, 2/3, 3/4, 9/10, or
 1/4. Write it as a fraction such as \code{2 / 3}, not a rounded decimal such
-as \code{0.67}. Write a small share directly: \code{1 / 80} works, but
-\code{1 - 0.9875} may not, because the subtraction adds rounding error.}
+as \code{0.67}.}
 
 \item{balance}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to balance
 across the sets. Numeric columns are standardized. Factor, character, and
