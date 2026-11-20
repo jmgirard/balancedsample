@@ -12,8 +12,9 @@ permissions: read-all
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
-    # Usually 2 minutes, at most 4 so far. Other Ubuntu jobs have spent up to
-    # 14 minutes in setup with cold caches.
+    # Usually 2 minutes, at most 4 for a successful run. One run spent 14
+    # minutes in setup-r on slow downloads, and other Ubuntu jobs have spent
+    # up to 12 minutes in setup.
     timeout-minutes: 20
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
