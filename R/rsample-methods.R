@@ -71,7 +71,10 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
   p <- split_args$prop
-  if (is.numeric(p) && length(p) == 2 && all(is.finite(p)) && all(p > 0)) {
+  ok <- !is.object(p) && is.numeric(p) && length(p) == 2
+  if (ok && all(is.finite(p)) && all(p > 0)) {
+    # Dividing by the larger value first keeps the sum from overflowing.
+    p <- p / max(p)
     split_args$prop <- p[[1]] / sum(p)
     if (rlang::is_string(split_args$method, "twinning")) {
       split_args$prop <- nearest_twin_prop(split_args$prop)
@@ -108,8 +111,11 @@ nearest_twin_prop <- function(prop) {
 # analysis set can't be split (for example, if it is too small).
 balanced_calibration_split <- function(analysis_set, split_args, class) {
   options <- split_args$options %||% list()
-  # `strategy` applies to folds only.
-  options$strategy <- NULL
+  # `strategy` applies to folds only. balanced_initial_split() rejects
+  # options that aren't a list.
+  if (is.list(options)) {
+    options$strategy <- NULL
+  }
   split <- tryCatch(
     balanced_initial_split(
       analysis_set,

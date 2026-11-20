@@ -8,7 +8,8 @@
 #' @param prop The proportion of data (or of groups, if you use `group`) for
 #'   the training set. With `method = "twinning"`, `prop` must be `1 - 1/r`
 #'   or `1/r` for a whole number `r`, for example 1/2, 2/3, 3/4, 9/10, or
-#'   1/4.
+#'   1/4. Write it as a fraction such as `2 / 3` or `1 / 1000`, not as a
+#'   rounded decimal or a difference such as `1 - (1 - 1 / 1000)`.
 #'
 #' @details
 #' The methods, options, and group handling are the same as for

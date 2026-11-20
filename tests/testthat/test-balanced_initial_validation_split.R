@@ -230,6 +230,13 @@ test_that("twinning calibration splits use the nearest share twinning can make",
   )
   expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
 
+  # Very large values don't overflow.
+  cal <- rsample::internal_calibration_split(
+    s,
+    split_args = list(prop = rep(.Machine$double.xmax, 2))
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 70)
+
   # A named method string is still twinning.
   attr(s, "val_att")$method <- c(chosen = "twinning")
   cal <- rsample::internal_calibration_split(s, split_args = list())
@@ -249,6 +256,8 @@ test_that("twinning calibration splits use the nearest share twinning can make",
     list(prop = numeric(0)),
     list(prop = c(-1, -1)),
     list(prop = c(0.3, 0.2, 0.1)),
+    list(prop = structure(c(0.5, 0.35), class = "my_prop")),
+    list(options = identity),
     list(method = new.env())
   )
   for (args in bad) {
