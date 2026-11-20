@@ -106,8 +106,9 @@ with \code{group}, so are columns whose group means are all equal (see Groups).
 If none are left, for example with only \code{exact} columns and no \code{group}, the
 method doesn't run and the sets are drawn at random, within the \code{exact}
 strata if there are any. The limits the method itself checks, such as
-twinning's strategy 2 needing a power of 2, then don't apply. The options are still checked, and the split functions
-still check that twinning can make \code{prop}.
+twinning's strategy 2 needing a power of 2, then don't apply. The options
+are still checked, and the split functions still check that twinning can
+make \code{prop}.
 }
 
 \section{Groups}{
