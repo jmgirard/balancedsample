@@ -229,8 +229,9 @@ method_twinning <- function(
 # 1/r of the data. Returns NULL if r is not a whole number. Like
 # twin_parts(), it depends on `prop` only, not on the data size. `prop` is
 # compared with 1 - 1/r (or 1/r) directly, because 1 - prop and 1/x add
-# rounding error. The tolerance is relative, like the one in twin_parts(), and
-# loose enough for proportions computed by subtraction, such as 1 - 0.9875.
+# rounding error. `prop` may differ from the fraction by 1e-8 times the
+# fraction, which allows for proportions computed by subtraction, such as
+# 1 - 0.9875, and values rounded to eight or more digits.
 twin_split_parts <- function(prop) {
   r <- round(1 / min(prop, 1 - prop))
   if (!is.finite(r)) {

@@ -100,6 +100,21 @@ test_that("twin_split_parts() depends on prop only", {
   expect_equal(twin_split_parts(0.500000003), c(1, 1))
 })
 
+test_that("near misses give the same twinning split as the fraction", {
+  skip_if_not_installed("twinning")
+  d <- data.frame(x = stats::rnorm(199))
+  sizes <- vapply(
+    c(0.5, 0.500000003),
+    function(p) {
+      set.seed(4)
+      s <- balanced_initial_split(d, prop = p, balance = x, method = "twinning")
+      nrow(rsample::training(s))
+    },
+    numeric(1)
+  )
+  expect_equal(sizes[[1]], sizes[[2]])
+})
+
 test_that("twinning splits with a very large r fall back to random", {
   skip_if_not_installed("twinning")
   d <- sim_data()

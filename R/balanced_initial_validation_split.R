@@ -116,6 +116,8 @@ balanced_initial_validation_split <- function(
         call = call
       )
     }
+    # Near misses give the same set sizes as the fractions they match.
+    props <- method_options$parts / sum(method_options$parts)
   }
   a <- assign_balanced(prep, props, entry, method_options, call = call)
   res <- list(
