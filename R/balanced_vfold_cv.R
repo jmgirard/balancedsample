@@ -90,7 +90,8 @@
 #' If a workflow has a postprocessor that must be trained, such as a
 #' calibration from the tailor package, tune splits each analysis set again.
 #' That inner split is a [balanced_initial_split()] with the same `balance`,
-#' `exact`, `group`, `method`, and `options`, and with `prop = 1 - 1/v`.
+#' `exact`, `group`, `method`, and `options` (without twinning's
+#' `strategy`), and with `prop = 1 - 1/v`.
 #'
 #' @return A tibble with class `balanced_vfold_cv` and `rset`. It has a
 #'   `splits` column of `rsplit` objects and one or two ID columns.

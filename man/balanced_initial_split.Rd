@@ -20,7 +20,10 @@ balanced_initial_split(
 
 \item{prop}{The proportion of data (or of groups, if you use \code{group}) for
 the training set. With \code{method = "twinning"}, \code{prop} must be \code{1 - 1/r}
-for a whole number \code{r}, for example 1/2, 2/3, 3/4, 4/5, or 9/10.}
+or \code{1/r} for a whole number \code{r}, for example 1/2, 2/3, 3/4, 9/10, or
+1/4. Write it as a fraction such as \code{2 / 3}, not a rounded decimal such
+as \code{0.67}. A value within a relative 1e-8 of such a fraction counts as
+that fraction.}
 
 \item{balance}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to balance
 across the sets. Numeric columns are standardized. Factor, character, and
@@ -60,7 +63,8 @@ and \code{\link[rsample:testing]{rsample::testing()}} to get the two data sets.
 \details{
 The methods, options, and group handling are the same as for
 \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}. With \code{method = "twinning"}, the split uses
-\code{\link[twinning:twin]{twinning::twin()}}, and the options are \code{leaf_size} only.
+\code{\link[twinning:twin]{twinning::twin()}}, and the options are \code{leaf_size} only. Strata with
+fewer than \code{2 * r} rows (or groups) are split at random.
 
 If a workflow has a postprocessor that must be trained, \code{\link[tune:last_fit]{tune::last_fit()}}
 splits the training set again with \code{balanced_initial_split()}, using the
