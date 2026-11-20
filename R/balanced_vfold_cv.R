@@ -68,22 +68,25 @@
 #'   strata become sparse. Options are `n_bins` (default 4) and `pool`
 #'   (default 0.1): cells with less than this fraction of the rows are pooled.
 #'
-#' The method balances the columns left after standardizing: constant columns
-#' are dropped, and with `group`, so are columns whose group means are all
-#' equal (see Groups). If none are left, for example with only `exact`
-#' columns, the method doesn't run and the sets are stratified at random. The
-#' options are still checked.
+#' The method balances the columns left after standardizing: constant and
+#' nearly constant columns (standard deviation up to 1e-12) are dropped, and
+#' with `group`, so are columns whose group means are all equal (see Groups).
+#' If none are left, for example with only `exact` columns and no `group`, the
+#' method doesn't run and the sets are stratified at random. The limits the
+#' method itself checks, such as twinning's strategy 2 needing a power of 2,
+#' then don't apply. The options are still checked, and the split functions
+#' still check that twinning can make `prop`.
 #'
 #' # Groups
 #'
 #' If you use `group`, each group becomes one row before the method runs.
 #' This row holds the group means of the standardized `balance` columns and
 #' the log of the group size. The group size is added only if a `balance`
-#' column varies or there are `exact` columns, and it is dropped if all groups
-#' have the same size. The method assigns groups, and then each row
-#' gets the set of its group. The number of groups per set follows the target
-#' proportions, so the number of rows per set is only approximate. `exact`
-#' columns must be constant within each group.
+#' column is left after standardizing or there are `exact` columns, and it is
+#' dropped if all groups have the same size. The method assigns groups, and
+#' then each row gets the set of its group. The number of groups per set
+#' follows the target proportions, so the number of rows per set is only
+#' approximate. `exact` columns must be constant within each group.
 #'
 #' # Use with tune
 #'
