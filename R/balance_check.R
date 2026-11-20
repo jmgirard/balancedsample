@@ -39,9 +39,7 @@
 #'
 #' @examples
 #' set.seed(1)
-#' folds <- balanced_vfold_cv(
-#'   mtcars, v = 4, balance = c(mpg, hp, wt), method = "rerandomize"
-#' )
+#' folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 #' balance_check(folds)
 #'
 #' # Compare with ordinary folds

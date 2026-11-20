@@ -99,8 +99,7 @@ split <- balanced_initial_validation_split(
   mtcars,
   prop = c(0.6, 0.2),
   balance = c(mpg, hp, wt),
-  exact = am,
-  method = "rerandomize"
+  exact = am
 )
 split
 balance_check(split)

@@ -7,9 +7,10 @@
 # optionally, pairwise products), so that set means, variances, and so on are
 # similar. The exchange step only swaps rows that share a category, so a
 # stratified random start keeps the exact counts from allocate_strata(). With
-# `local_maximum = TRUE`, exchange passes repeat until a pass makes no swap. Each repetition starts from a new stratified assignment. Groups
-# are handled by aggregation: anticlust's `must_link` needs fold sizes that
-# groups can fill exactly, which real grouped data rarely allows.
+# `local_maximum = TRUE`, exchange passes repeat until a pass makes no swap.
+# Each repetition starts from a new stratified assignment. Groups are handled
+# by aggregation: anticlust's `must_link` needs fold sizes that groups can
+# fill exactly, which real grouped data rarely allows.
 method_anticlust <- function(
   x_scaled,
   sizes,
