@@ -141,3 +141,62 @@ test_that("balance_check() needs at least one split", {
   empty <- rsample::manual_rset(list(), character())
   expect_error(balance_check(empty, mpg), "no splits", class = "rlang_error")
 })
+
+test_that("summary() gives one row per split", {
+  d <- sim_data()
+  set.seed(8)
+  folds <- balanced_vfold_cv(
+    d,
+    v = 3,
+    repeats = 2,
+    balance = c(x1, cat),
+    exact = sex,
+    method = "rerandomize"
+  )
+  bc <- balance_check(folds)
+  s <- summary(bc)
+  expect_false(inherits(s, "balance_check"))
+  expect_named(
+    s,
+    c("id", "id2", "max_abs_smd", "variable", "level", "energy")
+  )
+  expect_equal(s$id, folds$id)
+  expect_equal(s$id2, folds$id2)
+  expect_equal(s$energy, bc$value[bc$statistic == "energy"])
+  for (i in seq_len(nrow(s))) {
+    rows <- bc[bc$id == s$id[i] & bc$id2 == s$id2[i], ]
+    smd <- rows[rows$statistic == "smd", ]
+    worst <- which.max(abs(smd$value))
+    expect_equal(s$max_abs_smd[i], abs(smd$value[worst]))
+    expect_equal(s$variable[i], smd$variable[worst])
+    expect_equal(s$level[i], smd$level[worst])
+  }
+  expect_error(summary(bc, 1), class = "rlib_error_dots_nonempty")
+})
+
+test_that("summary() handles splits, three-way splits, and missing SMDs", {
+  d <- sim_data()
+  set.seed(9)
+  s3 <- balanced_initial_validation_split(
+    d,
+    prop = c(0.6, 0.2),
+    balance = c(x1, x2),
+    method = "rerandomize"
+  )
+  expect_equal(summary(balance_check(s3))$id, c("Validation", "Testing"))
+
+  d <- data.frame(
+    z = c(NA, NA, NA, 1, 2, 3),
+    g = c("a", "b", "a", "b", "a", "b")
+  )
+  s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
+  out <- summary(balance_check(s, z))
+  expect_equal(out$id, "Split")
+  expect_true(is.na(out$max_abs_smd))
+  expect_true(is.na(out$variable))
+  expect_true(is.na(out$energy))
+
+  out <- summary(balance_check(s, z, g))
+  expect_equal(out$variable, "g")
+  expect_equal(out$max_abs_smd, abs(balance_check(s, g)$value[1]))
+})

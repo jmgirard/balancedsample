@@ -5,6 +5,7 @@
 \alias{balance_check.rset}
 \alias{balance_check.rsplit}
 \alias{balance_check.three_way_split}
+\alias{summary.balance_check}
 \title{Check the balance of a split or of a set of resamples}
 \usage{
 balance_check(x, ..., max_n = 2000)
@@ -14,6 +15,8 @@ balance_check(x, ..., max_n = 2000)
 \method{balance_check}{rsplit}(x, ..., max_n = 2000)
 
 \method{balance_check}{three_way_split}(x, ..., max_n = 2000)
+
+\method{summary}{balance_check}(object, ...)
 }
 \arguments{
 \item{x}{An \code{rset} (for example from \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}), an \code{rsplit}
@@ -26,11 +29,18 @@ empty, the \code{balance} and \code{exact} columns stored in \code{x} are used.}
 
 \item{max_n}{The largest number of rows per set for the energy distance.
 Larger sets are subsampled at random to keep memory use low.}
+
+\item{object}{A \code{balance_check} object.}
 }
 \value{
 A tibble with class \code{balance_check}. It has the ID columns of \code{x},
 and the columns \code{variable}, \code{level}, \code{statistic} (\code{"smd"} or \code{"energy"}),
 and \code{value}. Energy rows have \code{NA} in \code{variable} and \code{level}.
+
+\code{summary()} returns a tibble with one row per split. It has the ID
+columns, \code{max_abs_smd} (the largest absolute SMD in the split), the
+\code{variable} and \code{level} with that SMD, and \code{energy}. If the split has no
+SMD that isn't missing, \code{max_abs_smd}, \code{variable}, and \code{level} are \code{NA}.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its
@@ -57,12 +67,15 @@ The energy distance is the V-statistic
 \verb{2 E|X - Y| - E|X - X'| - E|Y - Y'|} on the standardized variables (one
 indicator column per categorical level). It is 0 when the two sets have the
 same distribution, and it also detects differences in spread and shape.
+
+Use \code{summary()} on the result to get one row per split.
 }
 \examples{
 set.seed(1)
 folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 balance_check(folds)
+summary(balance_check(folds))
 
 # Compare with ordinary folds
-balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt)
+summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
 }
