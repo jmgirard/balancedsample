@@ -220,6 +220,9 @@ test_that("summary() handles splits, three-way splits, and missing SMDs", {
   # The two levels of g tie, and the first one is kept.
   expect_equal(out$level, "a")
   expect_equal(out$max_abs_smd, abs(balance_check(s, g)$value[1]))
+  d$g <- factor(d$g, levels = c("b", "a"))
+  s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
+  expect_equal(summary(balance_check(s, g))$level, "b")
 
   d <- data.frame(g = rep(c("A", "B"), each = 4))
   s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
@@ -267,4 +270,13 @@ test_that("summary() handles empty and incomplete input", {
   dup <- bc
   dup$id <- "same"
   expect_snapshot(summary(dup), error = TRUE)
+
+  # Columns that don't start with "id" are not IDs.
+  noted <- bc
+  noted$note <- seq_len(nrow(bc))
+  expect_equal(summary(noted), summary(bc))
+  expect_snapshot(summary(noted[-1]), error = TRUE)
+
+  # Rows with a missing or unknown statistic.
+  expect_snapshot(summary(bc[c(NA, seq_len(nrow(bc))), ]), error = TRUE)
 })
