@@ -7,6 +7,15 @@
       ! `method = "twinning"` can only split off 1/r of the data, where r is a whole number.
       i Use `prop` = 1/2, 2/3, 3/4, 9/10, 1/4, or another value of 1 - 1/r or 1/r.
 
+# two-way twinning splits reject `strategy`
+
+    Code
+      balanced_initial_split(d, balance = x1, method = "twinning", options = list(
+        strategy = 2))
+    Condition
+      Error in `balanced_initial_split()`:
+      ! `balanced_initial_split()` doesn't use `strategy`. Remove it from `options`.
+
 # bad prop values give clear errors
 
     Code

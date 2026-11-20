@@ -129,8 +129,8 @@ balanced_calibration_split <- function(
   split <- tryCatch(
     {
       options <- split_args$options %||% list()
-      # `strategy` applies to folds only. balanced_initial_split() rejects
-      # options that aren't a list.
+      # The inner split is a balanced_initial_split(), which doesn't take
+      # `strategy`. It also rejects options that aren't a list.
       if (is.list(options)) {
         options$strategy <- NULL
       }
