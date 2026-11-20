@@ -79,18 +79,17 @@ result is kept.
 \item \code{"twinning"} uses \code{\link[twinning:multiplet]{twinning::multiplet()}} for folds, or
 \code{\link[twinning:twin]{twinning::twin()}} for \code{v = 2} with strategy 1 or 2, which then give the
 same result. Options are \code{strategy} (1, 2, or 3; strategy 2 needs \code{v} to
-be a power of 2) and \code{leaf_size}.
-Strata with fewer than \code{2 * v} rows are assigned at random. The
-twinning package is required.
+be a power of 2) and \code{leaf_size}. Strata with fewer than \code{2 * v} rows
+(or groups) are assigned at random. The twinning package is required.
 \item \code{"rerandomize"} draws stratified random splits and keeps the first one
 whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
 2012). For folds, the imbalance is the largest over the "one fold versus
 the rest" comparisons. The threshold is the \code{p_accept} quantile of the
 imbalance over pilot draws made with the same \code{exact} and \code{group}
 constraints (\code{max(100, min(ceiling(10 / p_accept), max_draws))}
-draws). Draws that tie with the threshold are accepted at random, so that the
-acceptance rate is close to \code{p_accept} even for discrete data. If
-\code{p_accept} is below \code{1 / max(100, max_draws)}, the pilot draws can't
+draws). Draws that tie with the threshold are accepted at random, so
+that the acceptance rate is close to \code{p_accept} even for discrete data.
+If \code{p_accept} is below \code{1 / max(100, max_draws)}, the pilot draws can't
 resolve it, and the threshold is the best pilot draw. Options are
 \code{p_accept}, the target acceptance rate (default 0.1), and \code{max_draws}
 (default 1000). If no draw meets the threshold, the best draw is used
@@ -101,19 +100,19 @@ strata become sparse. Options are \code{n_bins} (default 4) and \code{pool}
 (default 0.1): cells with less than this fraction of the rows are pooled.
 }
 
-If no \code{balance} column varies (for example, with only \code{exact} columns),
-no method runs: the sets are stratified at random, and twinning's limits
-on \code{v}, on the proportions, and on small strata don't apply. The options
-are still checked. With \code{group} and \code{exact} columns, the method still runs
-on the group sizes if they differ (see Groups).
+The method balances the columns left after standardizing: constant columns
+are dropped, and with \code{group}, so are columns whose group means are all
+equal (see Groups). If none are left, for example with only \code{exact}
+columns, the method doesn't run and the sets are stratified at random. The
+options are still checked.
 }
 
 \section{Groups}{
 If you use \code{group}, each group becomes one row before the method runs.
 This row holds the group means of the standardized \code{balance} columns and
-the log of the group size. The group size is left out if no \code{balance}
-column varies and there are no \code{exact} columns, or if all groups have the
-same size. The method assigns groups, and then each row
+the log of the group size. The group size is added only if a \code{balance}
+column varies or there are \code{exact} columns, and it is dropped if all groups
+have the same size. The method assigns groups, and then each row
 gets the set of its group. The number of groups per set follows the target
 proportions, so the number of rows per set is only approximate. \code{exact}
 columns must be constant within each group.
