@@ -65,6 +65,24 @@ test_that("calibration splits of folds are balanced initial splits", {
   expect_length(intersect(fit_set$id, cal_set$id), 0)
   n_groups <- length(unique(rsample::analysis(outer)$id))
   expect_equal(length(unique(cal_set$id)), round(n_groups / 5), tolerance = 1)
+
+  # The inner split is balanced_initial_split() on the analysis set, with the
+  # outer split's arguments.
+  set.seed(30)
+  cal <- rsample::internal_calibration_split(
+    outer,
+    split_args = rsample::.get_split_args(folds)
+  )
+  set.seed(30)
+  direct <- balanced_initial_split(
+    rsample::analysis(outer),
+    prop = 1 - 1 / 5,
+    balance = c(x1, x2),
+    exact = site,
+    group = id,
+    method = "rerandomize"
+  )
+  expect_identical(cal$in_id, direct$in_id)
 })
 
 test_that("calibration splits of an initial split use the same prop", {
@@ -82,6 +100,18 @@ test_that("calibration splits of an initial split use the same prop", {
   cal <- rsample::internal_calibration_split(split, split_args = list())
   expect_equal(nrow(rsample::calibration(cal)), 32)
   expect_equal(attr(cal, "balance"), c("x1", "cat"))
+
+  # The inner split is balanced_initial_split() on the training set, with the
+  # outer split's arguments.
+  set.seed(40)
+  cal <- rsample::internal_calibration_split(split, split_args = list())
+  set.seed(40)
+  direct <- balanced_initial_split(
+    rsample::training(split),
+    prop = 4 / 5,
+    balance = c(x1, cat)
+  )
+  expect_identical(cal$in_id, direct$in_id)
 })
 
 test_that("twinning folds drop `strategy` for the calibration split", {
@@ -161,41 +191,32 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     stats::predict(model, new_data[c("hp", "wt")])$.pred
   }
 
-  # Count the inner splits that tune asks balancesample for. The splits
-  # themselves are tested above.
-  calls <- character()
-  record <- function(method) {
-    force(method)
-    function(x, split_args, ...) {
-      calls <<- c(calls, class(x)[[1]])
-      method(x, split_args, ...)
-    }
-  }
-  # local_mocked_s3_method() can't see rsample's generic from here, so the
-  # methods are registered in rsample's namespace and restored afterwards.
-  methods <- list(
-    balanced_vfold_split = internal_calibration_split.balanced_vfold_split,
-    balanced_initial_split = internal_calibration_split.balanced_initial_split
-  )
-  rsample_ns <- asNamespace("rsample")
-  for (cls in names(methods)) {
-    registerS3method(
-      "internal_calibration_split",
-      cls,
-      record(methods[[cls]]),
-      envir = rsample_ns
-    )
-  }
-  withr::defer(
-    for (cls in names(methods)) {
-      registerS3method(
-        "internal_calibration_split",
-        cls,
-        methods[[cls]],
-        envir = rsample_ns
-      )
+  # Record the inner splits that tune gets from balancesample. All the
+  # internal_calibration_split() methods make them with
+  # balanced_calibration_split(). The splits themselves are tested above.
+  inner <- list()
+  make_inner <- balanced_calibration_split
+  local_mocked_bindings(
+    balanced_calibration_split = function(...) {
+      split <- make_inner(...)
+      inner[[length(inner) + 1]] <<- split
+      split
     }
   )
+  # The model in a fitted workflow was fit on one of the recorded inner
+  # analysis sets.
+  fit_on_inner <- function(fitted) {
+    engine <- workflows::extract_fit_engine(fitted)
+    fitted_coef <- unname(stats::coef(engine))
+    any(vapply(
+      inner,
+      function(split) {
+        refit <- stats::lm(mpg ~ hp + wt, data = rsample::analysis(split))
+        isTRUE(all.equal(unname(stats::coef(refit)), fitted_coef))
+      },
+      logical(1)
+    ))
+  }
 
   set.seed(7)
   folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
@@ -203,7 +224,8 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
   res <- tune::fit_resamples(wf, resamples = folds, control = ctrl)
   expect_s3_class(res, "resample_results")
   expect_true(all(tune::collect_metrics(res)$n == 4))
-  expect_equal(calls, rep("balanced_vfold_split", 4))
+  expect_length(inner, 4)
+  expect_true(all(vapply(inner, inherits, logical(1), "balanced_vfold_split")))
   # In each fold, the collected predictions are the calibrated predictions
   # of the workflow that tune fitted, and the calibration changed them.
   pred <- tune::collect_predictions(res)
@@ -217,13 +239,15 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
       unname(stats::predict(fitted, new_data)$.pred)
     )
     expect_gt(max(abs(fold_pred$.pred - raw_predict(fitted, new_data))), 1e-6)
+    expect_true(fit_on_inner(fitted), info = id)
   }
 
-  calls <- character()
+  inner <- list()
   set.seed(8)
   split <- balanced_initial_split(mtcars, balance = c(mpg, hp, wt))
   res <- tune::last_fit(wf, split = split)
-  expect_equal(calls, "balanced_initial_split")
+  expect_length(inner, 1)
+  expect_s3_class(inner[[1]], "balanced_initial_split")
   pred <- tune::collect_predictions(res)
   expect_equal(nrow(pred), 8)
   fitted <- tune::extract_workflow(res)
@@ -233,6 +257,7 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     unname(stats::predict(fitted, new_data)$.pred)
   )
   expect_gt(max(abs(pred$.pred - raw_predict(fitted, new_data))), 1e-6)
+  expect_true(fit_on_inner(fitted))
 })
 
 test_that("labels() of repeated folds combine both IDs", {
