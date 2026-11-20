@@ -70,19 +70,6 @@ internal_calibration_split.balanced_initial_validation_split <- function(
   stored <- attr(x, "val_att")
   stored <- stored[!vapply(stored, is.null, logical(1))]
   split_args <- c(split_args, stored[setdiff(names(stored), names(split_args))])
-  p <- split_args$prop
-  ok <- !is.object(p) && is.numeric(p) && length(p) == 2
-  if (ok && all(is.finite(p)) && all(p > 0)) {
-    # Dividing by the larger value first keeps the sum from overflowing.
-    p <- p / max(p)
-    split_args$prop <- p[[1]] / sum(p)
-    if (rlang::is_string(split_args$method, "twinning")) {
-      split_args$prop <- nearest_twin_prop(split_args$prop)
-    }
-  } else {
-    # balanced_initial_split() rejects this, so the fallback applies.
-    split_args$prop <- NA_real_
-  }
   balanced_calibration_split(
     rsample::training(x),
     split_args,
@@ -91,8 +78,28 @@ internal_calibration_split.balanced_initial_validation_split <- function(
       "internal_calibration_split",
       "mc_split",
       "rsplit"
-    )
+    ),
+    share = three_way_fit_share
   )
+}
+
+# Errors here reach the fallback in balanced_calibration_split().
+three_way_fit_share <- function(split_args) {
+  p <- split_args$prop
+  if (!is.numeric(p) || length(p) != 2 || !all(is.finite(p) & p > 0)) {
+    cli::cli_abort("{.arg prop} must be two numbers above 0.", call = NULL)
+  }
+  total <- sum(p)
+  # Scale only if the sum overflows, so that other shares are unchanged.
+  if (!is.finite(total)) {
+    p <- p / max(p)
+    total <- sum(p)
+  }
+  share <- p[[1]] / total
+  if (rlang::is_string(split_args$method, "twinning")) {
+    share <- nearest_twin_prop(share)
+  }
+  share
 }
 
 # The shares 1/r are not evenly spaced, so compare the two nearest ones. A
@@ -109,23 +116,31 @@ nearest_twin_prop <- function(prop) {
 
 # Like rsample, fall back to an empty calibration set with a warning if the
 # analysis set can't be split (for example, if it is too small).
-balanced_calibration_split <- function(analysis_set, split_args, class) {
-  options <- split_args$options %||% list()
-  # `strategy` applies to folds only. balanced_initial_split() rejects
-  # options that aren't a list.
-  if (is.list(options)) {
-    options$strategy <- NULL
-  }
+# `share` turns `split_args` into the share of `analysis_set` to fit on.
+balanced_calibration_split <- function(
+  analysis_set,
+  split_args,
+  class,
+  share = function(args) args$prop
+) {
   split <- tryCatch(
-    balanced_initial_split(
-      analysis_set,
-      prop = split_args$prop,
-      balance = tidyselect::all_of(split_args$balance %||% character()),
-      exact = tidyselect::all_of(split_args$exact %||% character()),
-      group = tidyselect::all_of(split_args$group %||% character()),
-      method = split_args$method %||% "anticlust",
-      options = options
-    ),
+    {
+      options <- split_args$options %||% list()
+      # `strategy` applies to folds only. balanced_initial_split() rejects
+      # options that aren't a list.
+      if (is.list(options)) {
+        options$strategy <- NULL
+      }
+      balanced_initial_split(
+        analysis_set,
+        prop = share(split_args),
+        balance = tidyselect::all_of(split_args$balance %||% character()),
+        exact = tidyselect::all_of(split_args$exact %||% character()),
+        group = tidyselect::all_of(split_args$group %||% character()),
+        method = split_args$method %||% "anticlust",
+        options = options
+      )
+    },
     error = function(cnd) {
       cli::cli_warn(
         "Cannot create calibration split; creating an empty calibration set.",
