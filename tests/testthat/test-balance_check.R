@@ -127,6 +127,12 @@ test_that("balance_check() subsamples large sets for the energy distance", {
   d <- sim_data()
   set.seed(6)
   folds <- balanced_vfold_cv(d, v = 2, balance = c(x1, x2))
+  # A smaller `max_n` changes the energy distance through the public API.
+  energy <- function(bc) bc$value[bc$statistic == "energy"]
+  set.seed(7)
+  small <- energy(balance_check(folds, max_n = 5))
+  full <- energy(balance_check(folds))
+  expect_false(isTRUE(all.equal(small, full)))
   expect_error(balance_check(folds, max_n = 1), "at least 2")
   expect_snapshot(balance_check(folds, max_n = 1), error = TRUE)
 })

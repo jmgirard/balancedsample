@@ -12,7 +12,7 @@ check_anticlust_options <- function(
   if (!is_whole_number(moments) || moments < 1 || moments > 4) {
     cli::cli_abort("{.arg moments} must be 1, 2, 3, or 4.", call = NULL)
   }
-  if (!rlang::is_bool(covariances)) {
+  if (!is_flag(covariances)) {
     cli::cli_abort(
       "{.arg covariances} must be {.code TRUE} or {.code FALSE}.",
       call = NULL
@@ -28,7 +28,7 @@ check_anticlust_options <- function(
       call = NULL
     )
   }
-  if (!rlang::is_bool(local_maximum)) {
+  if (!is_flag(local_maximum)) {
     cli::cli_abort(
       "{.arg local_maximum} must be {.code TRUE} or {.code FALSE}.",
       call = NULL
@@ -450,9 +450,20 @@ pool_strata <- function(fine, exact, min_size) {
 
 # option helpers ---------------------------------------------------------------
 
-# One number that is not NA and not an array.
+# One plain number that is not NA. Classed numbers (such as bit64's
+# integer64) and arrays are refused, because their arithmetic can pass these
+# checks while the native code of the methods reads something else.
 is_number <- function(x) {
-  is.numeric(x) && length(x) == 1 && is.null(dim(x)) && !is.na(x)
+  is.numeric(x) &&
+    !is.object(x) &&
+    length(x) == 1 &&
+    is.null(dim(x)) &&
+    !is.na(x)
+}
+
+# TRUE or FALSE, as a plain vector of length one.
+is_flag <- function(x) {
+  rlang::is_bool(x) && !is.object(x) && is.null(dim(x))
 }
 
 # A whole number small enough to be an integer, so that seq_len() and the

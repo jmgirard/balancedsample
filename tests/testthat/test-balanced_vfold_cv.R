@@ -550,16 +550,35 @@ test_that("logical balance columns and exact-only groups work", {
 })
 
 test_that("bad option values give the package's own errors", {
+  classed <- structure(3, class = "classed_number")
+  # Each case is a bad option and the start of its error message.
+  must <- list(
+    moments = "must be 1, 2, 3, or 4",
+    covariances = "must be `TRUE` or `FALSE`",
+    k_neighbours = "must be a whole number of at least 1, or",
+    local_maximum = "must be `TRUE` or `FALSE`",
+    repetitions = "must be a whole number of at least 1",
+    strategy = "must be 1, 2, or 3",
+    leaf_size = "must be a whole number of at least 1",
+    p_accept = "must be a number above 0 and at most 1",
+    max_draws = "must be a whole number of at least 1",
+    n_bins = "must be a whole number of at least 2",
+    pool = "must be a number from 0 up to"
+  )
   bad <- list(
     anticlust = list(
       list(moments = NA_real_),
       list(moments = 2.5),
+      list(covariances = matrix(TRUE)),
       list(k_neighbours = 1e20),
+      list(k_neighbours = classed),
+      list(local_maximum = NA),
       list(repetitions = NA_real_)
     ),
     rerandomize = list(
       list(p_accept = NA_real_),
       list(p_accept = matrix(0.5)),
+      list(p_accept = structure(0.5, class = "classed_number")),
       list(max_draws = NA_real_),
       list(max_draws = 2.5),
       list(max_draws = 2^52)
@@ -576,29 +595,63 @@ test_that("bad option values give the package's own errors", {
       list(leaf_size = NA_real_),
       list(leaf_size = 0),
       list(leaf_size = -1),
-      list(leaf_size = 2.5)
+      list(leaf_size = 2.5),
+      list(leaf_size = classed)
     )
   )
   if (!rlang::is_installed("twinning")) {
     bad$twinning <- NULL
   }
-  d <- data.frame(x = 1:12, ex = rep(c("a", "b"), 6))
+  d <- data.frame(
+    x = 1:12,
+    const = 1,
+    ex = rep(c("a", "b"), 6),
+    g = rep(1:6, 2)
+  )
+  # With exact or constant columns only, the method doesn't run, but its
+  # options are still checked.
+  calls <- list(
+    balance = function(m, o) {
+      balanced_vfold_cv(d, 2, balance = x, method = m, options = o)
+    },
+    exact = function(m, o) {
+      balanced_vfold_cv(d, 2, exact = ex, method = m, options = o)
+    },
+    constant = function(m, o) {
+      balanced_vfold_cv(d, 2, balance = const, method = m, options = o)
+    },
+    group = function(m, o) {
+      balanced_vfold_cv(d, 2, balance = x, group = g, method = m, options = o)
+    },
+    split = function(m, o) {
+      balanced_initial_split(d, 1 / 2, balance = x, method = m, options = o)
+    },
+    validation = function(m, o) {
+      balanced_initial_validation_split(
+        d,
+        c(0.5, 0.25),
+        balance = x,
+        method = m,
+        options = o
+      )
+    }
+  )
   for (m in names(bad)) {
     for (o in bad[[m]]) {
-      # Without balance columns the method doesn't run, but its options are
-      # still checked.
-      for (with_balance in c(TRUE, FALSE)) {
-        info <- paste(m, names(o), with_balance)
-        err <- expect_error(
-          if (with_balance) {
-            balanced_vfold_cv(d, 2, balance = x, method = m, options = o)
-          } else {
-            balanced_vfold_cv(d, 2, exact = ex, method = m, options = o)
-          },
-          class = "rlang_error"
-        )
+      nm <- names(o)
+      for (cl in names(calls)) {
+        # Two-way splits refuse `strategy` before the method is chosen.
+        if (cl == "split" && nm == "strategy") {
+          next
+        }
+        err <- expect_error(calls[[cl]](m, o), class = "rlang_error")
         expect_s3_class(err$parent, "rlang_error")
-        expect_match(conditionMessage(err$parent), names(o), info = info)
+        expect_match(
+          conditionMessage(err$parent),
+          paste0("`", nm, "` ", must[[nm]]),
+          fixed = TRUE,
+          info = paste(m, nm, cl)
+        )
       }
     }
   }
