@@ -2,8 +2,9 @@
 #'
 #' `balance_check()` compares the assessment set of each split with its
 #' analysis set. For a three-way split, it compares the validation set and the
-#' testing set each with the training set. It reports a standardized mean difference (SMD) for each
-#' variable and the energy distance for all variables together. It works
+#' testing set each with the training set. It reports a standardized mean
+#' difference (SMD) for each variable and the energy distance for all
+#' variables together. It works
 #' with any `rset` or `rsplit`, so you can compare balanced folds with
 #' ordinary [rsample::vfold_cv()] folds.
 #'

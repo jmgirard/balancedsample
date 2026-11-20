@@ -145,7 +145,12 @@ folds
 balance_check(folds)
 
 # Other methods
-balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "rerandomize")
+balanced_vfold_cv(
+  mtcars,
+  v = 4,
+  balance = c(mpg, hp),
+  method = "rerandomize"
+)
 \dontshow{if (rlang::is_installed("twinning")) withAutoprint(\{ # examplesIf}
 balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
 \dontshow{\}) # examplesIf}
