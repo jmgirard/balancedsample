@@ -271,11 +271,20 @@ test_that("summary() handles empty and incomplete input", {
   dup$id <- "same"
   expect_snapshot(summary(dup), error = TRUE)
 
-  # Columns that don't start with "id" are not IDs.
+  # Only the ID columns balance_check() made are IDs, even if an added
+  # column's name starts with "id".
   noted <- bc
   noted$note <- seq_len(nrow(bc))
+  noted$identifier <- seq_len(nrow(bc))
   expect_equal(summary(noted), summary(bc))
+  expect_null(attr(summary(bc), "id_cols"))
   expect_snapshot(summary(noted[-1]), error = TRUE)
+
+  # Without the record, columns whose names start with "id" are IDs.
+  plain <- bc
+  attr(plain, "id_cols") <- NULL
+  plain$note <- seq_len(nrow(bc))
+  expect_equal(summary(plain), summary(bc))
 
   # Rows with a missing or unknown statistic.
   expect_snapshot(summary(bc[c(NA, seq_len(nrow(bc))), ]), error = TRUE)

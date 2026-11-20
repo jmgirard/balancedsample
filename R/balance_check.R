@@ -47,7 +47,8 @@
 #'   `energy`. If the split has no SMD that isn't missing, `max_abs_smd`,
 #'   `variable`, and `level` are `NA`. If it has no energy row, `energy` is
 #'   `NA`. Each split must have its own ID, so no ID may have more than one
-#'   energy row.
+#'   energy row. Only the ID columns that `balance_check()` made are used, so
+#'   columns you add are ignored.
 #'
 #' @examples
 #' set.seed(1)
@@ -86,7 +87,7 @@ balance_check.rset <- function(x, ..., max_n = 2000) {
     id_rows <- ids[rep(i, nrow(out)), , drop = FALSE]
     cbind(id_rows, out)
   })
-  new_balance_check(do.call(rbind, res))
+  new_balance_check(do.call(rbind, res), id_cols)
 }
 
 #' @rdname balance_check
@@ -248,8 +249,11 @@ mean_dist <- function(a, b) {
   mean(sqrt(pmax(d2, 0)))
 }
 
-new_balance_check <- function(x) {
+# `id_cols` records the ID columns, so that summary() can tell them from
+# columns added later.
+new_balance_check <- function(x, id_cols = "id") {
   x <- tibble::as_tibble(x)
+  attr(x, "id_cols") <- id_cols
   class(x) <- c("balance_check", class(x))
   x
 }
@@ -279,8 +283,10 @@ summary.balance_check <- function(object, ...) {
   rlang::check_dots_empty()
   x <- unclass_balance(object)
   stat_cols <- c("variable", "level", "statistic", "value")
-  # ID columns are named as in balance_check(), so other columns are ignored.
-  id_cols <- grep("^id", names(x), value = TRUE)
+  # Use the ID columns balance_check() recorded, so that added columns are
+  # ignored. Without the record, take the columns rsample names as IDs.
+  id_cols <- attr(x, "id_cols") %||% grep("^id", names(x), value = TRUE)
+  id_cols <- intersect(id_cols, names(x))
   if (!all(stat_cols %in% names(x)) || length(id_cols) == 0) {
     cli::cli_abort(
       c(
@@ -328,6 +334,7 @@ summary.balance_check <- function(object, ...) {
   )
   first <- vapply(rows, `[`, integer(1), 1)
   out <- tibble::as_tibble(x[first, id_cols, drop = FALSE])
+  attr(out, "id_cols") <- NULL
   out$max_abs_smd <- abs(x$value[worst])
   out$variable <- x$variable[worst]
   out$level <- x$level[worst]
