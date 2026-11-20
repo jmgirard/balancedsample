@@ -107,6 +107,8 @@ test_that("autoplot() returns ggplot objects", {
   bc <- balance_check(folds)
   expect_s3_class(ggplot2::autoplot(bc), "ggplot")
   expect_s3_class(ggplot2::autoplot(bc, type = "energy"), "ggplot")
+  # The record of ID columns doesn't reach the plotted data.
+  expect_null(attr(ggplot2::autoplot(bc)$data, "id_cols"))
 
   s <- balanced_initial_split(d, balance = x1, method = "rerandomize")
   p <- ggplot2::autoplot(balance_check(s), type = "energy")
@@ -300,8 +302,6 @@ test_that("summary() handles empty and incomplete input", {
   expect_output(printed <- print(bc))
   expect_identical(printed, bc)
   expect_null(attr(summary(bc), "id_cols"))
-  skip_if_not_installed("ggplot2")
-  expect_null(attr(ggplot2::autoplot(bc)$data, "id_cols"))
 
   # Rows with a missing or unknown statistic.
   expect_snapshot(summary(bc[c(NA, seq_len(nrow(bc))), ]), error = TRUE)
