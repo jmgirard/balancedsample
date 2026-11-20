@@ -282,17 +282,32 @@ test_that("twinning calibration splits use the nearest share twinning can make",
     list(prop = numeric(0)),
     list(prop = c(-1, -1)),
     list(prop = c(0.3, 0.2, 0.1)),
-    list(prop = structure(c(0.5, 0.35), class = "bad_prop")),
     list(options = identity),
     list(method = new.env())
   )
-  # A class whose arithmetic fails, like some vctrs classes.
-  local_mocked_s3_method("Ops", "bad_prop", function(e1, e2) stop("no math"))
   for (args in bad) {
     expect_warning(
       cal <- rsample::internal_calibration_split(s, split_args = args),
       "empty calibration set"
     )
+    expect_equal(nrow(rsample::calibration(cal)), 0)
+  }
+
+  # Errors from classed prop and options values reach the fallback too.
+  local_mocked_s3_method("Ops", "bad_prop", function(e1, e2) stop("no math"))
+  local_mocked_s3_method("$<-", "bad_options", function(x, name, value) {
+    stop("read only")
+  })
+  classed <- list(
+    "no math" = list(prop = structure(c(0.5, 0.35), class = "bad_prop")),
+    "read only" = list(options = structure(list(), class = "bad_options"))
+  )
+  for (cause in names(classed)) {
+    w <- expect_warning(
+      cal <- rsample::internal_calibration_split(s, classed[[cause]]),
+      "empty calibration set"
+    )
+    expect_match(conditionMessage(w$parent), cause)
     expect_equal(nrow(rsample::calibration(cal)), 0)
   }
 })

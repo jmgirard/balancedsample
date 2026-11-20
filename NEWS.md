@@ -8,8 +8,8 @@
   calibration) now work with `tune::fit_resamples()` and `tune::tune_grid()`
   on balanced folds, and with `tune::last_fit()` on balanced training/testing
   splits. The inner calibration split uses the same balance columns, exact
-  strata, groups, method, and options as the outer split, except twinning's
-  `strategy`, which applies to folds only. This needs rsample 1.3.1 or later.
+  strata, groups, method, and options as the outer split, without twinning's
+  `strategy` option. This needs rsample 1.3.1 or later.
 
 * `labels()` of repeated folds now combines the repeat and fold IDs, as it
   does for `rsample::vfold_cv()`.

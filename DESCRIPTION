@@ -31,7 +31,7 @@ Suggests:
     rmarkdown,
     rpart,
     tailor,
-    testthat (>= 3.0.0),
+    testthat (>= 3.3.2),
     tune,
     twinning,
     withr,
