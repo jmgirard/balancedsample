@@ -364,16 +364,6 @@ test_that("twinning checks strategy for two folds", {
     ),
     "strategy"
   )
-  expect_error(
-    balanced_vfold_cv(
-      mtcars,
-      2,
-      balance = mpg,
-      method = "twinning",
-      options = list(strategy = 1:2)
-    ),
-    "strategy"
-  )
   set.seed(1)
   folds <- balanced_vfold_cv(
     mtcars,
@@ -516,27 +506,6 @@ test_that("more anticlust options are checked", {
 
 test_that("rerandomize and interaction options are checked", {
   d <- sim_data(n = 60)
-  bad <- list(
-    rerandomize = list(
-      list(p_accept = NA_real_),
-      list(max_draws = NA_real_),
-      list(max_draws = 2.5)
-    ),
-    interaction = list(
-      list(n_bins = NA_real_),
-      list(n_bins = 2.5),
-      list(pool = NA_real_)
-    )
-  )
-  for (m in names(bad)) {
-    for (o in bad[[m]]) {
-      err <- expect_error(
-        balanced_vfold_cv(d, balance = x1, method = m, options = o),
-        "failed"
-      )
-      expect_match(conditionMessage(err$parent), names(o), info = m)
-    }
-  }
   expect_snapshot(error = TRUE, {
     balanced_vfold_cv(
       d,
@@ -578,4 +547,72 @@ test_that("logical balance columns and exact-only groups work", {
   folds <- balanced_vfold_cv(d, v = 4, exact = site, group = id)
   expect_true(groups_intact(folds, d$id))
   expect_true(assessed_once(folds, nrow(d)))
+})
+
+test_that("bad option values give the package's own errors", {
+  bad <- list(
+    anticlust = list(
+      list(moments = NA_real_),
+      list(moments = 2.5),
+      list(k_neighbours = 1e20),
+      list(repetitions = NA_real_)
+    ),
+    rerandomize = list(
+      list(p_accept = NA_real_),
+      list(p_accept = matrix(0.5)),
+      list(max_draws = NA_real_),
+      list(max_draws = 2.5),
+      list(max_draws = 2^52)
+    ),
+    interaction = list(
+      list(n_bins = NA_real_),
+      list(n_bins = 2.5),
+      list(n_bins = matrix(2)),
+      list(pool = NA_real_),
+      list(pool = matrix(0.5))
+    ),
+    twinning = list(
+      list(strategy = 1:2),
+      list(leaf_size = NA_real_),
+      list(leaf_size = 0),
+      list(leaf_size = -1),
+      list(leaf_size = 2.5)
+    )
+  )
+  if (!rlang::is_installed("twinning")) {
+    bad$twinning <- NULL
+  }
+  d <- data.frame(x = 1:12, ex = rep(c("a", "b"), 6))
+  for (m in names(bad)) {
+    for (o in bad[[m]]) {
+      # Without balance columns the method doesn't run, but its options are
+      # still checked.
+      for (with_balance in c(TRUE, FALSE)) {
+        info <- paste(m, names(o), with_balance)
+        err <- expect_error(
+          if (with_balance) {
+            balanced_vfold_cv(d, 2, balance = x, method = m, options = o)
+          } else {
+            balanced_vfold_cv(d, 2, exact = ex, method = m, options = o)
+          },
+          class = "rlang_error"
+        )
+        expect_s3_class(err$parent, "rlang_error")
+        expect_match(conditionMessage(err$parent), names(o), info = info)
+      }
+    }
+  }
+})
+
+test_that("option names must not be missing", {
+  expect_error(
+    balanced_vfold_cv(
+      mtcars,
+      2,
+      balance = mpg,
+      options = stats::setNames(list(2), NA_character_)
+    ),
+    "unique names",
+    class = "rlang_error"
+  )
 })
