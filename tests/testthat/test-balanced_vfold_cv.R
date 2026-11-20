@@ -491,10 +491,43 @@ test_that("print shows the method and design", {
       "# stratified by site, grouped by id"
     )
   )
-  withr::local_options(width = 100)
+  # A header that fits exactly stays on one line.
+  full <- paste0("# ", pretty(folds))
+  withr::local_options(width = nchar(full))
+  expect_equal(utils::capture.output(print(folds))[1], full)
+  withr::local_options(width = nchar(full) - 1)
   expect_equal(
-    utils::capture.output(print(folds))[1],
-    paste0("# ", pretty(folds))
+    utils::capture.output(print(folds))[1:2],
+    c(
+      "# 3-fold balanced cross-validation (rerandomize), stratified by site,",
+      "# grouped by id"
+    )
+  )
+})
+
+test_that("print wraps long lists of exact columns by display width", {
+  d <- sim_data()
+  d$sex2 <- d$sex
+  d$site2 <- d$site
+  # 16 wide characters, each two columns wide.
+  names(d)[names(d) == "site2"] <- strrep("\u754c", 16)
+  set.seed(12)
+  folds <- balanced_vfold_cv(
+    d,
+    v = 3,
+    balance = x1,
+    exact = c(site, sex, sex2, tidyselect::last_col()),
+    method = "rerandomize"
+  )
+  expect_match(pretty(folds), "stratified by site, sex, sex2, ")
+  withr::local_options(width = 60)
+  header <- grep("^# ", utils::capture.output(print(folds)), value = TRUE)
+  header <- header[seq_len(length(header) - 1)]
+  expect_true(all(nchar(header, type = "width") <= 60))
+  expect_equal(header[2], "# stratified by site, sex, sex2,")
+  expect_equal(
+    paste(sub("^# ", "", header), collapse = " "),
+    pretty(folds)
   )
 })
 
