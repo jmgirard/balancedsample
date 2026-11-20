@@ -572,18 +572,26 @@ test_that("bad option values give the package's own errors", {
       list(moments = NA_real_),
       list(moments = 2.5),
       list(moments = 5),
+      list(moments = 0),
+      list(moments = asS4(2)),
       list(covariances = matrix(TRUE)),
+      list(covariances = structure(TRUE, class = "classed_number")),
       list(k_neighbours = 0),
+      list(k_neighbours = 1.5),
+      list(k_neighbours = matrix(Inf)),
       list(k_neighbours = 1e20),
       list(k_neighbours = classed),
       list(local_maximum = NA),
       list(local_maximum = matrix(TRUE)),
+      list(local_maximum = asS4(TRUE)),
       list(repetitions = NA_real_),
       list(repetitions = 0)
     ),
     rerandomize = list(
       list(p_accept = NA_real_),
       list(p_accept = 2),
+      list(p_accept = 0),
+      list(p_accept = TRUE),
       list(p_accept = matrix(0.5)),
       list(p_accept = structure(0.5, class = "classed_number")),
       list(max_draws = NA_real_),
@@ -598,11 +606,13 @@ test_that("bad option values give the package's own errors", {
       list(n_bins = 1),
       list(pool = NA_real_),
       list(pool = 1),
+      list(pool = -0.1),
       list(pool = matrix(0.5))
     ),
     twinning = list(
       list(strategy = 1:2),
       list(strategy = 4),
+      list(strategy = 0),
       list(leaf_size = NA_real_),
       list(leaf_size = 0),
       list(leaf_size = -1),
@@ -610,6 +620,19 @@ test_that("bad option values give the package's own errors", {
       list(leaf_size = classed)
     )
   )
+  # The twinning checks run without twinning, so test them directly too.
+  for (o in bad$twinning) {
+    nm <- names(o)
+    err <- expect_error(
+      rlang::exec(check_twinning_options, !!!o),
+      class = "rlang_error"
+    )
+    expect_match(
+      conditionMessage(err),
+      paste0("`", nm, "` ", must[[nm]]),
+      fixed = TRUE
+    )
+  }
   if (!rlang::is_installed("twinning")) {
     bad$twinning <- NULL
   }

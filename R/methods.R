@@ -456,6 +456,7 @@ pool_strata <- function(fine, exact, min_size) {
 # is.object() comes first, so that no class method of is.numeric() runs.
 is_number <- function(x) {
   !is.object(x) &&
+    !isS4(x) &&
     is.numeric(x) &&
     length(x) == 1 &&
     is.null(dim(x)) &&
@@ -464,7 +465,7 @@ is_number <- function(x) {
 
 # TRUE or FALSE, as a plain vector of length one.
 is_flag <- function(x) {
-  !is.object(x) && rlang::is_bool(x) && is.null(dim(x))
+  !is.object(x) && !isS4(x) && rlang::is_bool(x) && is.null(dim(x))
 }
 
 # A whole number small enough to be an integer, so that seq_len() and the
