@@ -2,17 +2,22 @@ Package: balancesample
 Title: Multivariate Balanced Data Splitting for 'rsample'
 Version: 0.0.0.9000
 Authors@R: 
-    person("Jeffrey M.", "Girard", , "jeffgirard@gmail.com", role = c("aut", "cre"))
-Description: Creates training/testing splits and cross-validation folds
-    that are balanced on several variables at once. Numeric and
-    categorical variables are balanced with anticlustering, data
-    twinning, rerandomization, or crossed strata. Categorical variables
-    can also be stratified exactly, and rows from the same group can be
-    kept together. Results are 'rsample' objects, so they work with
+    person("Jeffrey M.", "Girard", , "jeffgirard@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-7359-3746"))
+Description: Creates training/testing splits, training/validation/testing
+    splits, and cross-validation folds that are balanced on several
+    variables at once. Numeric and categorical variables are balanced with
+    anticlustering (Papenberg and Klau, 2021 <doi:10.1037/met0000301>;
+    Papenberg, 2024 <doi:10.1111/bmsp.12315>), data twinning (Vakayil and
+    Joseph, 2022 <doi:10.1002/sam.11574>), rerandomization (Morgan and
+    Rubin, 2012 <doi:10.1214/12-AOS1008>), or crossed strata. Categorical
+    variables can also be stratified exactly, and rows from the same group
+    can be kept together. Results are 'rsample' objects, so they work with
     'tune' and the rest of 'tidymodels'.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
+URL: https://github.com/jmgirard/balancesample,
+    https://jmgirard.github.io/balancesample/
+BugReports: https://github.com/jmgirard/balancesample/issues
 Depends: 
     R (>= 4.1.0)
 Imports: 
@@ -32,13 +37,14 @@ Suggests:
     rpart,
     tailor,
     testthat (>= 3.3.2),
-    tune,
+    tune (>= 2.0.0),
     twinning,
     withr,
     workflows
-Config/testthat/edition: 3
-VignetteBuilder: knitr
+VignetteBuilder: 
+    knitr
 Config/roxygen2/version: 8.1.1
-URL: https://github.com/jmgirard/balancesample,
-    https://jmgirard.github.io/balancesample/
-BugReports: https://github.com/jmgirard/balancesample/issues
+Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
