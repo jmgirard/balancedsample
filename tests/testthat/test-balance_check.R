@@ -188,7 +188,14 @@ test_that("summary() handles splits, three-way splits, and missing SMDs", {
     balance = c(x1, x2),
     method = "rerandomize"
   )
-  expect_equal(summary(balance_check(s3))$id, c("Validation", "Testing"))
+  bc3 <- balance_check(s3)
+  out3 <- summary(bc3)
+  expect_equal(out3$id, c("Validation", "Testing"))
+  expect_equal(out3$energy, bc3$value[bc3$statistic == "energy"])
+  for (id in out3$id) {
+    smd <- bc3$value[bc3$id == id & bc3$statistic == "smd"]
+    expect_equal(out3$max_abs_smd[out3$id == id], max(abs(smd)))
+  }
 
   d <- data.frame(
     z = c(NA, NA, NA, 1, 2, 3),
@@ -203,5 +210,54 @@ test_that("summary() handles splits, three-way splits, and missing SMDs", {
 
   out <- summary(balance_check(s, z, g))
   expect_equal(out$variable, "g")
+  # The two levels of g tie, and the first one is kept.
+  expect_equal(out$level, "a")
   expect_equal(out$max_abs_smd, abs(balance_check(s, g)$value[1]))
+
+  d <- data.frame(g = rep(c("A", "B"), each = 4))
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  out <- summary(balance_check(s, g))
+  expect_equal(out$max_abs_smd, Inf)
+  expect_equal(out$level, "A")
+})
+
+test_that("summary() keeps splits apart however the rows are arranged", {
+  d <- sim_data()
+  set.seed(10)
+  folds <- rsample::vfold_cv(d, v = 3)
+  bc <- balance_check(folds, x1, cat)
+  shuffled <- bc[sample(nrow(bc)), ]
+  expect_equal(
+    summary(shuffled)[order(summary(shuffled)$id), ],
+    summary(bc)
+  )
+
+  # IDs that would collide if pasted, and `NA` next to "NA".
+  folds <- rsample::vfold_cv(d, v = 4)
+  bc <- balance_check(folds, x1, cat)
+  fold <- match(bc$id, unique(bc$id))
+  bc$id <- c("a\rb", "a", NA, "NA")[fold]
+  bc$id2 <- c("c", "b\rc", "x", "x")[fold]
+  out <- summary(bc)
+  expect_equal(out$id, c("a\rb", "a", NA, "NA"))
+  expect_equal(out$energy, bc$value[bc$statistic == "energy"])
+})
+
+test_that("summary() handles empty and incomplete input", {
+  d <- sim_data()
+  set.seed(11)
+  bc <- balance_check(rsample::vfold_cv(d, v = 3), x1)
+  empty <- summary(bc[0, ])
+  expect_equal(nrow(empty), 0)
+  expect_named(empty, names(summary(bc)))
+  expect_type(empty$max_abs_smd, "double")
+  expect_type(empty$variable, "character")
+  expect_type(empty$energy, "double")
+
+  expect_snapshot(summary(bc[c("id", "statistic", "value")]), error = TRUE)
+  expect_snapshot(summary(bc[-1]), error = TRUE)
+
+  dup <- bc
+  dup$id <- "same"
+  expect_snapshot(summary(dup), error = TRUE)
 })

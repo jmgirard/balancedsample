@@ -23,3 +23,30 @@
       Error in `balance_check()`:
       ! `max_n` must be a whole number of at least 2.
 
+# summary() handles empty and incomplete input
+
+    Code
+      summary(bc[c("id", "statistic", "value")])
+    Condition
+      Error in `summary()`:
+      ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
+      i Summarize the full output of `balance_check()`.
+
+---
+
+    Code
+      summary(bc[-1])
+    Condition
+      Error in `summary()`:
+      ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
+      i Summarize the full output of `balance_check()`.
+
+---
+
+    Code
+      summary(dup)
+    Condition
+      Error in `summary()`:
+      ! Each split in `object` must have its own ID.
+      x Some IDs have more than one energy distance.
+
