@@ -187,6 +187,20 @@ test_that("validation sets work with tune", {
   expect_equal(nrow(tune::collect_predictions(res)), nrow(rsample::testing(s)))
 })
 
+test_that("calibration splits accept classed numeric proportions", {
+  set.seed(11)
+  s <- balanced_initial_validation_split(
+    mtcars,
+    prop = I(c(0.5, 0.35)),
+    balance = hp,
+    method = "rerandomize"
+  )
+  expect_no_warning(
+    cal <- rsample::internal_calibration_split(s, split_args = list())
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 7)
+})
+
 test_that("calibration splits of a validation split balance the training set", {
   d <- sim_data()
   set.seed(7)
@@ -230,6 +244,18 @@ test_that("twinning calibration splits use the nearest share twinning can make",
   )
   expect_equal(nrow(rsample::calibration(cal)), round(140 / 6))
 
+  # A share exactly between two twinning shares rounds as plain arithmetic
+  # does. 7/12 is between 1/2 and 2/3.
+  set.seed(10)
+  s7 <- balanced_initial_validation_split(
+    sim_data(320),
+    prop = c(7, 5) / 16,
+    balance = x1,
+    method = "twinning"
+  )
+  cal <- rsample::internal_calibration_split(s7, split_args = list())
+  expect_equal(nrow(rsample::calibration(cal)), round(140 / 3))
+
   # Very large values don't overflow.
   cal <- rsample::internal_calibration_split(
     s,
@@ -256,10 +282,12 @@ test_that("twinning calibration splits use the nearest share twinning can make",
     list(prop = numeric(0)),
     list(prop = c(-1, -1)),
     list(prop = c(0.3, 0.2, 0.1)),
-    list(prop = structure(c(0.5, 0.35), class = "my_prop")),
+    list(prop = structure(c(0.5, 0.35), class = "bad_prop")),
     list(options = identity),
     list(method = new.env())
   )
+  # A class whose arithmetic fails, like some vctrs classes.
+  local_mocked_s3_method("Ops", "bad_prop", function(e1, e2) stop("no math"))
   for (args in bad) {
     expect_warning(
       cal <- rsample::internal_calibration_split(s, split_args = args),

@@ -5,10 +5,11 @@
   `"rerandomize"`, `"interaction"`).
 
 * Workflows with a postprocessor that must be trained (for example, a tailor
-  calibration) now work with `tune::fit_resamples()`, `tune::tune_grid()`, and
-  `tune::last_fit()` on balanced folds and training/testing splits. The inner
-  calibration split is balanced with the same settings as the outer split.
-  This needs rsample 1.3.1 or later.
+  calibration) now work with `tune::fit_resamples()` and `tune::tune_grid()`
+  on balanced folds, and with `tune::last_fit()` on balanced training/testing
+  splits. The inner calibration split uses the same balance columns, exact
+  strata, groups, method, and options as the outer split, except twinning's
+  `strategy`, which applies to folds only. This needs rsample 1.3.1 or later.
 
 * `labels()` of repeated folds now combines the repeat and fold IDs, as it
   does for `rsample::vfold_cv()`.
