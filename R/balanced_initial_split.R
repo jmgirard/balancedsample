@@ -9,7 +9,8 @@
 #'   the training set. With `method = "twinning"`, `prop` must be `1 - 1/r`
 #'   or `1/r` for a whole number `r`, for example 1/2, 2/3, 3/4, 9/10, or
 #'   1/4. Write it as a fraction such as `2 / 3`, not a rounded decimal such
-#'   as `0.67`.
+#'   as `0.67`. A value within a relative 1e-8 of such a fraction counts as
+#'   that fraction.
 #'
 #' @details
 #' The methods, options, and group handling are the same as for
@@ -78,6 +79,7 @@ balanced_initial_split <- function(
     cli::cli_abort("{.arg group} must have at least two groups.", call = call)
   }
 
+  props <- c(prop, 1 - prop)
   method_options <- options
   if (method == "twinning") {
     method_options$parts <- twin_split_parts(prop)
@@ -90,14 +92,10 @@ balanced_initial_split <- function(
         call = call
       )
     }
+    # A near miss such as 0.500000003 gives the same set sizes as 1/2.
+    props <- method_options$parts / sum(method_options$parts)
   }
-  a <- assign_balanced(
-    prep,
-    c(prop, 1 - prop),
-    entry,
-    method_options,
-    call = call
-  )
+  a <- assign_balanced(prep, props, entry, method_options, call = call)
   res <- rsample::make_splits(
     list(analysis = which(a == 1L), assessment = which(a == 2L)),
     data = data,

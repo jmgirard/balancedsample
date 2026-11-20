@@ -33,8 +33,9 @@
 * With `method = "twinning"`, `balanced_initial_split()` now checks that
   `prop` is a fraction twinning can make before it rounds the set sizes, so
   the check no longer depends on the data size. Before, a `prop` such as 0.7
-  could pass on small data because of rounding. Write `prop` as an exact fraction, such as
-  `2 / 3`, not `0.67`.
+  could pass on small data because of rounding. Write `prop` as a fraction,
+  such as `2 / 3`, not `0.67`. A value within a relative 1e-8 of a fraction
+  counts as that fraction.
 
 * `rsample::internal_calibration_split()` on a twinning three-way split now
   uses the nearest training share that twinning can make (for example 5/6
