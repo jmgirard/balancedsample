@@ -5,6 +5,9 @@
 
 * This is a new release.
 
+TODO: rerun after the version bump. On the 0.0.0.9000 development version,
+the same note also says "Version contains large components (0.0.0.9000)".
+
 ## Test environments
 
 * Local macOS 27 (aarch64), R 4.6.2, twice: with all suggested packages
@@ -19,4 +22,5 @@
 
 * twinning, tune, tailor, parsnip, probably, workflows, and ggplot2 are
   suggested packages. Tests and examples that need them skip when they are
-  not installed, and the vignette stops early with a note.
+  not installed. The vignette stops early with a note when any package it
+  uses (twinning, ggplot2, parsnip, rpart, tune, or workflows) is missing.

@@ -13,8 +13,8 @@ Description: Creates training/testing splits, training/validation/testing
     (2022) <doi:10.1002/sam.11574>, rerandomization as in Morgan and Rubin
     (2012) <doi:10.1214/12-AOS1008>, or crossed strata. Categorical
     variables can also be stratified exactly, and rows from the same group
-    can be kept together. Results are 'rsample' objects, so they work with
-    'tune' and the rest of 'tidymodels'.
+    can be kept together. Results are 'rsample' objects that can be passed
+    to the resampling and tuning functions of 'tune'.
 License: MIT + file LICENSE
 URL: https://github.com/jmgirard/balancesample,
     https://jmgirard.github.io/balancesample/
