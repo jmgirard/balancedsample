@@ -93,7 +93,9 @@ three_way_fit_share <- function(split_args) {
     )
   }
   # Doubles, so that sums of large integers don't overflow.
-  p <- as.double(p)
+  if (is.integer(p)) {
+    p <- as.double(p)
+  }
   twinning <- rlang::is_string(split_args$method, "twinning")
   if (twinning && sum(p) < 1) {
     # Use the whole-number parts of the outer split, so that near misses give
@@ -120,9 +122,10 @@ three_way_fit_share <- function(split_args) {
 # goes to the larger r, which splits off the smaller set. A share that
 # rounds to 1 is left for balanced_calibration_split() to reject.
 nearest_twin_share <- function(fit, cal) {
-  # Scale very large values so that the products can't overflow.
-  big <- max(fit, cal)
-  if (big > 1e150) {
+  # Scale very large values so that the products can't overflow. Dividing by
+  # a power of 2 is exact, so ties stay ties.
+  if (max(fit, cal) > 1e150) {
+    big <- 2^floor(log2(max(fit, cal)))
     fit <- fit / big
     cal <- cal / big
   }
