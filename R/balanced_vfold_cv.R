@@ -135,7 +135,12 @@
 #' balance_check(folds)
 #'
 #' # Other methods
-#' balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "rerandomize")
+#' balanced_vfold_cv(
+#'   mtcars,
+#'   v = 4,
+#'   balance = c(mpg, hp),
+#'   method = "rerandomize"
+#' )
 #' @examplesIf rlang::is_installed("twinning")
 #' balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
 #' @export

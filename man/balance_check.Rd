@@ -35,8 +35,9 @@ and \code{value}. Energy rows have \code{NA} in \code{variable} and \code{level}
 \description{
 \code{balance_check()} compares the assessment set of each split with its
 analysis set. For a three-way split, it compares the validation set and the
-testing set each with the training set. It reports a standardized mean difference (SMD) for each
-variable and the energy distance for all variables together. It works
+testing set each with the training set. It reports a standardized mean
+difference (SMD) for each variable and the energy distance for all
+variables together. It works
 with any \code{rset} or \code{rsplit}, so you can compare balanced folds with
 ordinary \code{\link[rsample:vfold_cv]{rsample::vfold_cv()}} folds.
 }
