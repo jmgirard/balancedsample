@@ -223,12 +223,15 @@ test_that("calibration splits of a validation split balance the training set", {
 
 test_that("twinning calibration splits use the nearest share twinning can make", {
   skip_if_not_installed("twinning")
-  expect_equal(nearest_twin_prop(14 / 17), 5 / 6)
+  expect_equal(nearest_twin_share(14, 3), 5 / 6)
   # 1/r is not evenly spaced: 7/17 is nearer 1/3 than 1/2.
-  expect_equal(nearest_twin_prop(10 / 17), 2 / 3)
-  expect_equal(nearest_twin_prop(3 / 4), 3 / 4)
-  expect_equal(nearest_twin_prop(0.5), 0.5)
-  expect_equal(nearest_twin_prop(0.2), 0.2)
+  expect_equal(nearest_twin_share(10, 7), 2 / 3)
+  expect_equal(nearest_twin_share(3, 1), 3 / 4)
+  expect_equal(nearest_twin_share(1, 1), 0.5)
+  expect_equal(nearest_twin_share(1, 4), 0.2)
+  # 5/12 is exactly between 1/2 and 1/3. The tie goes to the larger r.
+  expect_equal(nearest_twin_share(7, 5), 2 / 3)
+  expect_equal(nearest_twin_share(5, 7), 1 / 3)
 
   d <- sim_data()
   set.seed(9)
@@ -255,6 +258,25 @@ test_that("twinning calibration splits use the nearest share twinning can make",
   )
   cal <- rsample::internal_calibration_split(s7, split_args = list())
   expect_equal(nrow(rsample::calibration(cal)), round(140 / 3))
+
+  # A near miss gives the same calibration split as the fraction it matches.
+  cal_rows <- vapply(
+    list(c(7, 5) / 13, c(7, 5) / 13 + c(1, -1) * 1e-10),
+    function(p) {
+      set.seed(4)
+      s13 <- balanced_initial_validation_split(
+        sim_data(199),
+        prop = p,
+        balance = x1,
+        method = "twinning"
+      )
+      set.seed(5)
+      cal <- rsample::internal_calibration_split(s13, split_args = list())
+      nrow(rsample::calibration(cal))
+    },
+    numeric(1)
+  )
+  expect_equal(cal_rows[[1]], cal_rows[[2]])
 
   # Very large values don't overflow.
   cal <- rsample::internal_calibration_split(

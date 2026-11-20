@@ -92,29 +92,44 @@ three_way_fit_share <- function(split_args) {
       call = NULL
     )
   }
-  total <- sum(p)
+  twinning <- rlang::is_string(split_args$method, "twinning")
+  if (twinning && sum(p) < 1) {
+    # Use the whole-number parts of the outer split, so that near misses give
+    # the same share as the fraction they match, and ties are exact.
+    parts <- twin_parts(c(p, 1 - sum(p)))
+    if (!is.null(parts)) {
+      p <- parts[1:2]
+    }
+  }
   # Scale only if the sum overflows, so that other shares are unchanged.
-  if (!is.finite(total)) {
+  if (!is.finite(sum(p))) {
     p <- p / max(p)
-    total <- sum(p)
   }
-  share <- p[[1]] / total
-  if (rlang::is_string(split_args$method, "twinning")) {
-    share <- nearest_twin_prop(share)
+  if (twinning) {
+    return(nearest_twin_share(p[[1]], p[[2]]))
   }
-  share
+  p[[1]] / sum(p)
 }
 
-# The shares 1/r are not evenly spaced, so compare the two nearest ones. A
-# share that rounds to 1 is left for balanced_calibration_split() to reject.
-nearest_twin_prop <- function(prop) {
-  small <- min(prop, 1 - prop)
-  if (small <= 0) {
-    return(prop)
+# The fit share nearest fit / (fit + cal) that twinning can make: 1 - 1/r, or
+# 1/r if `fit` is the smaller. The shares 1/r are not evenly spaced, so the
+# two nearest are compared. The comparison uses products, not quotients, so
+# it is exact for whole numbers. A tie goes to the larger r, which splits off
+# the smaller set. A share that rounds to 1 is left for
+# balanced_calibration_split() to reject.
+nearest_twin_share <- function(fit, cal) {
+  total <- fit + cal
+  small <- min(fit, cal)
+  r <- unique(pmax(2, c(floor(total / small), ceiling(total / small))))
+  if (!all(is.finite(r))) {
+    return(fit / total)
   }
-  r <- unique(pmax(2, c(floor(1 / small), ceiling(1 / small))))
-  r <- r[which.min(abs(1 / r - small))]
-  if (prop >= 0.5) 1 - 1 / r else 1 / r
+  if (length(r) == 2) {
+    # |1/r - small/total| is |total - r * small| / (r * total).
+    near <- abs(total - r * small) * rev(r)
+    r <- if (near[[2]] <= near[[1]]) r[[2]] else r[[1]]
+  }
+  if (fit >= cal) 1 - 1 / r else 1 / r
 }
 
 # Like rsample, fall back to an empty calibration set with a warning if the
