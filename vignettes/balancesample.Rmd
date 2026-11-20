@@ -14,8 +14,16 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.height = 3.5
 )
-needed <- c("anticlust", "twinning", "ggplot2", "parsnip", "rpart", "tune", "workflows")
-knitr::opts_chunk$set(eval = all(vapply(needed, requireNamespace, logical(1), quietly = TRUE)))
+needed <- c("twinning", "ggplot2", "parsnip", "rpart", "tune", "workflows")
+missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly = TRUE)]
+# `eval = FALSE` doesn't stop inline code, so stop the article instead.
+if (length(missing) > 0) {
+  knitr::knit_exit(paste0(
+    "This article needs these packages, which are not installed: ",
+    paste(missing, collapse = ", "),
+    "."
+  ))
+}
 ```
 
 This article walks through a modeling project with balancesample: a balanced training/testing split, balanced folds on the training set, tuning with tune, and a final fit. It also shows how to choose the columns to balance, how to check the result, and how to choose a method.
@@ -145,7 +153,7 @@ collect_metrics(final_fit)
 
 ## Choosing a method
 
-balancesample has four methods. `"anticlust"` (the default) and `"twinning"` need the anticlust and twinning packages. `"rerandomize"` and `"interaction"` need no extra packages. This compares all four on the full data with 10 folds:
+balancesample has four methods. `"twinning"` needs the twinning package, and the other three work without extra packages. This compares all four on the full data with 10 folds:
 
 ```{r methods}
 methods <- c("anticlust", "twinning", "rerandomize", "interaction")
@@ -165,7 +173,7 @@ by_method
 
 In this run, `r by_method$method[which.min(by_method$worst_smd)]` had the smallest worst SMD (`r min(by_method$worst_smd)`), and `r by_method$method[which.min(by_method$mean_energy)]` had the smallest mean energy distance (`r min(by_method$mean_energy)`). These come from one run of each method, so treat small differences as noise.
 
-Start with anticlust. Its run time grows quickly with the number of rows. On large data, set `options = list(k_neighbours = 20)` or try twinning, then check the balance again. The README lists run times for both. Use rerandomize if you can't install the extra packages. interaction is a baseline that shows how crossed strata become sparse. See `?balanced_vfold_cv` for the options of each method.
+Start with anticlust. Its run time grows quickly with the number of rows. On large data, set `options = list(k_neighbours = 20)` or try twinning, then check the balance again. The README lists run times for both. interaction is a baseline that shows how crossed strata become sparse. See `?balanced_vfold_cv` for the options of each method.
 
 ## Groups
 

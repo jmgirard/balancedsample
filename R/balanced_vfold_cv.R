@@ -45,8 +45,6 @@
 #'     pass makes no swap (at most 100 passes). `FALSE` runs one pass.
 #'   * `repetitions` (default 1): the number of random starts. The best
 #'     result is kept.
-#'
-#'   The anticlust package is required.
 #' * `"twinning"` uses [twinning::multiplet()] for folds. Options are
 #'   `strategy` (1, 2, or 3; strategy 2 needs `v` to be a power of 2) and
 #'   `leaf_size`. For `v = 2`, strategies 1 and 2 give the same result.

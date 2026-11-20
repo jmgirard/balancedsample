@@ -232,7 +232,6 @@ test_that("method options are checked", {
 })
 
 test_that("anticlust options work and are checked", {
-  skip_if_not_installed("anticlust")
   d <- sim_data(n = 60)
   opts <- list(
     list(moments = 1),
@@ -261,7 +260,6 @@ test_that("anticlust options work and are checked", {
 })
 
 test_that("anticlust accepts square categorical balance data", {
-  skip_if_not_installed("anticlust")
   d <- data.frame(x = factor(letters[1:4]))
   set.seed(1)
   folds <- balanced_vfold_cv(d, v = 2, balance = x, options = list(moments = 1))
@@ -300,7 +298,6 @@ test_that("rerandomize accepts close to p_accept with tied imbalance", {
 })
 
 test_that("local_maximum balances at least as well as one pass", {
-  skip_if_not_installed("anticlust")
   d <- sim_data(n = 120)
   x <- build_balance_matrix(d[c("x1", "x2", "x3")])
   f <- kplus_features(x, 2, FALSE)
@@ -318,7 +315,6 @@ test_that("local_maximum balances at least as well as one pass", {
 })
 
 test_that("anticlust repetitions keep the exact counts", {
-  skip_if_not_installed("anticlust")
   d <- withr::with_seed(
     1,
     data.frame(x = stats::rnorm(19), s = factor(rep(1:3, c(5, 6, 8))))
@@ -336,7 +332,6 @@ test_that("anticlust repetitions keep the exact counts", {
 })
 
 test_that("anticlust handles factor-only and one-row-per-fold data", {
-  skip_if_not_installed("anticlust")
   set.seed(1)
   folds <- balanced_vfold_cv(data.frame(g = factor(1:6)), 3, balance = g)
   expect_true(assessed_once(folds, 6))
