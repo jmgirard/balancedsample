@@ -83,6 +83,8 @@ test_that("calibration splits of folds are balanced initial splits", {
     method = "rerandomize"
   )
   expect_identical(cal$in_id, direct$in_id)
+  args <- c("prop", "balance", "exact", "group", "method", "options")
+  expect_identical(attributes(cal)[args], attributes(direct)[args])
 })
 
 test_that("calibration splits of an initial split use the same prop", {
@@ -124,6 +126,8 @@ test_that("calibration splits of an initial split use the same prop", {
     method = "interaction"
   )
   expect_identical(cal$in_id, direct$in_id)
+  args <- c("prop", "balance", "exact", "group", "method", "options")
+  expect_identical(attributes(cal)[args], attributes(direct)[args])
 })
 
 test_that("twinning folds drop `strategy` for the calibration split", {
@@ -220,7 +224,12 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
   fit_on_inner <- function(fitted, outer) {
     from_outer <- vapply(
       inner,
-      function(split) identical(rownames(split$data), rownames(outer)),
+      function(split) {
+        # The same rows, in any order.
+        rows <- rownames(outer)
+        setequal(rownames(split$data), rows) &&
+          identical(split$data[rows, , drop = FALSE], outer)
+      },
       logical(1)
     )
     if (sum(from_outer) != 1) {
