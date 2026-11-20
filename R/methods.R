@@ -21,10 +21,6 @@ method_anticlust <- function(
   local_maximum = TRUE,
   repetitions = 1L
 ) {
-  rlang::check_installed(
-    "anticlust",
-    reason = "to use `method = \"anticlust\"`."
-  )
   if (
     !rlang::is_scalar_integerish(moments, finite = TRUE) ||
       moments < 1 ||

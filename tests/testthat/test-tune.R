@@ -134,7 +134,8 @@ test_that("twinning calibration falls back to an empty set for a bad share", {
 })
 
 test_that("tune trains a postprocessor on a balanced calibration split", {
-  skip_if_not_installed("tune")
+  # tune 2.0.0 is the first version that trains postprocessors.
+  skip_if_not_installed("tune", "2.0.0")
   skip_if_not_installed("parsnip")
   skip_if_not_installed("workflows")
   skip_if_not_installed("tailor")

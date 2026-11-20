@@ -76,8 +76,6 @@ pass makes no swap (at most 100 passes). \code{FALSE} runs one pass.
 \item \code{repetitions} (default 1): the number of random starts. The best
 result is kept.
 }
-
-The anticlust package is required.
 \item \code{"twinning"} uses \code{\link[twinning:multiplet]{twinning::multiplet()}} for folds. Options are
 \code{strategy} (1, 2, or 3; strategy 2 needs \code{v} to be a power of 2) and
 \code{leaf_size}. For \code{v = 2}, strategies 1 and 2 give the same result.

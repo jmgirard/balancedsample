@@ -8,8 +8,7 @@
       "k_neighbours",
       "local_maximum",
       "repetitions"
-    ),
-    package = "anticlust"
+    )
   )
   register_balance_method(
     "twinning",
