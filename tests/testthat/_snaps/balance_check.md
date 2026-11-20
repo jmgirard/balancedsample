@@ -15,3 +15,11 @@
       Error in `balance_check()`:
       ! `x` must be an <rset>, an <rsplit>, or a <three_way_split>, not a number.
 
+# balance_check() subsamples large sets for the energy distance
+
+    Code
+      balance_check(folds, max_n = 1)
+    Condition
+      Error in `balance_check()`:
+      ! `max_n` must be a whole number of at least 2.
+
