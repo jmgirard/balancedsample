@@ -12,8 +12,9 @@
 #'   (for example from [balanced_initial_split()]), or a three-way split (from
 #'   [balanced_initial_validation_split()] or
 #'   [rsample::initial_validation_split()]).
-#' @param ... <[`tidy-select`][tidyselect::language]> Columns to check. If
-#'   empty, the `balance` and `exact` columns stored in `x` are used.
+#' @param ... For `balance_check()`, <[`tidy-select`][tidyselect::language]>
+#'   columns to check. If empty, the `balance` and `exact` columns stored in
+#'   `x` are used. For `summary()`, not used and must be empty.
 #' @param max_n The largest number of rows per set for the energy distance.
 #'   Larger sets are subsampled at random to keep memory use low.
 #'
@@ -42,8 +43,9 @@
 #'
 #'   `summary()` returns a tibble with one row per split. It has the ID
 #'   columns, `max_abs_smd` (the largest absolute SMD in the split), the
-#'   `variable` and `level` with that SMD, and `energy`. If the split has no
-#'   SMD that isn't missing, `max_abs_smd`, `variable`, and `level` are `NA`.
+#'   `variable` and `level` with that SMD (the first one if several tie), and
+#'   `energy`. If the split has no SMD that isn't missing, `max_abs_smd`,
+#'   `variable`, and `level` are `NA`. Each split must have its own ID.
 #'
 #' @examples
 #' set.seed(1)
@@ -274,25 +276,53 @@ print.balance_check <- function(x, ...) {
 summary.balance_check <- function(object, ...) {
   rlang::check_dots_empty()
   x <- unclass_balance(object)
-  id_cols <- setdiff(names(x), c("variable", "level", "statistic", "value"))
-  key <- do.call(paste, c(unname(as.list(x[id_cols])), sep = "\r"))
-  rows <- split(seq_len(nrow(x)), factor(key, levels = unique(key)))
-  res <- lapply(rows, function(i) {
-    smd <- i[x$statistic[i] == "smd" & !is.na(x$value[i])]
-    worst <- if (length(smd) > 0) {
-      smd[which.max(abs(x$value[smd]))]
-    } else {
-      NA_integer_
-    }
-    en <- x$value[i][x$statistic[i] == "energy"]
-    tibble::tibble(
-      max_abs_smd = abs(x$value[worst]),
-      variable = x$variable[worst],
-      level = x$level[worst],
-      energy = if (length(en) == 1) en else NA_real_
+  stat_cols <- c("variable", "level", "statistic", "value")
+  id_cols <- setdiff(names(x), stat_cols)
+  if (!all(stat_cols %in% names(x)) || length(id_cols) == 0) {
+    cli::cli_abort(
+      c(
+        "{.arg object} must have ID columns and the columns {.code {stat_cols}}.",
+        i = "Summarize the full output of {.fn balance_check}."
+      )
     )
-  })
+  }
+  # Integer codes keep `NA` apart from "NA" and can't collide when pasted.
+  codes <- lapply(x[id_cols], function(v) match(v, unique(v)))
+  key <- do.call(paste, c(unname(codes), sep = "."))
+  rows <- split(seq_len(nrow(x)), factor(key, levels = unique(key)))
+  n_energy <- vapply(rows, function(i) sum(x$statistic[i] == "energy"), 1L)
+  if (any(n_energy > 1)) {
+    cli::cli_abort(
+      c(
+        "Each split in {.arg object} must have its own ID.",
+        x = "Some IDs have more than one energy distance."
+      )
+    )
+  }
+  worst <- vapply(
+    rows,
+    function(i) {
+      smd <- i[x$statistic[i] == "smd" & !is.na(x$value[i])]
+      if (length(smd) == 0) {
+        return(NA_integer_)
+      }
+      smd[which.max(abs(x$value[smd]))]
+    },
+    integer(1)
+  )
+  energy <- vapply(
+    rows,
+    function(i) {
+      en <- x$value[i][x$statistic[i] == "energy"]
+      if (length(en) == 1) en else NA_real_
+    },
+    numeric(1)
+  )
   first <- vapply(rows, `[`, integer(1), 1)
-  ids <- tibble::as_tibble(x[first, id_cols, drop = FALSE])
-  tibble::as_tibble(cbind(ids, do.call(rbind, res)))
+  out <- tibble::as_tibble(x[first, id_cols, drop = FALSE])
+  out$max_abs_smd <- abs(x$value[worst])
+  out$variable <- x$variable[worst]
+  out$level <- x$level[worst]
+  out$energy <- unname(energy)
+  out
 }

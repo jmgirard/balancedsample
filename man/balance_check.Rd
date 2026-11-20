@@ -24,8 +24,9 @@ balance_check(x, ..., max_n = 2000)
 \code{\link[=balanced_initial_validation_split]{balanced_initial_validation_split()}} or
 \code{\link[rsample:initial_validation_split]{rsample::initial_validation_split()}}).}
 
-\item{...}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to check. If
-empty, the \code{balance} and \code{exact} columns stored in \code{x} are used.}
+\item{...}{For \code{balance_check()}, <\code{\link[tidyselect:language]{tidy-select}}>
+columns to check. If empty, the \code{balance} and \code{exact} columns stored in
+\code{x} are used. For \code{summary()}, not used and must be empty.}
 
 \item{max_n}{The largest number of rows per set for the energy distance.
 Larger sets are subsampled at random to keep memory use low.}
@@ -39,8 +40,9 @@ and \code{value}. Energy rows have \code{NA} in \code{variable} and \code{level}
 
 \code{summary()} returns a tibble with one row per split. It has the ID
 columns, \code{max_abs_smd} (the largest absolute SMD in the split), the
-\code{variable} and \code{level} with that SMD, and \code{energy}. If the split has no
-SMD that isn't missing, \code{max_abs_smd}, \code{variable}, and \code{level} are \code{NA}.
+\code{variable} and \code{level} with that SMD (the first one if several tie), and
+\code{energy}. If the split has no SMD that isn't missing, \code{max_abs_smd},
+\code{variable}, and \code{level} are \code{NA}. Each split must have its own ID.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its
