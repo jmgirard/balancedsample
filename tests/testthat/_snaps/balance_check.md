@@ -53,15 +53,6 @@
 ---
 
     Code
-      summary(noted[-1])
-    Condition
-      Error in `summary()`:
-      ! `object` must have ID columns and the columns `variable`, `level`, `statistic`, and `value`.
-      i Summarize the output of `balance_check()`.
-
----
-
-    Code
       summary(bc[c(NA, seq_len(nrow(bc))), ])
     Condition
       Error in `summary()`:
