@@ -298,7 +298,7 @@ test_that("summary() handles empty and incomplete input", {
   expect_equal(nrow(out), 6)
   expect_equal(out$id_fold, summary(rep_bc)$id2)
 
-  # The record doesn't leak into printed or plotted data.
+  # print() returns its input, and summary() drops the record.
   expect_output(printed <- print(bc))
   expect_identical(printed, bc)
   expect_null(attr(summary(bc), "id_cols"))
