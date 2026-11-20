@@ -453,9 +453,10 @@ pool_strata <- function(fine, exact, min_size) {
 # One plain number that is not NA. Classed numbers (such as bit64's
 # integer64) and arrays are refused, because their arithmetic can pass these
 # checks while the native code of the methods reads something else.
+# is.object() comes first, so that no class method of is.numeric() runs.
 is_number <- function(x) {
-  is.numeric(x) &&
-    !is.object(x) &&
+  !is.object(x) &&
+    is.numeric(x) &&
     length(x) == 1 &&
     is.null(dim(x)) &&
     !is.na(x)
@@ -463,7 +464,7 @@ is_number <- function(x) {
 
 # TRUE or FALSE, as a plain vector of length one.
 is_flag <- function(x) {
-  rlang::is_bool(x) && !is.object(x) && is.null(dim(x))
+  !is.object(x) && rlang::is_bool(x) && is.null(dim(x))
 }
 
 # A whole number small enough to be an integer, so that seq_len() and the

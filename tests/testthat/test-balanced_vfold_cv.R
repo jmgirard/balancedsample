@@ -551,6 +551,8 @@ test_that("logical balance columns and exact-only groups work", {
 
 test_that("bad option values give the package's own errors", {
   classed <- structure(3, class = "classed_number")
+  # A class can claim to be numeric; the checks must not ask it.
+  local_mocked_s3_method("is.numeric", "classed_number", function(x) "yes")
   # Each case is a bad option and the start of its error message.
   must <- list(
     moments = "must be 1, 2, 3, or 4",
@@ -569,29 +571,38 @@ test_that("bad option values give the package's own errors", {
     anticlust = list(
       list(moments = NA_real_),
       list(moments = 2.5),
+      list(moments = 5),
       list(covariances = matrix(TRUE)),
+      list(k_neighbours = 0),
       list(k_neighbours = 1e20),
       list(k_neighbours = classed),
       list(local_maximum = NA),
-      list(repetitions = NA_real_)
+      list(local_maximum = matrix(TRUE)),
+      list(repetitions = NA_real_),
+      list(repetitions = 0)
     ),
     rerandomize = list(
       list(p_accept = NA_real_),
+      list(p_accept = 2),
       list(p_accept = matrix(0.5)),
       list(p_accept = structure(0.5, class = "classed_number")),
       list(max_draws = NA_real_),
       list(max_draws = 2.5),
-      list(max_draws = 2^52)
+      list(max_draws = 2^52),
+      list(max_draws = 0)
     ),
     interaction = list(
       list(n_bins = NA_real_),
       list(n_bins = 2.5),
       list(n_bins = matrix(2)),
+      list(n_bins = 1),
       list(pool = NA_real_),
+      list(pool = 1),
       list(pool = matrix(0.5))
     ),
     twinning = list(
       list(strategy = 1:2),
+      list(strategy = 4),
       list(leaf_size = NA_real_),
       list(leaf_size = 0),
       list(leaf_size = -1),
