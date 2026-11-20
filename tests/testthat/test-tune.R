@@ -47,7 +47,8 @@ test_that("calibration splits of folds are balanced initial splits", {
     balance = c(x1, x2),
     exact = site,
     group = id,
-    method = "rerandomize"
+    method = "rerandomize",
+    options = list(p_accept = 0.2)
   )
   outer <- folds$splits[[1]]
   cal <- rsample::internal_calibration_split(
@@ -80,7 +81,8 @@ test_that("calibration splits of folds are balanced initial splits", {
     balance = c(x1, x2),
     exact = site,
     group = id,
-    method = "rerandomize"
+    method = "rerandomize",
+    options = list(p_accept = 0.2)
   )
   expect_identical(cal$in_id, direct$in_id)
   args <- c("prop", "balance", "exact", "group", "method", "options")
@@ -112,7 +114,8 @@ test_that("calibration splits of an initial split use the same prop", {
     balance = c(x1, cat),
     exact = site,
     group = id,
-    method = "interaction"
+    method = "interaction",
+    options = list(n_bins = 3)
   )
   set.seed(40)
   cal <- rsample::internal_calibration_split(split, split_args = list())
@@ -123,7 +126,8 @@ test_that("calibration splits of an initial split use the same prop", {
     balance = c(x1, cat),
     exact = site,
     group = id,
-    method = "interaction"
+    method = "interaction",
+    options = list(n_bins = 3)
   )
   expect_identical(cal$in_id, direct$in_id)
   args <- c("prop", "balance", "exact", "group", "method", "options")
