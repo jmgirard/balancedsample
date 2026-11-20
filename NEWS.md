@@ -30,10 +30,10 @@
 * `method = "twinning"` can now make sets of unequal size from whole numbers
   of similar parts.
 
-* With `method = "twinning"`, `balanced_initial_split()` now decides from
-  `prop` alone whether it can make the split, so the same `prop` is accepted
-  or rejected for any data size. Before, a `prop` such as 0.7 could pass on
-  small data because of rounding. Write `prop` as an exact fraction, such as
+* With `method = "twinning"`, `balanced_initial_split()` now checks that
+  `prop` is a fraction twinning can make before it rounds the set sizes, so
+  the check no longer depends on the data size. Before, a `prop` such as 0.7
+  could pass on small data because of rounding. Write `prop` as an exact fraction, such as
   `2 / 3`, not `0.67`.
 
 * `rsample::internal_calibration_split()` on a twinning three-way split now

@@ -63,7 +63,7 @@ balanced_initial_split <- function(
   entry <- get_balance_method(method, call = call)
   if (method == "twinning" && "strategy" %in% names(options)) {
     cli::cli_abort(
-      "{.arg strategy} applies to folds only. Remove it from {.arg options}.",
+      "{.fn balanced_initial_split} doesn't use {.arg strategy}. Remove it from {.arg options}.",
       call = call
     )
   }

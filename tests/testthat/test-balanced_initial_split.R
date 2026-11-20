@@ -66,6 +66,20 @@ test_that("twinning needs prop = 1 - 1/r", {
   expect_equal(nrow(rsample::training(s)), 50)
 })
 
+test_that("two-way twinning splits reject `strategy`", {
+  skip_if_not_installed("twinning")
+  d <- sim_data()
+  expect_snapshot(
+    balanced_initial_split(
+      d,
+      balance = x1,
+      method = "twinning",
+      options = list(strategy = 2)
+    ),
+    error = TRUE
+  )
+})
+
 test_that("twin_split_parts() depends on prop only", {
   expect_equal(twin_split_parts(3 / 4), c(3L, 1L))
   expect_equal(twin_split_parts(1 - 1 / 3), c(2L, 1L))
