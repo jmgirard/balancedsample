@@ -232,6 +232,15 @@ test_that("twinning calibration splits use the nearest share twinning can make",
   # 5/12 is exactly between 1/2 and 1/3. The tie goes to the larger r.
   expect_equal(nearest_twin_share(7, 5), 2 / 3)
   expect_equal(nearest_twin_share(5, 7), 1 / 3)
+  # Large values don't overflow.
+  expect_equal(nearest_twin_share(1e308, 6e307), 2 / 3)
+  expect_equal(
+    three_way_fit_share(list(
+      prop = c(1500000000L, 1000000000L),
+      method = "twinning"
+    )),
+    2 / 3
+  )
 
   d <- sim_data()
   set.seed(9)
