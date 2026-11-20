@@ -161,20 +161,57 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     stats::predict(model, new_data[c("hp", "wt")])$.pred
   }
 
+  # Count the inner splits that tune asks balancesample for. The splits
+  # themselves are tested above.
+  calls <- character()
+  record <- function(method) {
+    force(method)
+    function(x, split_args, ...) {
+      calls <<- c(calls, class(x)[[1]])
+      method(x, split_args, ...)
+    }
+  }
+  # local_mocked_s3_method() can't see rsample's generic from here, so the
+  # methods are registered in rsample's namespace and restored afterwards.
+  methods <- list(
+    balanced_vfold_split = internal_calibration_split.balanced_vfold_split,
+    balanced_initial_split = internal_calibration_split.balanced_initial_split
+  )
+  rsample_ns <- asNamespace("rsample")
+  for (cls in names(methods)) {
+    registerS3method(
+      "internal_calibration_split",
+      cls,
+      record(methods[[cls]]),
+      envir = rsample_ns
+    )
+  }
+  withr::defer(
+    for (cls in names(methods)) {
+      registerS3method(
+        "internal_calibration_split",
+        cls,
+        methods[[cls]],
+        envir = rsample_ns
+      )
+    }
+  )
+
   set.seed(7)
   folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
   ctrl <- tune::control_resamples(save_pred = TRUE, extract = function(x) x)
   res <- tune::fit_resamples(wf, resamples = folds, control = ctrl)
   expect_s3_class(res, "resample_results")
   expect_true(all(tune::collect_metrics(res)$n == 4))
+  expect_equal(calls, rep("balanced_vfold_split", 4))
   # In each fold, the collected predictions are the calibrated predictions
   # of the workflow that tune fitted, and the calibration changed them.
   pred <- tune::collect_predictions(res)
-  for (i in seq_len(nrow(folds))) {
-    fitted <- res$.extracts[[i]]$.extracts[[1]]
-    new_data <- rsample::assessment(folds$splits[[i]])
-    fold_pred <- pred[pred$id == folds$id[[i]], ]
-    fold_pred <- fold_pred[order(fold_pred$.row), ]
+  extracts <- tune::collect_extracts(res)
+  for (id in folds$id) {
+    fitted <- extracts$.extracts[[which(extracts$id == id)]]
+    fold_pred <- pred[pred$id == id, ]
+    new_data <- mtcars[fold_pred$.row, ]
     expect_equal(
       unname(fold_pred$.pred),
       unname(stats::predict(fitted, new_data)$.pred)
@@ -182,14 +219,15 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     expect_gt(max(abs(fold_pred$.pred - raw_predict(fitted, new_data))), 1e-6)
   }
 
+  calls <- character()
   set.seed(8)
   split <- balanced_initial_split(mtcars, balance = c(mpg, hp, wt))
   res <- tune::last_fit(wf, split = split)
+  expect_equal(calls, "balanced_initial_split")
   pred <- tune::collect_predictions(res)
   expect_equal(nrow(pred), 8)
   fitted <- tune::extract_workflow(res)
-  new_data <- rsample::testing(split)
-  pred <- pred[order(pred$.row), ]
+  new_data <- mtcars[pred$.row, ]
   expect_equal(
     unname(pred$.pred),
     unname(stats::predict(fitted, new_data)$.pred)
