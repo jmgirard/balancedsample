@@ -90,13 +90,14 @@ test_that("twin_split_parts() depends on prop only", {
   expect_null(twin_split_parts(0.7))
   expect_null(twin_split_parts(0.67))
   expect_null(twin_split_parts(1e-310))
-  # Only rounding error is allowed for.
-  expect_null(twin_split_parts(0.500000003))
-  expect_null(twin_split_parts(0.5000000000004))
-  for (p in c(0.95, 0.99, 0.875, 0.05, 1 - 1 / 7, 1 / 7, 5 / 6)) {
+  expect_null(twin_split_parts(0.5001))
+  # Typed decimals and proportions computed by subtraction pass.
+  for (p in c(0.95, 0.99, 0.875, 0.05, 1 - 1 / 7, 1 / 7, 5 / 6, 1 - 0.9875)) {
     expect_false(is.null(twin_split_parts(p)))
   }
-  expect_null(twin_split_parts(1 / (1e8 + 0.49)))
+  expect_equal(twin_split_parts(1 - (1 - 1 / 100000)), c(1, 99999))
+  # Values within the relative tolerance of 1e-8 count as the fraction.
+  expect_equal(twin_split_parts(0.500000003), c(1, 1))
 })
 
 test_that("twinning splits with a very large r fall back to random", {
