@@ -45,7 +45,8 @@ columns, \code{max_abs_smd} (the largest absolute SMD in the split), the
 \code{variable}, and \code{level} are \code{NA}. If it has no energy row, \code{energy} is
 \code{NA}. Each split must have its own ID, so no ID may have more than one
 energy row. Only the ID columns that \code{balance_check()} made are used, so
-columns you add are ignored.
+columns you add are ignored. If you rename or drop an ID column, the
+columns whose names start with \code{id} are used instead.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its

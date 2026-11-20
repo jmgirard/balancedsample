@@ -243,9 +243,10 @@ test_that("summary() keeps splits apart however the rows are arranged", {
   )
 
   # IDs that would collide if pasted, and `NA` next to "NA".
-  folds <- rsample::vfold_cv(d, v = 4)
+  folds <- rsample::vfold_cv(d, v = 2, repeats = 2)
   bc <- balance_check(folds, x1, cat)
-  fold <- match(bc$id, unique(bc$id))
+  key <- paste(bc$id, bc$id2)
+  fold <- match(key, unique(key))
   bc$id <- c("a\rb", "a", NA, "NA")[fold]
   bc$id2 <- c("c", "b\rc", "x", "x")[fold]
   out <- summary(bc)
@@ -277,14 +278,30 @@ test_that("summary() handles empty and incomplete input", {
   noted$note <- seq_len(nrow(bc))
   noted$identifier <- seq_len(nrow(bc))
   expect_equal(summary(noted), summary(bc))
-  expect_null(attr(summary(bc), "id_cols"))
-  expect_snapshot(summary(noted[-1]), error = TRUE)
 
   # Without the record, columns whose names start with "id" are IDs.
   plain <- bc
   attr(plain, "id_cols") <- NULL
   plain$note <- seq_len(nrow(bc))
   expect_equal(summary(plain), summary(bc))
+  plain$identifier <- seq_len(nrow(bc))
+  expect_equal(nrow(summary(plain)), nrow(bc))
+
+  # A renamed ID column is still an ID.
+  set.seed(12)
+  rep_bc <- balance_check(rsample::vfold_cv(d, v = 3, repeats = 2), x1)
+  renamed <- rep_bc
+  names(renamed)[names(renamed) == "id2"] <- "id_fold"
+  out <- summary(renamed[renamed$statistic == "smd", ])
+  expect_equal(nrow(out), 6)
+  expect_equal(out$id_fold, summary(rep_bc)$id2)
+
+  # The record doesn't leak into printed or plotted data.
+  expect_output(printed <- print(bc))
+  expect_identical(printed, bc)
+  expect_null(attr(summary(bc), "id_cols"))
+  skip_if_not_installed("ggplot2")
+  expect_null(attr(ggplot2::autoplot(bc)$data, "id_cols"))
 
   # Rows with a missing or unknown statistic.
   expect_snapshot(summary(bc[c(NA, seq_len(nrow(bc))), ]), error = TRUE)

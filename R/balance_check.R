@@ -48,7 +48,8 @@
 #'   `variable`, and `level` are `NA`. If it has no energy row, `energy` is
 #'   `NA`. Each split must have its own ID, so no ID may have more than one
 #'   energy row. Only the ID columns that `balance_check()` made are used, so
-#'   columns you add are ignored.
+#'   columns you add are ignored. If you rename or drop an ID column, the
+#'   columns whose names start with `id` are used instead.
 #'
 #' @examples
 #' set.seed(1)
@@ -271,8 +272,7 @@ print.balance_check <- function(x, ...) {
     paste0("max |SMD| = ", format(signif(max_smd, 3))),
     paste0("mean energy distance = ", format(signif(mean_en, 3)))
   ))
-  class(x) <- setdiff(class(x), "balance_check")
-  print(x, ...)
+  print(unclass_balance(x), ...)
   invisible(x)
 }
 
@@ -284,9 +284,12 @@ summary.balance_check <- function(object, ...) {
   x <- unclass_balance(object)
   stat_cols <- c("variable", "level", "statistic", "value")
   # Use the ID columns balance_check() recorded, so that added columns are
-  # ignored. Without the record, take the columns rsample names as IDs.
-  id_cols <- attr(x, "id_cols") %||% grep("^id", names(x), value = TRUE)
-  id_cols <- intersect(id_cols, names(x))
+  # ignored. If the record is missing or an ID column was renamed or
+  # dropped, take the columns whose names start with "id", as rsample does.
+  id_cols <- attr(object, "id_cols")
+  if (is.null(id_cols) || !all(id_cols %in% names(x))) {
+    id_cols <- grep("^id", names(x), value = TRUE)
+  }
   if (!all(stat_cols %in% names(x)) || length(id_cols) == 0) {
     cli::cli_abort(
       c(
@@ -334,7 +337,6 @@ summary.balance_check <- function(object, ...) {
   )
   first <- vapply(rows, `[`, integer(1), 1)
   out <- tibble::as_tibble(x[first, id_cols, drop = FALSE])
-  attr(out, "id_cols") <- NULL
   out$max_abs_smd <- abs(x$value[worst])
   out$variable <- x$variable[worst]
   out$level <- x$level[worst]

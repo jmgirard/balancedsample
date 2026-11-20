@@ -65,5 +65,6 @@ autoplot.balance_check <- function(object, type = c("smd", "energy"), ...) {
 
 unclass_balance <- function(x) {
   class(x) <- setdiff(class(x), "balance_check")
+  attr(x, "id_cols") <- NULL
   x
 }
