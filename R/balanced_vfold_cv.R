@@ -227,7 +227,7 @@ balanced_vfold_cv <- function(
 
 #' @export
 print.balanced_vfold_cv <- function(x, ...) {
-  cat("# ", pretty(x), "\n", sep = "")
+  cat_header(header_parts(x))
   class(x) <- class(x)[!(class(x) %in% c("balanced_vfold_cv", "rset"))]
   print(x, ...)
   invisible(x)
@@ -235,6 +235,10 @@ print.balanced_vfold_cv <- function(x, ...) {
 
 #' @export
 pretty.balanced_vfold_cv <- function(x, ...) {
+  paste(header_parts(x), collapse = ", ")
+}
+
+header_parts <- function(x) {
   details <- attributes(x)
   res <- paste0(
     details$v,
@@ -245,20 +249,30 @@ pretty.balanced_vfold_cv <- function(x, ...) {
   if (!is.null(details$repeats) && details$repeats > 1) {
     res <- paste(res, "repeated", details$repeats, "times")
   }
-  extra <- character()
   if (length(details$exact) > 0) {
-    extra <- c(
-      extra,
-      paste("stratified by", paste(details$exact, collapse = ", "))
-    )
+    res <- c(res, paste("stratified by", paste(details$exact, collapse = ", ")))
   }
   if (length(details$group) > 0) {
-    extra <- c(extra, paste("grouped by", details$group))
-  }
-  if (length(extra) > 0) {
-    res <- paste0(res, ", ", paste(extra, collapse = ", "))
+    res <- c(res, paste("grouped by", details$group))
   }
   res
+}
+
+# Print a "# " header that joins `parts` with commas. A new line starts
+# between parts when the next part would pass the console width.
+cat_header <- function(parts) {
+  width <- getOption("width") - 3
+  lines <- parts[1]
+  for (part in parts[-1]) {
+    last <- length(lines)
+    if (nchar(lines[last]) + 2 + nchar(part) <= width) {
+      lines[last] <- paste0(lines[last], ", ", part)
+    } else {
+      lines[last] <- paste0(lines[last], ",")
+      lines <- c(lines, part)
+    }
+  }
+  cat(paste0("# ", lines, "\n"), sep = "")
 }
 
 names0 <- function(num, prefix) {

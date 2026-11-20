@@ -480,6 +480,22 @@ test_that("print shows the method and design", {
   )
   expect_match(pretty(folds), "stratified by site, grouped by id")
   expect_output(print(folds), "balanced cross-validation")
+
+  # A long header wraps between its parts.
+  withr::local_options(width = 60)
+  header <- utils::capture.output(print(folds))[1:2]
+  expect_equal(
+    header,
+    c(
+      "# 3-fold balanced cross-validation (rerandomize),",
+      "# stratified by site, grouped by id"
+    )
+  )
+  withr::local_options(width = 100)
+  expect_equal(
+    utils::capture.output(print(folds))[1],
+    paste0("# ", pretty(folds))
+  )
 })
 
 test_that("bad data give clear errors", {

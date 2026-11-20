@@ -53,6 +53,11 @@ test_that("balance_check() works on repeats and on splits", {
   bc <- balance_check(s)
   expect_equal(unique(bc$id), "Split")
   expect_output(print(bc), "Balance check: 1 split")
+  withr::local_options(width = 40)
+  header <- utils::capture.output(print(bc))[1:3]
+  expect_match(header[1], "^# Balance check: 1 split,$")
+  expect_match(header[2], "^# max \\|SMD\\| = [0-9.e-]+,$")
+  expect_match(header[3], "^# mean energy distance = [0-9.e-]+$")
 })
 
 test_that("balance_check() drops missing values", {
