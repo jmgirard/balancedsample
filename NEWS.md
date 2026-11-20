@@ -28,7 +28,9 @@
   objects that don't store `balance` or `exact` columns, such as those from
   `rsample::vfold_cv()`, name the columns to check. A three-way split is
   checked as the validation set and the testing set, each against the
-  training set. `autoplot()` plots the result with ggplot2.
+  training set. `summary()` gives one row per split, with its largest
+  absolute SMD and its energy distance. `autoplot()` plots the result with
+  ggplot2.
 
 * Balanced folds work with `tune::fit_resamples()` and `tune::tune_grid()`,
   and balanced splits with `tune::last_fit()`. To tune on the validation set

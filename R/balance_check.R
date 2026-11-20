@@ -34,17 +34,25 @@
 #' indicator column per categorical level). It is 0 when the two sets have the
 #' same distribution, and it also detects differences in spread and shape.
 #'
+#' Use `summary()` on the result to get one row per split.
+#'
 #' @return A tibble with class `balance_check`. It has the ID columns of `x`,
 #'   and the columns `variable`, `level`, `statistic` (`"smd"` or `"energy"`),
 #'   and `value`. Energy rows have `NA` in `variable` and `level`.
+#'
+#'   `summary()` returns a tibble with one row per split. It has the ID
+#'   columns, `max_abs_smd` (the largest absolute SMD in the split), the
+#'   `variable` and `level` with that SMD, and `energy`. If the split has no
+#'   SMD that isn't missing, `max_abs_smd`, `variable`, and `level` are `NA`.
 #'
 #' @examples
 #' set.seed(1)
 #' folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 #' balance_check(folds)
+#' summary(balance_check(folds))
 #'
 #' # Compare with ordinary folds
-#' balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt)
+#' summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
 #' @export
 balance_check <- function(x, ..., max_n = 2000) {
   UseMethod("balance_check")
@@ -267,4 +275,33 @@ print.balance_check <- function(x, ...) {
   class(x) <- setdiff(class(x), "balance_check")
   print(x, ...)
   invisible(x)
+}
+
+#' @rdname balance_check
+#' @param object A `balance_check` object.
+#' @export
+summary.balance_check <- function(object, ...) {
+  rlang::check_dots_empty()
+  x <- unclass_balance(object)
+  id_cols <- setdiff(names(x), c("variable", "level", "statistic", "value"))
+  key <- do.call(paste, c(unname(as.list(x[id_cols])), sep = "\r"))
+  rows <- split(seq_len(nrow(x)), factor(key, levels = unique(key)))
+  res <- lapply(rows, function(i) {
+    smd <- i[x$statistic[i] == "smd" & !is.na(x$value[i])]
+    worst <- if (length(smd) > 0) {
+      smd[which.max(abs(x$value[smd]))]
+    } else {
+      NA_integer_
+    }
+    en <- x$value[i][x$statistic[i] == "energy"]
+    tibble::tibble(
+      max_abs_smd = abs(x$value[worst]),
+      variable = x$variable[worst],
+      level = x$level[worst],
+      energy = if (length(en) == 1) en else NA_real_
+    )
+  })
+  first <- vapply(rows, `[`, integer(1), 1)
+  ids <- tibble::as_tibble(x[first, id_cols, drop = FALSE])
+  tibble::as_tibble(cbind(ids, do.call(rbind, res)))
 }
