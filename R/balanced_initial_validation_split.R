@@ -22,7 +22,8 @@
 #' The methods, options, and group handling are the same as for
 #' [balanced_vfold_cv()]. With `method = "twinning"`, the data are split
 #' into `m` similar parts with [twinning::multiplet()], and each set gets a
-#' whole number of parts. `strategy` 2 needs `m` to be a power of 2.
+#' whole number of parts. `strategy` 2 needs `m` to be a power of 2. Strata
+#' with fewer than `2 * m` rows (or groups) are split at random.
 #'
 #' # Use with tune
 #'

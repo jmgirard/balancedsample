@@ -70,7 +70,8 @@ off the training set first and then splits the rest.
 The methods, options, and group handling are the same as for
 \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}. With \code{method = "twinning"}, the data are split
 into \code{m} similar parts with \code{\link[twinning:multiplet]{twinning::multiplet()}}, and each set gets a
-whole number of parts. \code{strategy} 2 needs \code{m} to be a power of 2.
+whole number of parts. \code{strategy} 2 needs \code{m} to be a power of 2. Strata
+with fewer than \code{2 * m} rows (or groups) are split at random.
 }
 \section{Use with tune}{
 \code{\link[rsample:validation_set]{rsample::validation_set()}} turns the split into an \code{rset} for

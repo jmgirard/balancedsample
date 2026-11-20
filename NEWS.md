@@ -15,15 +15,13 @@
 
 * Four balancing methods: `"anticlust"` (k-plus anticlustering, the
   default), `"twinning"` (data twinning; needs the twinning package),
-  `"rerandomize"` (keeps the first stratified random split whose Mahalanobis
-  imbalance is under a threshold set from pilot draws), and `"interaction"`
-  (crosses quantile bins of the balance columns and stratifies at random).
+  `"rerandomize"` (rerandomization on the Mahalanobis imbalance), and
+  `"interaction"` (random stratification on crossed quantile bins, as a
+  baseline). `?balanced_vfold_cv` describes each one and its options.
 
-* With `method = "twinning"`, a training/testing split needs `prop = 1/r` or
-  `1 - 1/r` for a whole number `r`: write `2 / 3`, not `0.67`. In a
-  three-way split, each proportion must be a multiple of `1/m` for one whole
-  number `m` up to 20. Strata with fewer than twice as many rows (or groups)
-  as parts are split at random.
+* With `method = "twinning"`, only some proportions are allowed (for
+  example, `2 / 3` but not `0.67`), and small strata are split at random. See
+  `?balanced_initial_split` and `?balanced_initial_validation_split`.
 
 * `balance_check()` reports standardized mean differences and the energy
   distance of balanced splits and of rsample's own splits and resamples. For
@@ -42,10 +40,9 @@
 * With tune 2.0.0 or later, a postprocessor that must be trained (for
   example, a tailor calibration) needs an inner split of the analysis set.
   * For balanced folds and a balanced training/testing split, the inner split
-    uses the outer split's method, columns, and options (without twinning's
-    `strategy`). If it can't be made (for example, if there are too few rows
-    or groups), you get a warning and an empty calibration set, as in
-    rsample.
+    uses the outer split's method and columns. If it can't be made (for
+    example, if there are too few rows or groups), you get a warning and an
+    empty calibration set, as in rsample.
   * Through `rsample::validation_set()`, rsample makes the inner split at
     random, so it is not balanced and can split groups
     ([tidymodels/rsample#620](https://github.com/tidymodels/rsample/issues/620)).
