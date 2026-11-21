@@ -73,12 +73,15 @@ prepare_balance_data <- function(
       call = call
     )
   }
-  has_na <- names(data)[used][vapply(data[used], anyNA, logical(1))]
-  if (length(has_na) > 0) {
+  n_na <- vapply(data[used], function(v) sum(is.na(v)), integer(1))
+  if (any(n_na > 0)) {
+    n <- n_na[n_na > 0]
+    has_na <- paste0(names(n), " (", n, ifelse(n == 1, " row)", " rows)"))
     cli::cli_abort(
       c(
         "Selected columns must not have missing values.",
-        x = "Missing values in {.field {has_na}}."
+        x = "Missing values in {has_na}.",
+        i = "Drop those rows, or balance on a filled copy of the column and an indicator of which values were missing. See {.code vignette(\"balancesample\")}."
       ),
       call = call
     )

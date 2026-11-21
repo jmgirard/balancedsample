@@ -72,8 +72,10 @@ means only, 3 adds skewness, and 4 adds kurtosis.
 \item \code{covariances} (default \code{FALSE}): also balance the product of each
 pair of \code{balance} columns.
 \item \code{k_neighbours} (default \code{Inf}): the number of nearest neighbours each
-row may swap with. \code{Inf} tries every swap. A small number, such as
-20, is faster on large data.
+row may swap with. \code{Inf} tries every swap, so the run time grows
+quickly with the number of rows. A small number, such as 20, is much
+faster on large data, but categorical \code{balance} columns can end up
+less balanced. Check the result with \code{\link[=balance_check]{balance_check()}}.
 \item \code{local_maximum} (default \code{TRUE}): repeat the exchange passes until a
 pass makes no swap (at most 100 passes). \code{FALSE} runs one pass.
 \item \code{repetitions} (default 1): the number of random starts. The best
