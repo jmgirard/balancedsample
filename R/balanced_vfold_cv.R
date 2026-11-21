@@ -240,10 +240,12 @@ print.balanced_vfold_cv <- function(x, ...) {
 
 #' @export
 pretty.balanced_vfold_cv <- function(x, ...) {
-  paste(header_parts(x), collapse = ", ")
+  paste(header_parts(x, balance = FALSE), collapse = ", ")
 }
 
-header_parts <- function(x) {
+# `balance = FALSE` leaves out the balance columns, so that pretty() stays
+# short in the headers of other objects, such as nested_cv().
+header_parts <- function(x, balance = TRUE) {
   details <- attributes(x)
   res <- paste0(
     details$v,
@@ -254,8 +256,20 @@ header_parts <- function(x) {
   if (!is.null(details$repeats) && details$repeats > 1) {
     res <- paste(res, "repeated", details$repeats, "times")
   }
+  if (!balance) {
+    details$balance <- NULL
+  }
+  c(res, design_parts(details))
+}
+
+# One part per column, so a long list can wrap between column names.
+design_parts <- function(details) {
+  res <- character()
+  if (length(details$balance) > 0) {
+    bal <- details$balance
+    res <- c(res, paste("balancing", bal[1]), bal[-1])
+  }
   if (length(details$exact) > 0) {
-    # One part per column, so a long list can wrap between column names.
     exact <- details$exact
     res <- c(res, paste("stratified by", exact[1]), exact[-1])
   }

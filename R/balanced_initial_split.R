@@ -115,3 +115,17 @@ balanced_initial_split <- function(
   }
   res
 }
+
+#' @export
+print.balanced_initial_split <- function(x, ...) {
+  details <- attributes(x)
+  # The empty fallback of an inner calibration split stores no arguments.
+  if (!is.null(details$method)) {
+    cat_header(c(
+      paste0("Balanced training/testing split (", details$method, ")"),
+      design_parts(details)
+    ))
+  }
+  NextMethod()
+  invisible(x)
+}
