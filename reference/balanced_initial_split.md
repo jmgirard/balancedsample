@@ -41,8 +41,9 @@ balanced_initial_split(
 
   \<[`tidy-select`](https://tidyselect.r-lib.org/reference/language.html)\>
   Columns to balance across the sets. Numeric columns are standardized.
-  Factor, character, and logical columns become one indicator column per
-  level.
+  So are `Date`, `POSIXct`, and `difftime` columns, as numbers of days
+  or seconds. Factor, character, and logical columns become one
+  indicator column per level.
 
 - exact:
 
@@ -57,7 +58,10 @@ balanced_initial_split(
   exact. Numeric columns with whole-number values are treated as
   categories. Put continuous columns in `balance`, or use
   [`cut()`](https://rdrr.io/r/base/cut.html) to make a factor if you
-  need exact counts within ranges.
+  need exact counts within ranges. A stratum whose share of the smallest
+  set is under one row (or group) can be missing from some sets. If more
+  than half of the strata are missing from at least one set, you get a
+  warning.
 
 - group:
 
@@ -113,6 +117,8 @@ split <- balanced_initial_split(
   exact = am
 )
 split
+#> # Balanced training/testing split (anticlust), balancing mpg, hp, wt,
+#> # stratified by am
 #> <Training/Testing/Total>
 #> <24/8/32>
 rsample::training(split)

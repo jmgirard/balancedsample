@@ -77,8 +77,9 @@ the assessment set, and the other folds form the analysis set.</p>
 
 <dt id="arg-balance">balance<a class="anchor" aria-label="anchor" href="#arg-balance"></a></dt>
 <dd><p>&lt;<code><a href="https://tidyselect.r-lib.org/reference/language.html" class="external-link">tidy-select</a></code>&gt; Columns to balance
-across the sets. Numeric columns are standardized. Factor, character, and
-logical columns become one indicator column per level.</p></dd>
+across the sets. Numeric columns are standardized. So are <code>Date</code>,
+<code>POSIXct</code>, and <code>difftime</code> columns, as numbers of days or seconds. Factor,
+character, and logical columns become one indicator column per level.</p></dd>
 
 
 <dt id="arg-exact">exact<a class="anchor" aria-label="anchor" href="#arg-exact"></a></dt>
@@ -92,7 +93,10 @@ numbers of groups, not rows. <code>exact</code> does the job of <code>strata</co
 rsample, but it takes several columns and its counts are exact. Numeric
 columns with whole-number values are treated as categories. Put
 continuous columns in <code>balance</code>, or use <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> to make a factor if you
-need exact counts within ranges.</p></dd>
+need exact counts within ranges. A stratum whose share of the smallest
+set is under one row (or group) can be missing from some sets. If more
+than half of the strata are missing from at least one set, you get a
+warning.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -128,8 +132,10 @@ means only, 3 adds skewness, and 4 adds kurtosis.</p></li>
 <li><p><code>covariances</code> (default <code>FALSE</code>): also balance the product of each
 pair of <code>balance</code> columns.</p></li>
 <li><p><code>k_neighbours</code> (default <code>Inf</code>): the number of nearest neighbours each
-row may swap with. <code>Inf</code> tries every swap. A small number, such as
-20, is faster on large data.</p></li>
+row may swap with. <code>Inf</code> tries every swap, so the run time grows
+quickly with the number of rows. A small number, such as 20, is much
+faster on large data, but categorical <code>balance</code> columns can end up
+less balanced. Check the result with <code><a href="balance_check.html">balance_check()</a></code>.</p></li>
 <li><p><code>local_maximum</code> (default <code>TRUE</code>): repeat the exchange passes until a
 pass makes no swap (at most 100 passes). <code>FALSE</code> runs one pass.</p></li>
 <li><p><code>repetitions</code> (default 1): the number of random starts. The best
@@ -157,9 +163,9 @@ with a warning.</p></li>
 bins, and stratifies at random. It is a baseline that shows how crossed
 strata become sparse. Options are <code>n_bins</code> (default 4) and <code>pool</code>
 (default 0.1): cells with less than this fraction of the rows are pooled.</p></li>
-</ul><p>The method balances the columns left after standardizing: constant and
-nearly constant columns (standard deviation up to 1e-12) are dropped, and
-with <code>group</code>, so are columns whose group means are all equal (see Groups).
+</ul><p>The method balances the columns left after standardizing: constant columns
+are dropped, and with <code>group</code>, so are columns whose group means are all
+equal up to rounding error (see Groups).
 If none are left, for example with only <code>exact</code> columns and no <code>group</code>, the
 method doesn't run and the sets are drawn at random, within the <code>exact</code>
 strata if there are any. The limits the method itself checks, such as
@@ -223,7 +229,8 @@ and Data Mining, 15</em>(5), 598-610.
 <span class="r-in"><span>  exact <span class="op">=</span> <span class="va">am</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">folds</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (anticlust), stratified by am</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (anticlust), balancing mpg, hp, wt,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by am</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
@@ -232,30 +239,21 @@ and Data Mining, 15</em>(5), 598-610.
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold4</span>
 <span class="r-in"><span><span class="fu"><a href="balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 4 splits, max |SMD| = 0.243, mean energy distance = 0.188</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 20 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    id    variable level statistic    value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Fold1 mpg      <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.055</span><span style="color: #BB0000; text-decoration: underline;">0</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Fold1 hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">4</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Fold1 wt       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.060</span><span style="color: #BB0000; text-decoration: underline;">1</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Fold1 am       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.081</span><span style="color: #BB0000; text-decoration: underline;">6</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Fold1 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.234  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Fold2 mpg      <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.014</span><span style="color: #BB0000; text-decoration: underline;">2</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Fold2 hp       <span style="color: #BB0000;">NA</span>    smd        0.044<span style="text-decoration: underline;">2</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Fold2 wt       <span style="color: #BB0000;">NA</span>    smd        0.023<span style="text-decoration: underline;">4</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Fold2 am       <span style="color: #BB0000;">NA</span>    smd        0.243  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Fold2 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.129  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> Fold3 mpg      <span style="color: #BB0000;">NA</span>    smd        0.061<span style="text-decoration: underline;">4</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> Fold3 hp       <span style="color: #BB0000;">NA</span>    smd        0.048<span style="text-decoration: underline;">1</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> Fold3 wt       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.003</span><span style="color: #BB0000; text-decoration: underline;">23</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> Fold3 am       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.081</span><span style="color: #BB0000; text-decoration: underline;">6</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> Fold3 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.248  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> Fold4 mpg      <span style="color: #BB0000;">NA</span>    smd        0.007<span style="text-decoration: underline;">27</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">17</span> Fold4 hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.056</span><span style="color: #BB0000; text-decoration: underline;">3</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">18</span> Fold4 wt       <span style="color: #BB0000;">NA</span>    smd        0.038<span style="text-decoration: underline;">2</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">19</span> Fold4 am       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.081</span><span style="color: #BB0000; text-decoration: underline;">6</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">20</span> Fold4 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.140  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 4 splits, max |SMD| = 0.254, mean energy distance = 0.205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 24 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    id    variable level statistic   value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Fold1 mpg      <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.055</span><span style="color: #BB0000; text-decoration: underline;">0</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Fold1 hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Fold1 wt       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.060</span><span style="color: #BB0000; text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Fold1 am       0     smd        0.085<span style="text-decoration: underline;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Fold1 am       1     smd       -<span style="color: #BB0000;">0.085</span><span style="color: #BB0000; text-decoration: underline;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Fold1 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.254 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Fold2 mpg      <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.014</span><span style="color: #BB0000; text-decoration: underline;">2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Fold2 hp       <span style="color: #BB0000;">NA</span>    smd        0.044<span style="text-decoration: underline;">2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Fold2 wt       <span style="color: #BB0000;">NA</span>    smd        0.023<span style="text-decoration: underline;">4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Fold2 am       0     smd       -<span style="color: #BB0000;">0.254</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 14 more rows</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Other methods</span></span></span>
 <span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span></span></span>
@@ -264,7 +262,7 @@ and Data Mining, 15</em>(5), 598-610.
 <span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"rerandomize"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (rerandomize)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (rerandomize), balancing mpg, hp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
@@ -273,7 +271,7 @@ and Data Mining, 15</em>(5), 598-610.
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold4</span>
 <span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span><span class="va">mtcars</span>, v <span class="op">=</span> <span class="fl">4</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"twinning"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (twinning)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (twinning), balancing mpg, hp</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>

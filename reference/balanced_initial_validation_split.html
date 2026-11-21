@@ -83,8 +83,9 @@ of <code>1/m</code> for one whole number <code>m</code> up to 20, for example <c
 
 <dt id="arg-balance">balance<a class="anchor" aria-label="anchor" href="#arg-balance"></a></dt>
 <dd><p>&lt;<code><a href="https://tidyselect.r-lib.org/reference/language.html" class="external-link">tidy-select</a></code>&gt; Columns to balance
-across the sets. Numeric columns are standardized. Factor, character, and
-logical columns become one indicator column per level.</p></dd>
+across the sets. Numeric columns are standardized. So are <code>Date</code>,
+<code>POSIXct</code>, and <code>difftime</code> columns, as numbers of days or seconds. Factor,
+character, and logical columns become one indicator column per level.</p></dd>
 
 
 <dt id="arg-exact">exact<a class="anchor" aria-label="anchor" href="#arg-exact"></a></dt>
@@ -98,7 +99,10 @@ numbers of groups, not rows. <code>exact</code> does the job of <code>strata</co
 rsample, but it takes several columns and its counts are exact. Numeric
 columns with whole-number values are treated as categories. Put
 continuous columns in <code>balance</code>, or use <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> to make a factor if you
-need exact counts within ranges.</p></dd>
+need exact counts within ranges. A stratum whose share of the smallest
+set is under one row (or group) can be missing from some sets. If more
+than half of the strata are missing from at least one set, you get a
+warning.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -169,23 +173,27 @@ be split, you get a warning and an empty calibration set.</p>
 <span class="r-in"><span>  exact <span class="op">=</span> <span class="va">am</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">split</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balanced training/validation/testing split (anticlust), balancing mpg, hp, wt,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by am</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;Training/Validation/Testing/Total&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;19/7/6/32&gt;</span>
 <span class="r-in"><span><span class="fu"><a href="balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 2 splits, max |SMD| = 0.272, mean energy distance = 0.282</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 10 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 2 splits, max |SMD| = 0.286, mean energy distance = 0.32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 5</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    id         variable level statistic    value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Validation mpg      <span style="color: #BB0000;">NA</span>    smd        0.001<span style="text-decoration: underline;">58</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Validation hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.105</span>  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Validation wt       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.023</span><span style="color: #BB0000; text-decoration: underline;">1</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Validation am       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.272</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Validation <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.353  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Testing    mpg      <span style="color: #BB0000;">NA</span>    smd        0.034<span style="text-decoration: underline;">3</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Testing    hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.018</span><span style="color: #BB0000; text-decoration: underline;">8</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Testing    wt       <span style="color: #BB0000;">NA</span>    smd        0.124  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Testing    am       <span style="color: #BB0000;">NA</span>    smd        0.150  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Testing    <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.210  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Validation am       0     smd        0.286  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Validation am       1     smd       -<span style="color: #BB0000;">0.286</span>  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Validation <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.408  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Testing    mpg      <span style="color: #BB0000;">NA</span>    smd        0.034<span style="text-decoration: underline;">3</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Testing    hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.018</span><span style="color: #BB0000; text-decoration: underline;">8</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Testing    wt       <span style="color: #BB0000;">NA</span>    smd        0.124  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Testing    am       0     smd       -<span style="color: #BB0000;">0.159</span>  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> Testing    am       1     smd        0.159  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> Testing    <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.232  </span>
 <span class="r-in"><span><span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/validation_set.html" class="external-link">validation_set</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 2</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id        </span>

@@ -179,6 +179,18 @@ make ranges of the same width.
 also works: it returns whole numbers, which `exact` treats as
 categories.
 
+What about the outcome? In rsample, `strata` is usually the outcome, so
+that every set has a similar mix of outcomes. You can do the same here.
+A numeric outcome can go in `balance`, next to the predictors, and a
+class outcome can go in `exact` if the class counts matter and every
+class has enough rows for every set. The outcome is used only to assign
+rows to sets, as with `strata`. This assumes you have the outcome when
+you make the split. If the evaluation must hold out whole time periods
+or whole sites, split by those instead: put the site in `group`, or use
+rsample’s time-based splits. In this article, the outcome depends on
+age, income, and diagnosis, so balancing those already keeps the outcome
+similar across the sets, and it is left out.
+
 Each column you add to `exact` splits the strata further. Here diagnosis
 and site together make 9 strata:
 
@@ -199,6 +211,58 @@ gets 1 or 2. A stratum with fewer rows than folds is missing from some
 folds. Small strata also leave the method less room to balance the other
 columns.
 
+### Missing values
+
+The columns in `balance`, `exact`, and `group` must not have missing
+values. If a `balance` column has some, you can balance on a filled copy
+of it and on an indicator of which values were missing. Here, 30 incomes
+are missing. The median fills them, and `income_missing` makes sure the
+missing incomes are spread over the folds too:
+
+``` r
+
+d_na <- d
+d_na$income[sample(n, 30)] <- NA
+d_na$income_filled <- d_na$income
+d_na$income_filled[is.na(d_na$income)] <- median(d_na$income, na.rm = TRUE)
+d_na$income_missing <- is.na(d_na$income)
+folds_na <- balanced_vfold_cv(
+  d_na,
+  v = 10,
+  balance = c(age, income_filled, income_missing),
+  exact = c(diagnosis, site)
+)
+```
+
+The filled copy is only for making the split. Your model can handle the
+missing values its own way, for example with a recipe.
+[`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+drops missing values variable by variable, so you can check the original
+column:
+
+``` r
+
+na_check <- balance_check(folds_na, age, income, income_missing)
+summary(na_check)
+#> # A tibble: 10 × 5
+#>    id     max_abs_smd variable level energy
+#>    <chr>        <dbl> <chr>    <chr>  <dbl>
+#>  1 Fold01    0.00356  income   NA    0.0314
+#>  2 Fold02    0.00596  income   NA    0.0346
+#>  3 Fold03    0.00508  income   NA    0.0699
+#>  4 Fold04    0.00980  income   NA    0.0271
+#>  5 Fold05    0.00586  income   NA    0.0459
+#>  6 Fold06    0.0106   income   NA    0.0547
+#>  7 Fold07    0.00146  age      NA    0.0371
+#>  8 Fold08    0.000956 income   NA    0.0401
+#>  9 Fold09    0.00395  age      NA    0.0326
+#> 10 Fold10    0.0299   income   NA    0.0875
+```
+
+For a categorical column, you can instead make a copy with its own level
+for missing values, for example with `forcats::fct_na_value_to_level()`,
+and put that in `balance` or `exact`.
+
 ## A full tidymodels workflow
 
 Start with a balanced training/testing split, with the same columns as
@@ -215,19 +279,19 @@ split <- balanced_initial_split(
 )
 train <- rsample::training(split)
 balance_check(split)
-#> # Balance check: 1 split, max |SMD| = 0.0373, mean energy distance = 0.0286
+#> # Balance check: 1 split, max |SMD| = 0.0373, mean energy distance = 0.0228
 #> # A tibble: 9 × 5
-#>   id    variable  level  statistic     value
-#>   <chr> <chr>     <chr>  <chr>         <dbl>
-#> 1 Split age       NA     smd       -0.000105
-#> 2 Split income    NA     smd        0.00133 
-#> 3 Split diagnosis mild   smd       -0.0373  
-#> 4 Split diagnosis none   smd        0.0339  
-#> 5 Split diagnosis severe smd        0       
-#> 6 Split site      A      smd       -0.0174  
-#> 7 Split site      B      smd        0.0367  
-#> 8 Split site      C      smd       -0.0174  
-#> 9 Split NA        NA     energy     0.0286
+#>   id    variable  level  statistic      value
+#>   <chr> <chr>     <chr>  <chr>          <dbl>
+#> 1 Split age       NA     smd       -0.0000573
+#> 2 Split income    NA     smd       -0.0000176
+#> 3 Split diagnosis mild   smd       -0.0373   
+#> 4 Split diagnosis none   smd        0.0339   
+#> 5 Split diagnosis severe smd        0        
+#> 6 Split site      A      smd        0.0260   
+#> 7 Split site      B      smd       -0.00923  
+#> 8 Split site      C      smd       -0.0174   
+#> 9 Split NA        NA     energy     0.0228
 ```
 
 A single split has few enough rows to read in full. The last row is the
@@ -291,9 +355,9 @@ show_best(res, metric = "rmse", n = 3)
 #> # A tibble: 3 × 8
 #>   tree_depth min_n .metric .estimator  mean     n std_err .config        
 #>        <int> <int> <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1         15    32 rmse    standard    1.15     5  0.0605 pre0_mod6_post0
-#> 2          9    24 rmse    standard    1.16     5  0.0371 pre0_mod4_post0
-#> 3         12     9 rmse    standard    1.17     5  0.0212 pre0_mod5_post0
+#> 1          3    40 rmse    standard    1.13     5  0.0693 pre0_mod2_post0
+#> 2          9    24 rmse    standard    1.15     5  0.0454 pre0_mod4_post0
+#> 3         12     9 rmse    standard    1.15     5  0.0451 pre0_mod5_post0
 ```
 
 Finalize the workflow with the settings that had the lowest
@@ -309,8 +373,8 @@ collect_metrics(final_fit)
 #> # A tibble: 2 × 4
 #>   .metric .estimator .estimate .config        
 #>   <chr>   <chr>          <dbl> <chr>          
-#> 1 rmse    standard       1.34  pre0_mod0_post0
-#> 2 rsq     standard       0.343 pre0_mod0_post0
+#> 1 rmse    standard       1.08  pre0_mod0_post0
+#> 2 rsq     standard       0.523 pre0_mod0_post0
 ```
 
 ## Choosing a method
@@ -382,20 +446,23 @@ shown <- by_method
 shown[-1] <- round(shown[-1], 3)
 shown
 #>        method max_abs_smd mean_energy
-#> 1   anticlust       0.134       0.054
-#> 2    twinning       0.205       0.039
-#> 3 rerandomize       0.370       0.065
-#> 4 interaction       0.378       0.070
+#> 1   anticlust       0.134       0.059
+#> 2    twinning       0.251       0.041
+#> 3 rerandomize       0.268       0.055
+#> 4 interaction       0.419       0.066
 ```
 
 In this run, anticlust had the smallest `max_abs_smd` (0.134), and
-twinning had the smallest `mean_energy` (0.039). These come from one run
+twinning had the smallest `mean_energy` (0.041). These come from one run
 of each method on one data set, so they don’t show which method does
 best in general, and small differences may be noise.
 
 Start with anticlust. On large data, set
 `options = list(k_neighbours = 20)` or try twinning, then check the
-balance again. The README lists run times for both. See
+balance again. With `k_neighbours = 20`, look at the categorical columns
+in particular: in one test with 5,000 rows, their largest SMD rose from
+about 0.005 to about 0.1, while the numeric columns stayed as well
+balanced. The README lists run times for both. See
 [`?balanced_vfold_cv`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
 for the options of each method.
 
@@ -419,16 +486,16 @@ grouped <- balanced_vfold_cv(
   group = person
 )
 grouped
-#> # 5-fold balanced cross-validation (anticlust), stratified by diagnosis,
-#> # site, grouped by person
+#> # 5-fold balanced cross-validation (anticlust), balancing age, income,
+#> # stratified by diagnosis, site, grouped by person
 #> # A tibble: 5 × 2
 #>   splits            id   
 #>   <list>            <chr>
-#> 1 <split [571/142]> Fold1
-#> 2 <split [570/143]> Fold2
-#> 3 <split [571/142]> Fold3
-#> 4 <split [570/143]> Fold4
-#> 5 <split [570/143]> Fold5
+#> 1 <split [578/145]> Fold1
+#> 2 <split [578/145]> Fold2
+#> 3 <split [579/144]> Fold3
+#> 4 <split [579/144]> Fold4
+#> 5 <split [578/145]> Fold5
 ```
 
 The split sizes are numbers of rows. Each fold gets about the same

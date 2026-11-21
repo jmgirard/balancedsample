@@ -3,7 +3,8 @@
 Plot the output of
 [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md).
 `type = "smd"` shows the standardized mean difference of each variable
-in each split, with dashed lines at -0.1 and 0.1. `type = "energy"`
+in each split, with dashed lines at -0.1 and 0.1. For a three-way split,
+the validation and testing sets have different shapes. `type = "energy"`
 shows the energy distance of each split.
 
 ## Usage

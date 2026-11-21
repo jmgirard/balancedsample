@@ -12,16 +12,16 @@ folds.
 ## Usage
 
 ``` r
-balance_check(x, ..., max_n = 2000)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 # S3 method for class 'rset'
-balance_check(x, ..., max_n = 2000)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 # S3 method for class 'rsplit'
-balance_check(x, ..., max_n = 2000)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 # S3 method for class 'three_way_split'
-balance_check(x, ..., max_n = 2000)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 # S3 method for class 'balance_check'
 summary(object, ...)
@@ -54,6 +54,10 @@ summary(object, ...)
   The largest number of rows per set for the energy distance. Larger
   sets are subsampled at random to keep memory use low.
 
+- variance_ratio:
+
+  If `TRUE`, also report the variance ratio of each numeric variable.
+
 - object:
 
   A `balance_check` object.
@@ -61,16 +65,19 @@ summary(object, ...)
 ## Value
 
 A tibble with class `balance_check`. It has the ID columns of `x`, and
-the columns `variable`, `level`, `statistic` (`"smd"` or `"energy"`),
-and `value`. Energy rows have `NA` in `variable` and `level`.
+the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`, or
+`"variance_ratio"`), and `value`. Energy rows have `NA` in `variable`
+and `level`.
 
 [`summary()`](https://rdrr.io/r/base/summary.html) returns a tibble with
 one row per split. It has the ID columns, `max_abs_smd` (the largest
 absolute SMD in the split), the `variable` and `level` with that SMD
-(the first one if several tie), and `energy`. If the split has no SMD
-that isn't missing, `max_abs_smd`, `variable`, and `level` are `NA`. If
-it has no energy row, `energy` is `NA`. Each split must have its own ID,
-so no ID may have more than one energy row. Only the ID columns that
+(the first one if several tie), and `energy`. With variance ratios, it
+also has `variance_ratio`, the ratio farthest from 1 on the log scale
+(so 0.25 is farther than 3). If the split has no SMD that isn't missing,
+`max_abs_smd`, `variable`, and `level` are `NA`. If it has no energy
+row, `energy` is `NA`. Each split must have its own ID, so no ID may
+have more than one energy row. Only the ID columns that
 `balance_check()` made are used, so columns you add are ignored. If you
 rename or drop an ID column, the columns whose names start with `id` are
 used instead.
@@ -85,9 +92,23 @@ under 0.1 in absolute size are often taken as good balance. If both sets
 have zero variance but different means, the SMD is `Inf` or `-Inf`; the
 plot shows these values at the edge of the panel.
 
-Missing values are dropped variable by variable for the SMD. The energy
-distance uses the rows that have no missing values in any checked
-column.
+Stored `exact` columns with whole numbers are treated as categories, as
+the split functions treat them, so they get one SMD per level and no
+variance ratio. This holds whether you name them or not. Other
+whole-number columns are numeric.
+
+With `variance_ratio = TRUE`, each numeric variable also gets the
+variance of the assessment set divided by the variance of the analysis
+set. It is 1 when the spreads are equal, and values between 0.5 and 2
+are often taken as good balance. The SMD can be 0 while the spreads
+differ, and the variance ratio shows which variable differs. A variance
+within rounding error of zero counts as zero: if both are zero, the
+ratio is 1, and if one is, it is 0 or `Inf`. With fewer than two values
+in a set, it is `NA`.
+
+Missing values are dropped variable by variable for the SMD and the
+variance ratio. The energy distance uses the rows that have no missing
+values in any checked column.
 
 The energy distance is the V-statistic
 `2 E|X - Y| - E|X - X'| - E|Y - Y'|` on the standardized variables (one
@@ -132,6 +153,14 @@ summary(balance_check(folds))
 #> 2 Fold2      0.0759 mpg      NA    0.118 
 #> 3 Fold3      0.0603 wt       NA    0.0961
 #> 4 Fold4      0.0734 hp       NA    0.105 
+summary(balance_check(folds, variance_ratio = TRUE))
+#> # A tibble: 4 × 6
+#>   id    max_abs_smd variable level energy variance_ratio
+#>   <chr>       <dbl> <chr>    <chr>  <dbl>          <dbl>
+#> 1 Fold1      0.138  wt       NA    0.212            1.53
+#> 2 Fold2      0.0759 mpg      NA    0.118            1.25
+#> 3 Fold3      0.0603 wt       NA    0.0961           1.27
+#> 4 Fold4      0.0734 hp       NA    0.105            1.18
 
 # Compare with ordinary folds
 summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))

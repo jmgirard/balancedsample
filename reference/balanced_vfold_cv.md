@@ -38,8 +38,9 @@ balanced_vfold_cv(
 
   \<[`tidy-select`](https://tidyselect.r-lib.org/reference/language.html)\>
   Columns to balance across the sets. Numeric columns are standardized.
-  Factor, character, and logical columns become one indicator column per
-  level.
+  So are `Date`, `POSIXct`, and `difftime` columns, as numbers of days
+  or seconds. Factor, character, and logical columns become one
+  indicator column per level.
 
 - exact:
 
@@ -54,7 +55,10 @@ balanced_vfold_cv(
   exact. Numeric columns with whole-number values are treated as
   categories. Put continuous columns in `balance`, or use
   [`cut()`](https://rdrr.io/r/base/cut.html) to make a factor if you
-  need exact counts within ranges.
+  need exact counts within ranges. A stratum whose share of the smallest
+  set is under one row (or group) can be missing from some sets. If more
+  than half of the strata are missing from at least one set, you get a
+  warning.
 
 - group:
 
@@ -94,8 +98,11 @@ column of `rsplit` objects and one or two ID columns.
     pair of `balance` columns.
 
   - `k_neighbours` (default `Inf`): the number of nearest neighbours
-    each row may swap with. `Inf` tries every swap. A small number, such
-    as 20, is faster on large data.
+    each row may swap with. `Inf` tries every swap, so the run time
+    grows quickly with the number of rows. A small number, such as 20,
+    is much faster on large data, but categorical `balance` columns can
+    end up less balanced. Check the result with
+    [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md).
 
   - `local_maximum` (default `TRUE`): repeat the exchange passes until a
     pass makes no swap (at most 100 passes). `FALSE` runs one pass.
@@ -132,15 +139,14 @@ column of `rsplit` objects and one or two ID columns.
   `pool` (default 0.1): cells with less than this fraction of the rows
   are pooled.
 
-The method balances the columns left after standardizing: constant and
-nearly constant columns (standard deviation up to 1e-12) are dropped,
-and with `group`, so are columns whose group means are all equal (see
-Groups). If none are left, for example with only `exact` columns and no
-`group`, the method doesn't run and the sets are drawn at random, within
-the `exact` strata if there are any. The limits the method itself
-checks, such as twinning's strategy 2 needing a power of 2, then don't
-apply. The options are still checked, and the split functions still
-check that twinning can make `prop`.
+The method balances the columns left after standardizing: constant
+columns are dropped, and with `group`, so are columns whose group means
+are all equal up to rounding error (see Groups). If none are left, for
+example with only `exact` columns and no `group`, the method doesn't run
+and the sets are drawn at random, within the `exact` strata if there are
+any. The limits the method itself checks, such as twinning's strategy 2
+needing a power of 2, then don't apply. The options are still checked,
+and the split functions still check that twinning can make `prop`.
 
 ## Groups
 
@@ -209,7 +215,8 @@ folds <- balanced_vfold_cv(
   exact = am
 )
 folds
-#> # 4-fold balanced cross-validation (anticlust), stratified by am
+#> # 4-fold balanced cross-validation (anticlust), balancing mpg, hp, wt,
+#> # stratified by am
 #> # A tibble: 4 × 2
 #>   splits         id   
 #>   <list>         <chr>
@@ -218,30 +225,21 @@ folds
 #> 3 <split [24/8]> Fold3
 #> 4 <split [24/8]> Fold4
 balance_check(folds)
-#> # Balance check: 4 splits, max |SMD| = 0.243, mean energy distance = 0.188
-#> # A tibble: 20 × 5
-#>    id    variable level statistic    value
-#>    <chr> <chr>    <chr> <chr>        <dbl>
-#>  1 Fold1 mpg      NA    smd       -0.0550 
-#>  2 Fold1 hp       NA    smd       -0.0404 
-#>  3 Fold1 wt       NA    smd       -0.0601 
-#>  4 Fold1 am       NA    smd       -0.0816 
-#>  5 Fold1 NA       NA    energy     0.234  
-#>  6 Fold2 mpg      NA    smd       -0.0142 
-#>  7 Fold2 hp       NA    smd        0.0442 
-#>  8 Fold2 wt       NA    smd        0.0234 
-#>  9 Fold2 am       NA    smd        0.243  
-#> 10 Fold2 NA       NA    energy     0.129  
-#> 11 Fold3 mpg      NA    smd        0.0614 
-#> 12 Fold3 hp       NA    smd        0.0481 
-#> 13 Fold3 wt       NA    smd       -0.00323
-#> 14 Fold3 am       NA    smd       -0.0816 
-#> 15 Fold3 NA       NA    energy     0.248  
-#> 16 Fold4 mpg      NA    smd        0.00727
-#> 17 Fold4 hp       NA    smd       -0.0563 
-#> 18 Fold4 wt       NA    smd        0.0382 
-#> 19 Fold4 am       NA    smd       -0.0816 
-#> 20 Fold4 NA       NA    energy     0.140  
+#> # Balance check: 4 splits, max |SMD| = 0.254, mean energy distance = 0.205
+#> # A tibble: 24 × 5
+#>    id    variable level statistic   value
+#>    <chr> <chr>    <chr> <chr>       <dbl>
+#>  1 Fold1 mpg      NA    smd       -0.0550
+#>  2 Fold1 hp       NA    smd       -0.0404
+#>  3 Fold1 wt       NA    smd       -0.0601
+#>  4 Fold1 am       0     smd        0.0853
+#>  5 Fold1 am       1     smd       -0.0853
+#>  6 Fold1 NA       NA    energy     0.254 
+#>  7 Fold2 mpg      NA    smd       -0.0142
+#>  8 Fold2 hp       NA    smd        0.0442
+#>  9 Fold2 wt       NA    smd        0.0234
+#> 10 Fold2 am       0     smd       -0.254 
+#> # ℹ 14 more rows
 
 # Other methods
 balanced_vfold_cv(
@@ -250,7 +248,7 @@ balanced_vfold_cv(
   balance = c(mpg, hp),
   method = "rerandomize"
 )
-#> # 4-fold balanced cross-validation (rerandomize)
+#> # 4-fold balanced cross-validation (rerandomize), balancing mpg, hp
 #> # A tibble: 4 × 2
 #>   splits         id   
 #>   <list>         <chr>
@@ -259,7 +257,7 @@ balanced_vfold_cv(
 #> 3 <split [24/8]> Fold3
 #> 4 <split [24/8]> Fold4
 balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
-#> # 4-fold balanced cross-validation (twinning)
+#> # 4-fold balanced cross-validation (twinning), balancing mpg, hp
 #> # A tibble: 4 × 2
 #>   splits         id   
 #>   <list>         <chr>

@@ -45,8 +45,9 @@ balanced_initial_validation_split(
 
   \<[`tidy-select`](https://tidyselect.r-lib.org/reference/language.html)\>
   Columns to balance across the sets. Numeric columns are standardized.
-  Factor, character, and logical columns become one indicator column per
-  level.
+  So are `Date`, `POSIXct`, and `difftime` columns, as numbers of days
+  or seconds. Factor, character, and logical columns become one
+  indicator column per level.
 
 - exact:
 
@@ -61,7 +62,10 @@ balanced_initial_validation_split(
   exact. Numeric columns with whole-number values are treated as
   categories. Put continuous columns in `balance`, or use
   [`cut()`](https://rdrr.io/r/base/cut.html) to make a factor if you
-  need exact counts within ranges.
+  need exact counts within ranges. A stratum whose share of the smallest
+  set is under one row (or group) can be missing from some sets. If more
+  than half of the strata are missing from at least one set, you get a
+  warning.
 
 - group:
 
@@ -151,23 +155,27 @@ split <- balanced_initial_validation_split(
   exact = am
 )
 split
+#> # Balanced training/validation/testing split (anticlust), balancing mpg, hp, wt,
+#> # stratified by am
 #> <Training/Validation/Testing/Total>
 #> <19/7/6/32>
 balance_check(split)
-#> # Balance check: 2 splits, max |SMD| = 0.272, mean energy distance = 0.282
-#> # A tibble: 10 × 5
+#> # Balance check: 2 splits, max |SMD| = 0.286, mean energy distance = 0.32
+#> # A tibble: 12 × 5
 #>    id         variable level statistic    value
 #>    <chr>      <chr>    <chr> <chr>        <dbl>
 #>  1 Validation mpg      NA    smd        0.00158
 #>  2 Validation hp       NA    smd       -0.105  
 #>  3 Validation wt       NA    smd       -0.0231 
-#>  4 Validation am       NA    smd       -0.272  
-#>  5 Validation NA       NA    energy     0.353  
-#>  6 Testing    mpg      NA    smd        0.0343 
-#>  7 Testing    hp       NA    smd       -0.0188 
-#>  8 Testing    wt       NA    smd        0.124  
-#>  9 Testing    am       NA    smd        0.150  
-#> 10 Testing    NA       NA    energy     0.210  
+#>  4 Validation am       0     smd        0.286  
+#>  5 Validation am       1     smd       -0.286  
+#>  6 Validation NA       NA    energy     0.408  
+#>  7 Testing    mpg      NA    smd        0.0343 
+#>  8 Testing    hp       NA    smd       -0.0188 
+#>  9 Testing    wt       NA    smd        0.124  
+#> 10 Testing    am       0     smd       -0.159  
+#> 11 Testing    am       1     smd        0.159  
+#> 12 Testing    NA       NA    energy     0.232  
 rsample::validation_set(split)
 #> # A tibble: 1 × 2
 #>   splits         id        
