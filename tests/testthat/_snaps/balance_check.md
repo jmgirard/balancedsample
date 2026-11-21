@@ -53,7 +53,7 @@
       print(balance_check(s, x, g, z, variance_ratio = TRUE))
     Output
       # Balance check: 1 split, 3 variables
-      # 3 of 3 variables have |SMD| > 0.1, energy distance 1.02
+      # |SMD| > 0.1 in 3 of 3 variables, energy distance 1.02
       
       variable  level         SMD  variance ratio
       x                    -0.129           0.667
@@ -67,18 +67,18 @@
 ---
 
     Code
-      print(balance_check(folds(3), x, g, variance_ratio = TRUE))
+      withr::with_options(list(width = 100), print(balance_check(folds(3), x, g,
+      variance_ratio = TRUE)))
     Output
       # Balance check: 3 splits, 2 variables
       # 3 of 3 splits have a variable with |SMD| > 0.1, mean energy distance 0.894
       
-      id     max |SMD|  variable  mean |SMD|  over 0.1  energy  variance ratio
+      id     max |SMD|  variable  mean |SMD|  over 0.1  energy  variance ratio  ratio variable
       Fold1      0.693  x              0.555       2/2   0.707           1.23   x
       Fold2      1.15   g: a           0.805       2/2   1.09            0.479  x
       Fold3      0.417  g: a           0.292       2/2   0.884           2.22   x
       
-      # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-      # 15 rows.
+      # summary() gives this table as a tibble, and tibble::as_tibble() gives all 15 rows.
 
 ---
 
@@ -95,6 +95,15 @@
       
       # summary(by = "variable") gives this table as a tibble, summary() gives one
       # row per split, and tibble::as_tibble() gives all 66 rows.
+
+# print() falls back to the rows when it can't summarize
+
+    Code
+      summary(smd)
+    Condition
+      Error in `summary()`:
+      ! `object` must keep its ID columns.
+      x It has no id2.
 
 # summary() handles empty and incomplete input
 

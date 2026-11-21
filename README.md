@@ -166,7 +166,7 @@ split
 #> <300/100/400>
 balance_check(split)
 #> # Balance check: 1 split, 2 variables
-#> # 0 of 2 variables have |SMD| > 0.1, energy distance 0.00206
+#> # |SMD| > 0.1 in 0 of 2 variables, energy distance 0.00206
 #> 
 #> variable  level       SMD
 #> age              -0.00875

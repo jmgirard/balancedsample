@@ -132,9 +132,10 @@ same distribution, and it also detects differences in spread and shape.
 Printing the result shows a short table. For one split, it has the SMD
 of each variable and level. For up to 10 splits, it has one row per split,
 as from \code{summary()}. For more splits, it has one row per variable, as from
-\code{summary(by = "variable")}. Printing counts SMDs over 0.1; use \code{summary()}
-with \code{threshold} for another value. Use \code{\link[tibble:as_tibble]{tibble::as_tibble()}} to see all
-rows.
+\code{summary(by = "variable")}. Columns that don't fit the width of the
+console are left out, and a note names them. Printing counts SMDs over
+0.1; use \code{summary()} with \code{threshold} for another value. Use
+\code{\link[tibble:as_tibble]{tibble::as_tibble()}} to see all rows.
 
 \code{summary()} first reduces each variable in each split to its largest
 absolute SMD, over its levels and its \code{"(missing)"} row. So a variable

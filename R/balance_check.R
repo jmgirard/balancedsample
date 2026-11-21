@@ -60,9 +60,10 @@
 #' Printing the result shows a short table. For one split, it has the SMD
 #' of each variable and level. For up to 10 splits, it has one row per split,
 #' as from `summary()`. For more splits, it has one row per variable, as from
-#' `summary(by = "variable")`. Printing counts SMDs over 0.1; use `summary()`
-#' with `threshold` for another value. Use [tibble::as_tibble()] to see all
-#' rows.
+#' `summary(by = "variable")`. Columns that don't fit the width of the
+#' console are left out, and a note names them. Printing counts SMDs over
+#' 0.1; use `summary()` with `threshold` for another value. Use
+#' [tibble::as_tibble()] to see all rows.
 #'
 #' `summary()` first reduces each variable in each split to its largest
 #' absolute SMD, over its levels and its `"(missing)"` row. So a variable
@@ -461,8 +462,9 @@ new_balance_check <- function(x, id_cols = "id") {
 #' @export
 print.balance_check <- function(x, ...) {
   s <- tryCatch(balance_splits(x), rlang_error = function(e) NULL)
-  if (is.null(s)) {
-    # For example, a subset without some of the columns.
+  if (is.null(s) || (nrow(x) > 0 && !any(s$x$statistic == "smd"))) {
+    # For example, a subset without some of the columns, or with only the
+    # energy rows.
     cat("# Balance check\n")
     print(unclass_balance(x), ...)
     return(invisible(x))
@@ -482,16 +484,15 @@ print.balance_check <- function(x, ...) {
 
   en <- by_split$energy
   if (n_split == 1) {
-    n_over <- by_split$n_over
     over <- paste0(
-      n_over,
+      "|SMD| > ",
+      threshold,
+      " in ",
+      by_split$n_over,
       " of ",
       by_split$n_variables,
       " variable",
-      if (by_split$n_variables != 1) "s",
-      if (n_over == 1) " has" else " have",
-      " |SMD| > ",
-      threshold
+      if (by_split$n_variables != 1) "s"
     )
     energy <- paste("energy distance", format_num(en))
   } else {
@@ -511,17 +512,17 @@ print.balance_check <- function(x, ...) {
   cat("\n")
 
   if (n_split == 1) {
-    cat_table(detail_table(s$x, threshold))
+    hidden <- cat_table(detail_table(s$x, threshold))
     note <- "tibble::as_tibble() gives all {nrow(x)} rows."
   } else if (n_split <= 10) {
-    cat_table(split_table(by_split, s$id_cols, threshold))
+    hidden <- cat_table(split_table(by_split, s$id_cols, threshold))
     note <- paste(
       "summary() gives this table as a tibble, and tibble::as_tibble()",
       "gives all {nrow(x)} rows."
     )
   } else {
     by_var <- summary_by_variable(s, threshold)
-    cat_table(variable_table(by_var, s$id_cols, threshold))
+    hidden <- cat_table(variable_table(by_var, s$id_cols, threshold))
     note <- paste(
       'summary(by = "variable") gives this table as a tibble, summary()',
       "gives one row per split, and tibble::as_tibble() gives all",
@@ -529,6 +530,16 @@ print.balance_check <- function(x, ...) {
     )
   }
   note <- gsub("{nrow(x)}", nrow(x), note, fixed = TRUE)
+  if (length(hidden) > 0) {
+    note <- c(
+      paste0(
+        "Not shown for lack of width: ",
+        paste(hidden, collapse = ", "),
+        "."
+      ),
+      note
+    )
+  }
   cat(
     "\n",
     paste0(strwrap(note, getOption("width") - 2, prefix = "# "), "\n"),
@@ -574,14 +585,20 @@ split_table <- function(s, id_cols, threshold) {
   align <- c(align, "right", "decimal")
   if ("variance_ratio" %in% names(s)) {
     out$`variance ratio` <- format_num(s$variance_ratio)
-    out$` ` <- ifelse(
+    out$`ratio variable` <- ifelse(
       is.na(s$variance_ratio_variable),
       "",
       s$variance_ratio_variable
     )
     align <- c(align, "decimal", "left")
   }
-  list(columns = out, align = align)
+  # The ratio and its variable are shown or dropped together.
+  group <- seq_along(out)
+  group[names(out) == "ratio variable"] <- group[
+    names(out) == "ratio variable"
+  ] -
+    1L
+  list(columns = out, align = align, group = group)
 }
 
 # One row per variable, from summary(by = "variable").
@@ -636,7 +653,7 @@ format_smd <- function(v, threshold) {
       d <- 3
       shown <- signif(abs(z), d)
       while (
-        d < 15 &&
+        d < 17 &&
           ((shown > threshold) != (abs(z) > threshold) ||
             (shown == threshold && abs(z) != threshold))
       ) {
@@ -651,11 +668,12 @@ format_smd <- function(v, threshold) {
 }
 
 # Prints columns of text, each aligned to the left, to the right, or on its
-# decimal points, under its name.
+# decimal points, under its name. Columns that don't fit the width are
+# dropped from the right, a group at a time, and their names returned.
 cat_table <- function(table) {
   width <- function(text) nchar(text, type = "width")
   pad <- function(text, right) {
-    gap <- strrep(" ", max(width(text)) - width(text))
+    gap <- strrep(" ", max(c(0, width(text))) - width(text))
     if (right) paste0(gap, text) else paste0(text, gap)
   }
   padded <- Map(
@@ -674,8 +692,18 @@ cat_table <- function(table) {
     table$columns,
     table$align
   )
-  lines <- do.call(paste, c(unname(padded), sep = "  "))
+  group <- table$group %||% seq_along(padded)
+  widths <- vapply(padded, function(p) width(p[1]), numeric(1))
+  keep <- rep(TRUE, length(padded))
+  while (
+    sum(widths[keep]) + 2 * (sum(keep) - 1) > getOption("width") &&
+      length(unique(group[keep])) > 1
+  ) {
+    keep[group == max(group[keep])] <- FALSE
+  }
+  lines <- do.call(paste, c(unname(padded[keep]), sep = "  "))
   cat(paste0(sub(" +$", "", lines), "\n"), sep = "")
+  invisible(names(table$columns)[!keep])
 }
 
 #' @rdname balance_check
@@ -711,9 +739,21 @@ balance_splits <- function(object, call = rlang::caller_env()) {
   # Use the ID columns balance_check() recorded, so that added columns are
   # ignored. If the record is missing or an ID column was renamed or
   # dropped, take the columns whose names start with "id", as rsample does.
-  id_cols <- attr(object, "id_cols")
+  recorded <- attr(object, "id_cols")
+  id_cols <- recorded
   if (is.null(id_cols) || !all(id_cols %in% names(x))) {
     id_cols <- grep("^id", names(x), value = TRUE)
+  }
+  # With an ID column dropped, splits that differ only in it would merge.
+  if (length(id_cols) > 0 && length(id_cols) < length(recorded)) {
+    lost <- setdiff(recorded, names(x))
+    cli::cli_abort(
+      c(
+        "{.arg object} must keep its ID columns.",
+        x = "It has no {.field {lost}}."
+      ),
+      call = call
+    )
   }
   if (!all(stat_cols %in% names(x)) || length(id_cols) == 0) {
     cli::cli_abort(
@@ -772,6 +812,7 @@ summary_by_split <- function(s, threshold) {
   top <- vapply(
     worst,
     function(w) {
+      w <- sort(w)
       if (length(w) > 0) w[which.max(abs(x$value[w]))] else NA_integer_
     },
     integer(1)
@@ -811,14 +852,17 @@ summary_by_variable <- function(s, threshold) {
   worst <- lapply(s$rows, worst_by_variable, x = x)
   rows <- as.integer(unlist(worst, use.names = FALSE))
   split_of <- rep(seq_along(worst), lengths(worst))
-  vars <- unique(x$variable[rows])
+  smd <- x$statistic == "smd" & !is.na(x$variable)
+  vars <- unique(x$variable[smd])
   by_var <- unname(split(
     seq_along(rows),
     factor(x$variable[rows], levels = vars)
   ))
   top <- vapply(
     by_var,
-    function(j) j[which.max(abs(x$value[rows[j]]))],
+    function(j) {
+      if (length(j) > 0) j[which.max(abs(x$value[rows[j]]))] else NA_integer_
+    },
     integer(1)
   )
   first <- vapply(s$rows, `[`, integer(1), 1)
@@ -827,7 +871,9 @@ summary_by_variable <- function(s, threshold) {
     variable = vars,
     median_abs_smd = vapply(
       by_var,
-      function(j) stats::median(abs(x$value[rows[j]])),
+      function(j) {
+        if (length(j) > 0) stats::median(abs(x$value[rows[j]])) else NA_real_
+      },
       numeric(1)
     ),
     max_abs_smd = abs(x$value[rows[top]]),

@@ -185,7 +185,7 @@ train <- rsample::training(split)
 balance_check(split)
 ```
 
-A single split has few enough rows to read in full. The last row is the energy distance.
+For a single split, the table shows the signed SMD of each variable and level, and the header gives the energy distance.
 
 ```{r folds}
 folds <- balanced_vfold_cv(
