@@ -351,3 +351,29 @@ test_that("a small-strata warning made an error doesn't fail the split", {
     "^\\(converted from warning\\) No draw met"
   )
 })
+
+test_that("warnings before a failed calibration split come first", {
+  order <- character()
+  # The inner split warns and then fails.
+  local_mocked_bindings(
+    balanced_initial_split = function(...) {
+      warning("first")
+      stop("broken")
+    }
+  )
+  withCallingHandlers(
+    cal <- balanced_calibration_split(
+      mtcars,
+      list(prop = 3 / 4, balance = "mpg"),
+      class = c("internal_calibration_split", "rsplit")
+    ),
+    warning = function(cnd) {
+      order <<- c(order, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(order[1], "first")
+  expect_match(order[2], "Cannot create calibration split")
+  expect_length(order, 2)
+  expect_equal(nrow(rsample::calibration(cal)), 0)
+})

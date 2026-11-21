@@ -455,7 +455,11 @@ test_that("small differences far from the origin are measured", {
 test_that("a gap between the sets doesn't hide the spread within them", {
   # Spreads of 1e-7 seconds at the epoch, against a set in 2026.
   d <- data.frame(
-    t = as.POSIXct(c(0, 1e-7, 2e-7, 0, rep(1767225600, 4)), tz = "UTC")
+    t = as.POSIXct(
+      c(0, 1e-7, 2e-7, 0, rep(1767225600, 4)),
+      origin = "1970-01-01",
+      tz = "UTC"
+    )
   )
   x <- as.numeric(d$t)
   # The 2026 set has no spread.
