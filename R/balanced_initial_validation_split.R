@@ -145,3 +145,18 @@ balanced_initial_validation_split <- function(
   )
   res
 }
+
+#' @export
+print.balanced_initial_validation_split <- function(x, ...) {
+  details <- attr(x, "val_att")
+  cat_header(c(
+    paste0(
+      "Balanced training/validation/testing split (",
+      details$method,
+      ")"
+    ),
+    design_parts(details)
+  ))
+  NextMethod()
+  invisible(x)
+}

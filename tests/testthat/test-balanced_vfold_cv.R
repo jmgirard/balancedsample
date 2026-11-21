@@ -488,6 +488,8 @@ test_that("print shows the method and design", {
     "3-fold balanced cross-validation \\(rerandomize\\)"
   )
   expect_match(pretty(folds), "stratified by site, grouped by id")
+  # pretty() leaves out the balance columns, which print() shows.
+  expect_no_match(pretty(folds), "balancing")
   expect_output(print(folds), "balanced cross-validation")
 
   # A long header wraps between its parts.
@@ -497,18 +499,18 @@ test_that("print shows the method and design", {
     header,
     c(
       "# 3-fold balanced cross-validation (rerandomize),",
-      "# stratified by site, grouped by id"
+      "# balancing x1, stratified by site, grouped by id"
     )
   )
   # A header that fits exactly stays on one line.
-  full <- paste0("# ", pretty(folds))
+  full <- paste0("# ", paste(header_parts(folds), collapse = ", "))
   withr::local_options(width = nchar(full))
   expect_equal(utils::capture.output(print(folds))[1], full)
   withr::local_options(width = nchar(full) - 1)
   expect_equal(
     utils::capture.output(print(folds))[1:2],
     c(
-      "# 3-fold balanced cross-validation (rerandomize), stratified by site,",
+      "# 3-fold balanced cross-validation (rerandomize), balancing x1, stratified by site,",
       "# grouped by id"
     )
   )
@@ -533,10 +535,10 @@ test_that("print wraps long lists of exact columns by display width", {
   header <- grep("^# ", utils::capture.output(print(folds)), value = TRUE)
   header <- header[seq_len(length(header) - 1)]
   expect_true(all(nchar(header, type = "width") <= 60))
-  expect_equal(header[2], "# stratified by site, sex, sex2,")
+  expect_equal(header[2], "# balancing x1, stratified by site, sex, sex2,")
   expect_equal(
     paste(sub("^# ", "", header), collapse = " "),
-    pretty(folds)
+    paste(header_parts(folds), collapse = ", ")
   )
 })
 
