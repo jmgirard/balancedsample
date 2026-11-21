@@ -160,20 +160,14 @@ balanced_calibration_split <- function(
       if (is.list(options)) {
         options$strategy <- NULL
       }
-      # The outer split already warned about small strata.
-      withCallingHandlers(
-        balanced_initial_split(
-          analysis_set,
-          prop = share(split_args),
-          balance = tidyselect::all_of(split_args$balance %||% character()),
-          exact = tidyselect::all_of(split_args$exact %||% character()),
-          group = tidyselect::all_of(split_args$group %||% character()),
-          method = split_args$method %||% "anticlust",
-          options = options
-        ),
-        balancesample_sparse_strata = function(cnd) {
-          rlang::cnd_muffle(cnd)
-        }
+      balanced_initial_split(
+        analysis_set,
+        prop = share(split_args),
+        balance = tidyselect::all_of(split_args$balance %||% character()),
+        exact = tidyselect::all_of(split_args$exact %||% character()),
+        group = tidyselect::all_of(split_args$group %||% character()),
+        method = split_args$method %||% "anticlust",
+        options = options
       )
     },
     error = function(cnd) {

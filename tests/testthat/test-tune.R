@@ -299,3 +299,15 @@ test_that("labels() of repeated folds combine both IDs", {
   single <- balanced_vfold_cv(mtcars, v = 2, balance = mpg)
   expect_equal(labels(single), c("Fold1", "Fold2"))
 })
+
+test_that("calibration splits warn about their own small strata", {
+  d <- mtcars
+  d$s <- rep(letters[1:16], each = 2)
+  set.seed(1)
+  # Every stratum is in both outer sets, so the outer split is quiet.
+  outer <- expect_no_warning(balanced_initial_split(d, prop = 0.51, exact = s))
+  expect_warning(
+    rsample::internal_calibration_split(outer, list()),
+    class = "balancesample_sparse_strata"
+  )
+})

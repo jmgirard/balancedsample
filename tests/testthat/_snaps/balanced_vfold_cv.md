@@ -280,6 +280,6 @@
     Condition
       Warning in `balanced_vfold_cv()`:
       68 of 68 `exact` strata are missing from at least one set.
-      i Only strata with at least 10 rows are sure to be in every set.
+      i A stratum with at least 10 rows is in every set.
       i Whole-number columns in `exact` are categories, and each value is a level: age. Put continuous columns in `balance`, or use `cut()`.
 

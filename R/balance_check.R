@@ -109,7 +109,20 @@ balance_check.rset <- function(
   if (nrow(x) == 0) {
     cli::cli_abort("{.arg x} has no splits.")
   }
+  # The columns are selected in the first split. The splits of a
+  # manual_rset() can have different data, so check that the others have them.
   cols <- check_columns(x$splits[[1]]$data, x, ...)
+  for (i in seq_len(nrow(x))) {
+    lacking <- setdiff(cols, names(x$splits[[i]]$data))
+    if (length(lacking) > 0) {
+      cli::cli_abort(
+        c(
+          "Every split of {.arg x} must have the columns to check.",
+          x = "Split {i} has no {.field {lacking}}."
+        )
+      )
+    }
+  }
   id_cols <- grep("^id", names(x), value = TRUE)
   ids <- tibble::as_tibble(as.data.frame(x)[id_cols])
 
@@ -297,32 +310,39 @@ smd_value <- function(a, b, binary = FALSE) {
   if (length(a) == 0 || length(b) == 0) {
     return(NA_real_)
   }
-  # Measure from an observed value, so that a large origin (such as a
-  # date-time in seconds) doesn't swamp small differences. Proportions need
-  # their own origin.
-  if (!binary) {
-    ref <- c(a, b)[1]
-    a <- a - ref
-    b <- b - ref
-  }
-  diff <- mean(a) - mean(b)
   if (binary) {
     pa <- mean(a)
     pb <- mean(b)
+    diff <- pa - pb
     den <- sqrt((pa * (1 - pa) + pb * (1 - pb)) / 2)
+    tol <- near_zero(1)
   } else {
-    va <- if (length(a) > 1) stats::var(a) else 0
-    vb <- if (length(b) > 1) stats::var(b) else 0
-    den <- sqrt((va + vb) / 2)
+    # Measure from an observed value, so that a large origin (such as a
+    # date-time in seconds) doesn't swamp small differences.
+    ref <- c(a, b)[1]
+    a <- a - ref
+    b <- b - ref
+    diff <- mean(a) - mean(b)
+    den <- sqrt((set_variance(a) + set_variance(b)) / 2)
+    tol <- near_zero(max(abs(c(a, b))))
   }
-  # Tolerances are relative to the size of the values, so the result does not
-  # depend on the units.
-  tol <- near_zero(max(abs(c(a, b))))
-  if (den <= tol) {
+  if (den == 0) {
     return(if (abs(diff) <= tol) 0 else sign(diff) * Inf)
   }
   out <- diff / den
   if (abs(out) < 1e-12) 0 else out
+}
+
+# Variance of one set, or 0 if it is within rounding error of zero. Each set
+# is measured from its own first value, so a gap between the sets doesn't
+# hide the spread within them.
+set_variance <- function(a) {
+  if (length(a) < 2) {
+    return(0)
+  }
+  a <- a - a[1]
+  v <- stats::var(a)
+  if (v <= near_zero(max(abs(a)))^2) 0 else v
 }
 
 # Variance of `a` over the variance of `b`. A variance within rounding error
@@ -334,19 +354,15 @@ variance_ratio_value <- function(a, b) {
   if (length(a) < 2 || length(b) < 2) {
     return(NA_real_)
   }
-  ref <- a[1]
-  a <- a - ref
-  b <- b - ref
-  va <- stats::var(a)
-  vb <- stats::var(b)
-  tol <- near_zero(max(abs(c(a, b))))^2
-  if (va <= tol && vb <= tol) {
+  va <- set_variance(a)
+  vb <- set_variance(b)
+  if (va == 0 && vb == 0) {
     return(1)
   }
-  if (vb <= tol) {
+  if (vb == 0) {
     return(Inf)
   }
-  if (va <= tol) {
+  if (va == 0) {
     return(0)
   }
   va / vb
