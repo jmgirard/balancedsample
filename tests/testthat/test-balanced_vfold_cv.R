@@ -577,7 +577,10 @@ test_that("dates, date-times, and durations can be balanced", {
   )
   expect_s3_class(rsample::analysis(a$splits[[1]])$day, "Date")
   bc <- balance_check(a)
-  expect_equal(unique(bc$variable[bc$statistic == "smd"]), c("day", "time", "days"))
+  expect_equal(
+    unique(bc$variable[bc$statistic == "smd"]),
+    c("day", "time", "days")
+  )
   expect_false(anyNA(bc$value))
 
   d$lt <- as.POSIXlt(d$time)
@@ -868,7 +871,13 @@ test_that("most strata being too small gives one warning", {
   # With groups, strata are counted in groups.
   d$id <- rep(1:40, each = 5)
   d$site <- d$id %% 2
-  expect_no_warning(balanced_vfold_cv(d, v = 10, balance = x, exact = site, group = id))
+  expect_no_warning(balanced_vfold_cv(
+    d,
+    v = 10,
+    balance = x,
+    exact = site,
+    group = id
+  ))
   d$site <- d$id %% 8
   expect_warning(
     balanced_vfold_cv(d, v = 10, balance = x, exact = site, group = id),

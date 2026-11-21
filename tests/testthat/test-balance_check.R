@@ -419,7 +419,10 @@ test_that("variance ratios work for every kind of object", {
   expect_equal(sum(bc$statistic == "variance_ratio"), 3)
   s3 <- balanced_initial_validation_split(d, balance = x1)
   bc <- balance_check(s3, variance_ratio = TRUE)
-  expect_equal(bc$id[bc$statistic == "variance_ratio"], c("Validation", "Testing"))
+  expect_equal(
+    bc$id[bc$statistic == "variance_ratio"],
+    c("Validation", "Testing")
+  )
   expect_output(print(bc), "Balance check: 2 splits")
   skip_if_not_installed("ggplot2")
   expect_s3_class(ggplot2::autoplot(bc), "ggplot")
