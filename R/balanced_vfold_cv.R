@@ -42,8 +42,10 @@
 #'   * `covariances` (default `FALSE`): also balance the product of each
 #'     pair of `balance` columns.
 #'   * `k_neighbours` (default `Inf`): the number of nearest neighbours each
-#'     row may swap with. `Inf` tries every swap. A small number, such as
-#'     20, is faster on large data.
+#'     row may swap with. `Inf` tries every swap, so the run time grows
+#'     quickly with the number of rows. A small number, such as 20, is much
+#'     faster on large data, but categorical `balance` columns can end up
+#'     less balanced. Check the result with [balance_check()].
 #'   * `local_maximum` (default `TRUE`): repeat the exchange passes until a
 #'     pass makes no swap (at most 100 passes). `FALSE` runs one pass.
 #'   * `repetitions` (default 1): the number of random starts. The best
