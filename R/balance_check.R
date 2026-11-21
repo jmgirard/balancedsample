@@ -27,6 +27,10 @@
 #' have zero variance but different means, the SMD is `Inf` or `-Inf`; the
 #' plot shows these values at the edge of the panel.
 #'
+#' Stored `exact` columns with whole numbers are treated as categories, as
+#' the split functions treat them, so they get one SMD per level. Whole-number
+#' columns that you name yourself, or that were not in `exact`, are numeric.
+#'
 #' Missing values are dropped variable by variable for the SMD. The energy
 #' distance uses the rows that have no missing values in any checked column.
 #'
@@ -80,11 +84,12 @@ balance_check.rset <- function(x, ..., max_n = 2000) {
   }
   data <- x$splits[[1]]$data
   cols <- check_columns(data, x, ...)
+  data <- exact_as_factors(data, x, cols)
   id_cols <- grep("^id", names(x), value = TRUE)
   ids <- tibble::as_tibble(as.data.frame(x)[id_cols])
 
   res <- lapply(seq_len(nrow(x)), function(i) {
-    out <- split_balance(x$splits[[i]], cols, max_n)
+    out <- split_balance(x$splits[[i]], cols, max_n, data)
     id_rows <- ids[rep(i, nrow(out)), , drop = FALSE]
     cbind(id_rows, out)
   })
@@ -96,7 +101,7 @@ balance_check.rset <- function(x, ..., max_n = 2000) {
 balance_check.rsplit <- function(x, ..., max_n = 2000) {
   check_whole(max_n, min = 2)
   cols <- check_columns(x$data, x, ...)
-  out <- split_balance(x, cols, max_n)
+  out <- split_balance(x, cols, max_n, exact_as_factors(x$data, x, cols))
   new_balance_check(cbind(tibble::tibble(id = rep("Split", nrow(out))), out))
 }
 
@@ -105,6 +110,7 @@ balance_check.rsplit <- function(x, ..., max_n = 2000) {
 balance_check.three_way_split <- function(x, ..., max_n = 2000) {
   check_whole(max_n, min = 2)
   cols <- check_columns(x$data, x, ...)
+  data <- exact_as_factors(x$data, x, cols)
   test_id <- setdiff(seq_len(nrow(x$data)), c(x$train_id, x$val_id))
   res <- lapply(
     list(Validation = x$val_id, Testing = test_id),
@@ -113,7 +119,7 @@ balance_check.three_way_split <- function(x, ..., max_n = 2000) {
         list(analysis = x$train_id, assessment = out_id),
         data = x$data
       )
-      split_balance(split, cols, max_n)
+      split_balance(split, cols, max_n, data)
     }
   )
   ids <- rep(names(res), vapply(res, nrow, integer(1)))
@@ -129,8 +135,7 @@ check_columns <- function(data, x, ..., call = rlang::caller_env()) {
   )
   cols <- names(pos)
   if (length(cols) == 0) {
-    # Three-way splits keep their arguments in `val_att`.
-    stored <- attr(x, "val_att") %||% attributes(x)
+    stored <- stored_args(x)
     cols <- unique(c(stored$balance, stored$exact))
   }
   if (length(cols) == 0) {
@@ -145,8 +150,23 @@ check_columns <- function(data, x, ..., call = rlang::caller_env()) {
   cols
 }
 
-split_balance <- function(split, cols, max_n) {
-  data <- split$data
+# Three-way splits keep their arguments in `val_att`.
+stored_args <- function(x) {
+  attr(x, "val_att") %||% attributes(x)
+}
+
+# The split functions treat whole-number `exact` columns as categories, so
+# the check does too, with one SMD per level.
+exact_as_factors <- function(data, x, cols) {
+  for (nm in intersect(cols, stored_args(x)$exact)) {
+    if (is.numeric(data[[nm]])) {
+      data[[nm]] <- factor(data[[nm]])
+    }
+  }
+  data
+}
+
+split_balance <- function(split, cols, max_n, data = split$data) {
   an <- split$in_id
   as <- rsample::complement(split)
 

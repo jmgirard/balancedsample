@@ -320,3 +320,22 @@ test_that("summary() handles empty and incomplete input", {
   # Rows with a missing or unknown statistic.
   expect_snapshot(summary(bc[c(NA, seq_len(nrow(bc))), ]), error = TRUE)
 })
+
+test_that("whole-number exact columns are checked as categories", {
+  d <- data.frame(code = rep(1:3, 20), x = seq_len(60))
+  set.seed(1)
+  folds <- balanced_vfold_cv(d, v = 3, balance = x, exact = code)
+  bc <- balance_check(folds)
+  expect_equal(bc$level[bc$variable %in% "code"], rep(c("1", "2", "3"), 3))
+
+  # A set with only code 2 differs from one with codes 1 and 3, although
+  # the means are equal.
+  d <- data.frame(code = c(2, 2, 2, 2, 1, 3, 1, 3), y = 1:8)
+  plain <- rsample::make_splits(list(analysis = 5:8, assessment = 1:4), d)
+  # Named columns from a plain split stay numeric.
+  expect_equal(balance_check(plain, code)$value[1], 0)
+  stored <- plain
+  attr(stored, "exact") <- "code"
+  bc <- balance_check(stored)
+  expect_equal(bc$value[bc$variable %in% "code" & bc$level == "2"], Inf)
+})

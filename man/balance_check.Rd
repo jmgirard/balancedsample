@@ -66,6 +66,10 @@ under 0.1 in absolute size are often taken as good balance. If both sets
 have zero variance but different means, the SMD is \code{Inf} or \code{-Inf}; the
 plot shows these values at the edge of the panel.
 
+Stored \code{exact} columns with whole numbers are treated as categories, as
+the split functions treat them, so they get one SMD per level. Whole-number
+columns that you name yourself, or that were not in \code{exact}, are numeric.
+
 Missing values are dropped variable by variable for the SMD. The energy
 distance uses the rows that have no missing values in any checked column.
 
