@@ -175,11 +175,12 @@ split_balance <- function(split, cols, max_n) {
         value = unname(vals)
       ))
     }
+    v <- as.numeric(as_balance_numeric(v))
     tibble::tibble(
       variable = nm,
       level = NA_character_,
       statistic = "smd",
-      value = smd_value(as.numeric(v[as]), as.numeric(v[an]))
+      value = smd_value(v[as], v[an])
     )
   })
 
@@ -224,7 +225,7 @@ smd_value <- function(a, b, binary = FALSE) {
   }
   # Tolerances are relative to the size of the values, so the result does not
   # depend on the units.
-  tol <- 1e-12 * max(abs(c(a, b)))
+  tol <- near_zero(max(abs(c(a, b))))
   if (den <= tol) {
     return(if (abs(diff) <= tol) 0 else sign(diff) * Inf)
   }

@@ -24,8 +24,9 @@ balanced_vfold_cv(
 \item{repeats}{The number of times to repeat the V-fold partitioning.}
 
 \item{balance}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to balance
-across the sets. Numeric columns are standardized. Factor, character, and
-logical columns become one indicator column per level.}
+across the sets. Numeric columns are standardized. So are date,
+date-time, and difftime columns, as numbers of days or seconds. Factor,
+character, and logical columns become one indicator column per level.}
 
 \item{exact}{<\code{\link[tidyselect:language]{tidy-select}}> Categorical columns to
 stratify exactly. Each combination of levels is one stratum. In each
@@ -101,8 +102,9 @@ strata become sparse. Options are \code{n_bins} (default 4) and \code{pool}
 }
 
 The method balances the columns left after standardizing: constant and
-nearly constant columns (standard deviation up to 1e-12) are dropped, and
-with \code{group}, so are columns whose group means are all equal (see Groups).
+nearly constant columns (standard deviation within rounding error of zero,
+relative to the largest absolute value) are dropped, and with \code{group}, so
+are columns whose group means are all equal (see Groups).
 If none are left, for example with only \code{exact} columns and no \code{group}, the
 method doesn't run and the sets are drawn at random, within the \code{exact}
 strata if there are any. The limits the method itself checks, such as

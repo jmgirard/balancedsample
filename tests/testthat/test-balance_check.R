@@ -87,6 +87,20 @@ test_that("balance_check() reports complete separation as Inf", {
   expect_equal(balance_check(s, x)$value[1], Inf)
 })
 
+test_that("SMDs don't depend on the units or the origin", {
+  x <- c(-2, -1, 1, 2, -1.5, 0.5)
+  smd <- function(v) {
+    s <- rsample::make_splits(
+      list(analysis = 1:3, assessment = 4:6),
+      data.frame(v = v)
+    )
+    balance_check(s, v)$value[1]
+  }
+  expect_equal(smd(x * 1e-14), smd(x))
+  expect_equal(smd(x * 1e14), smd(x))
+  expect_equal(smd(x + 1e12), smd(x))
+})
+
 test_that("balance_check() needs columns for plain rsample objects", {
   d <- sim_data()
   expect_snapshot(balance_check(rsample::vfold_cv(d, v = 3)), error = TRUE)
