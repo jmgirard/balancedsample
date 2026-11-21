@@ -152,24 +152,33 @@ balanced_calibration_split <- function(
   class,
   share = function(args) args$prop
 ) {
+  # A small-strata warning is held back and given after the fallback below,
+  # so that options(warn = 2) doesn't turn it into a failed split.
+  sparse <- NULL
   split <- tryCatch(
-    {
-      options <- split_args$options %||% list()
-      # The inner split is a balanced_initial_split(), which doesn't take
-      # `strategy`. It also rejects options that aren't a list.
-      if (is.list(options)) {
-        options$strategy <- NULL
+    withCallingHandlers(
+      {
+        options <- split_args$options %||% list()
+        # The inner split is a balanced_initial_split(), which doesn't take
+        # `strategy`. It also rejects options that aren't a list.
+        if (is.list(options)) {
+          options$strategy <- NULL
+        }
+        balanced_initial_split(
+          analysis_set,
+          prop = share(split_args),
+          balance = tidyselect::all_of(split_args$balance %||% character()),
+          exact = tidyselect::all_of(split_args$exact %||% character()),
+          group = tidyselect::all_of(split_args$group %||% character()),
+          method = split_args$method %||% "anticlust",
+          options = options
+        )
+      },
+      balancesample_sparse_strata = function(cnd) {
+        sparse <<- cnd
+        rlang::cnd_muffle(cnd)
       }
-      balanced_initial_split(
-        analysis_set,
-        prop = share(split_args),
-        balance = tidyselect::all_of(split_args$balance %||% character()),
-        exact = tidyselect::all_of(split_args$exact %||% character()),
-        group = tidyselect::all_of(split_args$group %||% character()),
-        method = split_args$method %||% "anticlust",
-        options = options
-      )
-    },
+    ),
     error = function(cnd) {
       cli::cli_warn(
         "Cannot create calibration split; creating an empty calibration set.",
@@ -179,6 +188,9 @@ balanced_calibration_split <- function(
     }
   )
   class(split) <- class
+  if (!is.null(sparse)) {
+    warning(sparse)
+  }
   split
 }
 

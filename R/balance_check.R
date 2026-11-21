@@ -317,13 +317,14 @@ smd_value <- function(a, b, binary = FALSE) {
     den <- sqrt((pa * (1 - pa) + pb * (1 - pb)) / 2)
     tol <- near_zero(1)
   } else {
+    # Each variance is measured within its own set, before the shift below.
+    den <- sqrt((set_variance(a) + set_variance(b)) / 2)
     # Measure from an observed value, so that a large origin (such as a
     # date-time in seconds) doesn't swamp small differences.
     ref <- c(a, b)[1]
     a <- a - ref
     b <- b - ref
     diff <- mean(a) - mean(b)
-    den <- sqrt((set_variance(a) + set_variance(b)) / 2)
     tol <- near_zero(max(abs(c(a, b))))
   }
   if (den == 0) {
