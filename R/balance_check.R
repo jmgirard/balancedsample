@@ -112,8 +112,10 @@
 #'
 #'   Each split must have its own ID, so no ID may have more than one energy
 #'   row. Only the ID columns that `balance_check()` made are used, so
-#'   columns you add are ignored. If you rename or drop an ID column, the
-#'   columns whose names start with `id` are used instead.
+#'   columns you add are ignored. If you rename an ID column, the columns
+#'   whose names start with `id` are used instead. If you drop one, splits
+#'   that differ only in it would merge, so `summary()` gives an error and
+#'   printing shows the rows.
 #'
 #' @examples
 #' set.seed(1)
@@ -640,9 +642,17 @@ format_num <- function(v) {
   )
 }
 
+# Whether `a` is above the threshold by more than rounding error, so that an
+# SMD that is 0.1 in decimal arithmetic but 0.1 + 1e-17 in floating point
+# isn't counted.
+above <- function(a, threshold) {
+  a - threshold > sqrt(.Machine$double.eps)
+}
+
 # Like format_num(), with more digits where rounding would put a value on
 # the other side of the threshold, or on it, so that the shown values agree
-# with the counts.
+# with the counts. A value within rounding error of the threshold shows as
+# the threshold.
 format_smd <- function(v, threshold) {
   vapply(
     v,
@@ -650,12 +660,14 @@ format_smd <- function(v, threshold) {
       if (!is.finite(z)) {
         return(format(z))
       }
+      over <- above(abs(z), threshold)
+      near <- !over && !above(threshold, abs(z))
       d <- 3
       shown <- signif(abs(z), d)
       while (
-        d < 17 &&
-          ((shown > threshold) != (abs(z) > threshold) ||
-            (shown == threshold && abs(z) != threshold))
+        d < 15 &&
+          ((shown > threshold) != over ||
+            (shown == threshold && !near))
       ) {
         d <- d + 1
         shown <- signif(abs(z), d)
@@ -709,7 +721,8 @@ cat_table <- function(table) {
 #' @rdname balance_check
 #' @param object A `balance_check` object.
 #' @param threshold The absolute SMD above which `summary()` counts a
-#'   variable in `n_over`.
+#'   variable in `n_over`. A value within rounding error of `threshold`
+#'   (1.5e-8) counts as equal to it, so it isn't counted.
 #' @param by `"split"` for one row per split, or `"variable"` for one row per
 #'   variable across the splits.
 #' @export
@@ -836,7 +849,11 @@ summary_by_split <- function(s, threshold) {
     function(a) if (length(a) > 0) mean(a) else NA_real_,
     numeric(1)
   )
-  out$n_over <- vapply(abs_smd, function(a) sum(a > threshold), integer(1))
+  out$n_over <- vapply(
+    abs_smd,
+    function(a) sum(above(a, threshold)),
+    integer(1)
+  )
   out$n_variables <- unname(lengths(abs_smd))
   out$energy <- energy
   if (any(x$statistic == "variance_ratio")) {
@@ -882,7 +899,7 @@ summary_by_variable <- function(s, threshold) {
   out <- tibble::as_tibble(c(out, ids))
   out$n_over <- vapply(
     by_var,
-    function(j) sum(abs(x$value[rows[j]]) > threshold),
+    function(j) sum(above(abs(x$value[rows[j]]), threshold)),
     integer(1)
   )
   out$n_splits <- lengths(by_var)

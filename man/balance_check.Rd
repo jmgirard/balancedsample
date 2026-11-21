@@ -37,7 +37,8 @@ numeric variable.}
 \item{object}{A \code{balance_check} object.}
 
 \item{threshold}{The absolute SMD above which \code{summary()} counts a
-variable in \code{n_over}.}
+variable in \code{n_over}. A value within rounding error of \code{threshold}
+(1.5e-8) counts as equal to it, so it isn't counted.}
 
 \item{by}{\code{"split"} for one row per split, or \code{"variable"} for one row per
 variable across the splits.}
@@ -80,8 +81,10 @@ splits.
 
 Each split must have its own ID, so no ID may have more than one energy
 row. Only the ID columns that \code{balance_check()} made are used, so
-columns you add are ignored. If you rename or drop an ID column, the
-columns whose names start with \code{id} are used instead.
+columns you add are ignored. If you rename an ID column, the columns
+whose names start with \code{id} are used instead. If you drop one, splits
+that differ only in it would merge, so \code{summary()} gives an error and
+printing shows the rows.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its

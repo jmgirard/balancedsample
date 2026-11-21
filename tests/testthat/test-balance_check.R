@@ -415,18 +415,24 @@ test_that("print() shows enough digits to agree with the counts", {
     format_smd(c(0.09996, 0.10004, 0.1, -0.0998, 0.232, Inf, -Inf, NA), 0.1),
     c("0.09996", "0.10004", "0.1", "-0.0998", "0.232", "Inf", "-Inf", "NA")
   )
-  # Mean differences of 0.1 with SDs of 1, just above and below 0.1 in
-  # floating point.
-  for (x in list(c(-2, -1, 0, -1.9, -0.9, 0.1), c(-1, 0, 1, -0.9, 0.1, 1.1))) {
+  # Mean differences of 0.1 with SDs of 1: just above and below 0.1 in
+  # floating point, and counted and shown as 0.1.
+  xs <- list(
+    c(-2, -1, 0, -1.9, -0.9, 0.1),
+    c(-1, 0, 1, -0.9, 0.1, 1.1),
+    c(-3.9, -2.9, -1.9, -3.8, -2.8, -1.8)
+  )
+  for (x in xs) {
     s <- rsample::make_splits(
       list(analysis = 1:3, assessment = 4:6),
       data.frame(x = x)
     )
     bc <- balance_check(s, x)
-    over <- summary(bc)$n_over
+    expect_equal(abs(bc$value[1]), 0.1)
+    expect_equal(summary(bc)$n_over, 0L)
+    expect_equal(summary(bc, by = "variable")$n_over, 0L)
     out <- utils::capture.output(print(bc))
-    shown <- as.numeric(sub("^x +", "", out[grepl("^x ", out)]))
-    expect_equal(shown > 0.1, over == 1)
+    expect_equal(sub("^x +", "", out[grepl("^x ", out)]), "0.1")
   }
   expect_equal(format_num(c(0.15123, 2, NA)), c("0.151", "2", "NA"))
 })
