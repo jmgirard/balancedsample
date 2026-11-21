@@ -52,27 +52,64 @@ test_that("balance_check() works on repeats and on splits", {
   s <- balanced_initial_split(d, balance = c(x1, x2), method = "rerandomize")
   bc <- balance_check(s)
   expect_equal(unique(bc$id), "Split")
-  expect_output(print(bc), "Balance check: 1 split")
+  expect_output(print(bc), "Balance check: 1 split, 2 variables")
   withr::local_options(width = 40)
-  header <- utils::capture.output(print(bc))[1:3]
-  expect_match(header[1], "^# Balance check: 1 split,$")
-  expect_match(header[2], "^# max \\|SMD\\| = [0-9.e-]+,$")
-  expect_match(header[3], "^# mean energy distance = [0-9.e-]+$")
-
-  withr::local_options(width = 80)
-  full <- utils::capture.output(print(bc))[1]
-  withr::local_options(width = nchar(full))
-  expect_equal(utils::capture.output(print(bc))[1], full)
-  withr::local_options(width = nchar(full) - 1)
-  expect_match(utils::capture.output(print(bc))[1], ",$")
+  header <- utils::capture.output(print(bc))[1:4]
+  expect_match(header[1], "^# Balance check: 1 split, 2 variables$")
+  expect_match(header[2], "^# \\|SMD\\| > 0.1 in [0-2] of 2 variables,$")
+  expect_match(header[3], "^# energy distance [0-9.e-]+$")
+  expect_equal(header[4], "")
 })
 
-test_that("balance_check() drops missing values", {
+test_that("balance_check() drops missing values and reports the share missing", {
   d <- data.frame(z = c(1, 2, 3, NA, 5, 6), w = c("a", NA, "b", "a", "b", "a"))
   s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
   bc <- balance_check(s, z, w)
-  expect_equal(bc$value[bc$variable %in% "z"], (5.5 - 2) / sqrt((0.5 + 1) / 2))
+  smd <- bc$statistic == "smd"
+  expect_equal(
+    bc$value[smd & bc$variable %in% "z" & is.na(bc$level)],
+    (5.5 - 2) / sqrt((0.5 + 1) / 2)
+  )
+  expect_equal(bc$level[bc$variable %in% "w"], c("a", "b", "(missing)"))
+  # z is missing in 1 of 3 assessment rows and in no analysis row; w the
+  # other way round.
+  missing <- bc$value[bc$level %in% "(missing)"]
+  expect_equal(missing, c(1, -1))
   expect_false(anyNA(bc$value))
+})
+
+test_that("the energy distance uses all rows when values are missing", {
+  set.seed(1)
+  n <- 200
+  d <- data.frame(x = rnorm(n), y = rnorm(n))
+  # Every row has a missing value, so no row is complete.
+  d$x[seq(1, n, 2)] <- NA
+  d$y[seq(2, n, 2)] <- NA
+  split <- rsample::initial_split(d)
+  en <- balance_check(split, x, y)
+  en <- en$value[en$statistic == "energy"]
+  expect_true(is.finite(en) && en > 0)
+
+  # The same encoding as the split functions: filled values and indicators.
+  xs <- build_balance_matrix(d)
+  expect_equal(
+    en,
+    energy_distance(
+      xs[rsample::complement(split), ],
+      xs[split$in_id, ]
+    )
+  )
+
+  # With no missing values, nothing changes.
+  d <- data.frame(x = rnorm(n), g = sample(letters[1:3], n, TRUE))
+  split <- rsample::initial_split(d)
+  bc <- balance_check(split, x, g)
+  xs <- build_balance_matrix(d)
+  expect_equal(
+    bc$value[bc$statistic == "energy"],
+    energy_distance(xs[rsample::complement(split), ], xs[split$in_id, ])
+  )
+  expect_false(any(bc$level %in% "(missing)"))
 })
 
 test_that("balance_check() reports complete separation as Inf", {
@@ -80,7 +117,8 @@ test_that("balance_check() reports complete separation as Inf", {
   s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
   bc <- balance_check(s, g)
   expect_equal(bc$value[bc$statistic == "smd"], c(-Inf, Inf))
-  expect_output(print(bc), "max \\|SMD\\| = Inf")
+  expect_output(print(bc), "|SMD| > 0.1 in 1 of 1 variable,", fixed = TRUE)
+  expect_output(print(bc), "g         A      -Inf", fixed = TRUE)
 
   d <- data.frame(x = c(0, 0, 1e-13, 1e-13))
   s <- rsample::make_splits(list(analysis = 1:2, assessment = 3:4), d)
@@ -137,9 +175,12 @@ test_that("balance_check() handles logical and missing columns", {
   s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
   bc <- balance_check(s, flag, z)
   expect_equal(bc$level[bc$variable %in% "flag"], c("FALSE", "TRUE"))
-  # z is missing in the whole analysis set, so no row there is complete.
-  expect_true(is.na(bc$value[bc$variable %in% "z"]))
-  expect_true(is.na(bc$value[bc$statistic == "energy"]))
+  # z is missing in the whole analysis set, so it has no SMD of its values,
+  # and its share missing differs completely.
+  z <- bc$variable %in% "z"
+  expect_true(is.na(bc$value[z & is.na(bc$level)]))
+  expect_equal(bc$value[z & bc$level %in% "(missing)"], -Inf)
+  expect_true(is.finite(bc$value[bc$statistic == "energy"]))
 })
 
 test_that("balance_check() subsamples large sets for the energy distance", {
@@ -186,7 +227,17 @@ test_that("summary() gives one row per split", {
   expect_false(inherits(s, "balance_check"))
   expect_named(
     s,
-    c("id", "id2", "max_abs_smd", "variable", "level", "energy")
+    c(
+      "id",
+      "id2",
+      "max_abs_smd",
+      "variable",
+      "level",
+      "mean_abs_smd",
+      "n_over",
+      "n_variables",
+      "energy"
+    )
   )
   expect_equal(s$id, folds$id)
   expect_equal(s$id2, folds$id2)
@@ -200,6 +251,218 @@ test_that("summary() gives one row per split", {
     expect_equal(s$level[i], smd$level[worst])
   }
   expect_error(summary(bc, 1), class = "rlib_error_dots_nonempty")
+})
+
+test_that("summary() counts each variable once", {
+  d <- data.frame(
+    x = c(1, 4, 2, 6, 3, 5, 2, 7),
+    g = c("a", "b", "c", "d", "a", "a", "b", "c"),
+    z = c(1, NA, 3, 4, NA, NA, 7, 8)
+  )
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  bc <- balance_check(s, x, g, z)
+  smd <- bc[bc$statistic == "smd", ]
+  # A level or the share missing stands for its variable.
+  worst <- tapply(abs(smd$value), smd$variable, max)[c("x", "g", "z")]
+  out <- summary(bc)
+  expect_equal(out$max_abs_smd, max(worst))
+  expect_equal(out$mean_abs_smd, mean(worst))
+  expect_equal(out$n_variables, 3L)
+  expect_equal(out$n_over, sum(worst > 0.1))
+  expect_equal(summary(bc, threshold = 0)$n_over, sum(worst > 0))
+  expect_equal(summary(bc, threshold = 100)$n_over, 0L)
+  expect_equal(
+    summary(bc, threshold = unname(worst["x"]))$n_over,
+    sum(worst > worst["x"])
+  )
+
+  # Of tied largest SMDs, the first row wins, however the rows are sorted.
+  d <- data.frame(
+    g = c("a", "d", "d", "d", "a", "e", "e", "e"),
+    h = c("f", "b", "b", "b", "f", "c", "c", "c")
+  )
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  tied <- balance_check(s, g, h)
+  tied <- tied[order(tied$level), ]
+  expect_equal(summary(tied)$variable, "h")
+  expect_equal(summary(tied)$level, "b")
+
+  expect_snapshot(summary(bc, threshold = -1), error = TRUE)
+  expect_snapshot(summary(bc, threshold = NA), error = TRUE)
+  expect_snapshot(summary(bc, by = "level"), error = TRUE)
+})
+
+test_that("summary(by = \"variable\") gives one row per variable", {
+  d <- sim_data()
+  set.seed(8)
+  folds <- balanced_vfold_cv(
+    d,
+    v = 3,
+    repeats = 2,
+    balance = c(x1, x2, cat),
+    exact = sex,
+    method = "rerandomize"
+  )
+  bc <- balance_check(folds, variance_ratio = TRUE)
+  out <- summary(bc, by = "variable", threshold = 0.05)
+  expect_named(
+    out,
+    c(
+      "variable",
+      "median_abs_smd",
+      "max_abs_smd",
+      "level",
+      "id",
+      "id2",
+      "n_over",
+      "n_splits",
+      "variance_ratio"
+    )
+  )
+  expect_equal(out$variable, c("x1", "x2", "cat", "sex"))
+  smd <- bc[bc$statistic == "smd", ]
+  for (v in out$variable) {
+    rows <- smd[smd$variable == v, ]
+    key <- paste(rows$id, rows$id2)
+    per_split <- tapply(abs(rows$value), key, max)
+    at <- which.max(abs(rows$value))
+    o <- out[out$variable == v, ]
+    expect_equal(o$median_abs_smd, stats::median(per_split))
+    expect_equal(o$max_abs_smd, max(per_split))
+    expect_equal(o$level, rows$level[at])
+    expect_equal(c(o$id, o$id2), c(rows$id[at], rows$id2[at]))
+    expect_equal(o$n_over, sum(per_split > 0.05))
+    expect_equal(o$n_splits, 6L)
+  }
+  vr <- bc[bc$statistic == "variance_ratio" & bc$variable == "x2", ]
+  expect_equal(
+    out$variance_ratio[out$variable == "x2"],
+    vr$value[which.max(abs(log(vr$value)))]
+  )
+  expect_true(is.na(out$variance_ratio[out$variable == "cat"]))
+
+  # A variable with no SMD in a split doesn't count for that split, and one
+  # with no SMD at all still gets a row.
+  none <- bc[
+    !(bc$variable %in% "x1" & bc$statistic == "smd") |
+      bc$id2 == "Fold1",
+  ]
+  none$value[none$variable %in% "x1" & none$statistic == "smd"] <- NA
+  none <- summary(none, by = "variable")
+  expect_equal(none$variable, out$variable)
+  expect_equal(none$n_splits[none$variable == "x1"], 0L)
+  expect_true(is.na(none$max_abs_smd[none$variable == "x1"]))
+  expect_true(is.na(none$id[none$variable == "x1"]))
+  part <- bc[!(bc$variable %in% "x1" & bc$id2 == "Fold1"), ]
+  part <- summary(part, by = "variable")
+  expect_equal(part$n_splits[part$variable == "x1"], 4L)
+  expect_equal(part$n_splits[part$variable != "x1"], c(6L, 6L, 6L))
+
+  empty <- summary(bc[0, ], by = "variable")
+  expect_equal(nrow(empty), 0)
+  expect_named(empty, setdiff(names(out), "variance_ratio"))
+  expect_type(empty$median_abs_smd, "double")
+  expect_type(empty$n_over, "integer")
+})
+
+test_that("print() shows one split, a few splits, or many splits", {
+  d <- data.frame(
+    x = c(1, 4, 2, 6, 3, 5, 2, 7, 4, 4, 5, 1),
+    g = rep(c("a", "b", "b"), 4),
+    z = c(1, NA, 3, 4, NA, 6, 7, 8, 2, 3, 1, 5)
+  )
+  s <- rsample::make_splits(list(analysis = 1:8, assessment = 9:12), d)
+  expect_snapshot(print(balance_check(s, x, g, z, variance_ratio = TRUE)))
+
+  folds <- function(k) {
+    splits <- lapply(seq_len(k), function(i) {
+      out <- ((i - 1L) %% 12L) + 1L
+      out <- c(out, (out %% 12L) + 1L)
+      rsample::make_splits(
+        list(analysis = setdiff(1:12, out), assessment = out),
+        d
+      )
+    })
+    rsample::manual_rset(splits, paste0("Fold", seq_len(k)))
+  }
+  expect_snapshot(withr::with_options(
+    list(width = 100),
+    print(balance_check(folds(3), x, g, variance_ratio = TRUE))
+  ))
+  expect_snapshot(print(balance_check(folds(11), x, g, z)))
+
+  # Columns that don't fit are dropped, the ratio with its variable.
+  wide <- balance_check(folds(3), x, g, variance_ratio = TRUE)
+  withr::with_options(
+    list(width = 70),
+    out <- utils::capture.output(print(wide))
+  )
+  expect_true(all(nchar(out) <= 70))
+  expect_false(any(grepl("ratio", out[1:8])))
+  expect_true(any(grepl(
+    "Not shown for lack of width: variance ratio, ratio variable",
+    out,
+    fixed = TRUE
+  )))
+
+  # Ten splits still get one row each.
+  out <- utils::capture.output(print(balance_check(folds(10), x)))
+  expect_true(any(grepl("^Fold10 ", out)))
+})
+
+test_that("print() shows enough digits to agree with the counts", {
+  expect_equal(
+    format_smd(c(0.09996, 0.10004, 0.1, -0.0998, 0.232, Inf, -Inf, NA), 0.1),
+    c("0.09996", "0.10004", "0.1", "-0.0998", "0.232", "Inf", "-Inf", "NA")
+  )
+  # Mean differences of 0.1 with SDs of 1: just above and below 0.1 in
+  # floating point, and counted and shown as 0.1.
+  xs <- list(
+    c(-2, -1, 0, -1.9, -0.9, 0.1),
+    c(-1, 0, 1, -0.9, 0.1, 1.1),
+    c(-3.9, -2.9, -1.9, -3.8, -2.8, -1.8)
+  )
+  for (x in xs) {
+    s <- rsample::make_splits(
+      list(analysis = 1:3, assessment = 4:6),
+      data.frame(x = x)
+    )
+    bc <- balance_check(s, x)
+    expect_equal(abs(bc$value[1]), 0.1)
+    expect_equal(summary(bc)$n_over, 0L)
+    expect_equal(summary(bc, by = "variable")$n_over, 0L)
+    out <- utils::capture.output(print(bc))
+    expect_equal(sub("^x +", "", out[grepl("^x ", out)]), "0.1")
+  }
+  expect_equal(format_num(c(0.15123, 2, NA)), c("0.151", "2", "NA"))
+})
+
+test_that("print() falls back to the rows when it can't summarize", {
+  d <- sim_data()
+  set.seed(11)
+  bc <- balance_check(rsample::vfold_cv(d, v = 3), x1)
+  expect_output(print(bc[0, ]), "Balance check: 0 splits")
+  out <- utils::capture.output(print(bc[c("id", "statistic", "value")]))
+  expect_equal(out[1], "# Balance check")
+  expect_match(out[2], "A tibble")
+  # Only energy rows, or only variance ratios.
+  rep_bc <- balance_check(
+    rsample::vfold_cv(d, v = 4, repeats = 3),
+    x1,
+    variance_ratio = TRUE
+  )
+  for (stat in c("energy", "variance_ratio")) {
+    expect_no_warning(
+      out <- utils::capture.output(print(rep_bc[rep_bc$statistic == stat, ]))
+    )
+    expect_equal(out[1], "# Balance check")
+  }
+
+  # Dropping an ID column would merge splits.
+  smd <- rep_bc[rep_bc$statistic == "smd", ]
+  smd$id2 <- NULL
+  expect_snapshot(summary(smd), error = TRUE)
+  expect_equal(utils::capture.output(print(smd))[1], "# Balance check")
 })
 
 test_that("summary() handles splits, three-way splits, and missing SMDs", {
@@ -225,13 +488,21 @@ test_that("summary() handles splits, three-way splits, and missing SMDs", {
     g = c("a", "b", "a", "b", "a", "b")
   )
   s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
-  out <- summary(balance_check(s, z))
+  # z has no observed value in the analysis set, so its only SMD that
+  # isn't missing is the one of its share missing.
+  bc <- balance_check(s, z)
+  out <- summary(bc[!bc$level %in% "(missing)", ])
   expect_equal(out$id, "Split")
   expect_true(is.na(out$max_abs_smd))
   expect_true(is.na(out$variable))
-  expect_true(is.na(out$energy))
+  out <- summary(bc)
+  expect_equal(out$variable, "z")
+  expect_equal(out$level, "(missing)")
+  expect_equal(out$max_abs_smd, Inf)
+  bc$value[bc$statistic == "energy"] <- NA
+  expect_true(is.na(summary(bc)$energy))
 
-  out <- summary(balance_check(s, z, g))
+  out <- summary(balance_check(s, g))
   expect_equal(out$variable, "g")
   # The two levels of g tie, and the first one is kept.
   expect_equal(out$level, "a")
@@ -489,4 +760,24 @@ test_that("every split of an rset must have the columns to check", {
   )
   r <- rsample::manual_rset(list(a, b), c("A", "B"))
   expect_snapshot(balance_check(r, x), error = TRUE)
+})
+
+test_that("logical exact columns are checked as categories", {
+  set.seed(3)
+  d <- data.frame(
+    flag = rep(c(FALSE, TRUE, NA), c(11, 12, 10)),
+    x = rnorm(33)
+  )
+  split <- balanced_initial_split(d, balance = x, exact = flag, na = "include")
+  bc <- balance_check(split)
+  expect_equal(
+    bc$level[bc$variable %in% "flag"],
+    c("FALSE", "TRUE", "(missing)")
+  )
+  as_factor <- rsample::make_splits(
+    list(analysis = split$in_id, assessment = rsample::complement(split)),
+    transform(d, flag = factor(flag))
+  )
+  energy <- function(bc) bc$value[bc$statistic == "energy"]
+  expect_equal(energy(bc), energy(balance_check(as_factor, x, flag)))
 })

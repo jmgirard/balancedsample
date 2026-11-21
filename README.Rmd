@@ -73,7 +73,7 @@ folds <- balanced_vfold_cv(
 folds
 ```
 
-`balance_check()` reports the standardized mean difference (SMD) of each variable in each fold. The SMD compares the assessment set with the analysis set. It also reports the energy distance, which compares the whole multivariate distribution. The function works with any rsample object, so you can compare balanced folds with ordinary folds.
+`balance_check()` reports the standardized mean difference (SMD) of each variable in each fold. The SMD compares the assessment set with the analysis set. It also reports the energy distance, which compares the whole multivariate distribution. The function works with any rsample object, so you can compare balanced folds with ordinary folds. The printed table has one row per fold: the largest absolute SMD and its variable, the mean over the variables, how many are over 0.1, and the energy distance. `summary()` returns the same numbers as a tibble.
 
 ```{r check}
 balance_check(folds)

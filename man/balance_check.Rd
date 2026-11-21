@@ -16,7 +16,7 @@ balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 \method{balance_check}{three_way_split}(x, ..., max_n = 2000, variance_ratio = FALSE)
 
-\method{summary}{balance_check}(object, ...)
+\method{summary}{balance_check}(object, ..., threshold = 0.1, by = c("split", "variable"))
 }
 \arguments{
 \item{x}{An \code{rset} (for example from \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}), an \code{rsplit}
@@ -35,6 +35,13 @@ Larger sets are subsampled at random to keep memory use low.}
 numeric variable.}
 
 \item{object}{A \code{balance_check} object.}
+
+\item{threshold}{The absolute SMD above which \code{summary()} counts a
+variable in \code{n_over}. A value within rounding error of \code{threshold}
+(1.5e-8) counts as equal to it, so it isn't counted.}
+
+\item{by}{\code{"split"} for one row per split, or \code{"variable"} for one row per
+variable across the splits.}
 }
 \value{
 A tibble with class \code{balance_check}. It has the ID columns of \code{x},
@@ -42,17 +49,42 @@ and the columns \code{variable}, \code{level}, \code{statistic} (\code{"smd"}, \
 \code{"variance_ratio"}), and \code{value}. Energy rows have \code{NA} in \code{variable} and
 \code{level}.
 
-\code{summary()} returns a tibble with one row per split. It has the ID
-columns, \code{max_abs_smd} (the largest absolute SMD in the split), the
-\code{variable} and \code{level} with that SMD (the first one if several tie), and
-\code{energy}. With variance ratios, it also has \code{variance_ratio}, the ratio
-farthest from 1 on the log scale (so 0.25 is farther than 3). If the
-split has no SMD that isn't missing, \code{max_abs_smd},
-\code{variable}, and \code{level} are \code{NA}. If it has no energy row, \code{energy} is
-\code{NA}. Each split must have its own ID, so no ID may have more than one
-energy row. Only the ID columns that \code{balance_check()} made are used, so
-columns you add are ignored. If you rename or drop an ID column, the
-columns whose names start with \code{id} are used instead.
+\code{summary()} with \code{by = "split"} returns a tibble with one row per split.
+It has the ID columns and these columns:
+\itemize{
+\item \code{max_abs_smd}: the largest absolute SMD in the split, with the
+\code{variable} and \code{level} it belongs to (the first one if several tie).
+\item \code{mean_abs_smd}: the mean over the variables of their largest absolute
+SMD.
+\item \code{n_over}: the number of variables whose largest absolute SMD is above
+\code{threshold}.
+\item \code{n_variables}: the number of variables with an SMD that isn't
+missing.
+\item \code{energy}: the energy distance.
+\item With variance ratios, \code{variance_ratio}, the ratio farthest from 1 on
+the log scale (so 0.25 is farther than 3), and
+\code{variance_ratio_variable}, the variable it belongs to.
+}
+
+If the split has no SMD that isn't missing, \code{max_abs_smd},
+\code{mean_abs_smd}, \code{variable}, and \code{level} are \code{NA}. If it has no energy
+row, \code{energy} is \code{NA}.
+
+With \code{by = "variable"}, it returns one row per variable, with
+\code{median_abs_smd} and \code{max_abs_smd} (the median and the largest of the
+variable's largest absolute SMD in each split), the \code{level} and the ID
+columns of the split with the largest, \code{n_over} (the number of splits
+where it is above \code{threshold}), and \code{n_splits} (the number of splits
+where the variable has an SMD that isn't missing). With variance
+ratios, it also has \code{variance_ratio}, the ratio farthest from 1 over the
+splits.
+
+Each split must have its own ID, so no ID may have more than one energy
+row. Only the ID columns that \code{balance_check()} made are used, so
+columns you add are ignored. If you rename an ID column, the columns
+whose names start with \code{id} are used instead. If you drop one, splits
+that differ only in it would merge, so \code{summary()} gives an error and
+printing shows the rows.
 }
 \description{
 \code{balance_check()} compares the assessment set of each split with its
@@ -86,21 +118,46 @@ error of zero counts as zero: if both are zero, the ratio is 1, and if one
 is, it is 0 or \code{Inf}. With fewer than two values in a set, it is \code{NA}.
 
 Missing values are dropped variable by variable for the SMD and the
-variance ratio. The energy
-distance uses the rows that have no missing values in any checked column.
+variance ratio. A variable with missing values also gets an SMD for the
+share of its values that are missing, with \code{level} \code{"(missing)"}. In
+\code{summary()}, this row counts as one more level of the variable. The
+energy distance uses all rows. It encodes missing values as the split
+functions do with \code{na = "include"}: a numeric variable gets the mean of
+its observed values plus an indicator of which values are missing, and a
+categorical variable gets a level for them. So with missing values, it compares the encoded
+data, not only the observed values.
 
 The energy distance is the V-statistic
 \verb{2 E|X - Y| - E|X - X'| - E|Y - Y'|} on the standardized variables (one
 indicator column per categorical level). It is 0 when the two sets have the
 same distribution, and it also detects differences in spread and shape.
 
-Use \code{summary()} on the result to get one row per split.
+Printing the result shows a short table. For one split, it has the SMD
+of each variable and level. For up to 10 splits, it has one row per split,
+as from \code{summary()}. For more splits, it has one row per variable, as from
+\code{summary(by = "variable")}. Columns that don't fit the width of the
+console are left out, and a note names them. Printing counts SMDs over
+0.1; use \code{summary()} with \code{threshold} for another value. Use
+\code{\link[tibble:as_tibble]{tibble::as_tibble()}} to see all rows.
+
+\code{summary()} first reduces each variable in each split to its largest
+absolute SMD, over its levels and its \code{"(missing)"} row. So a variable
+with many levels counts once, like a numeric variable. The largest
+absolute SMD of a split shows the worst variable, but it tends to grow
+with the number of variables: in random splits of 30 rows against 270,
+it averaged 0.21 with 2 variables and 0.48 with 40. The mean across
+variables stayed near 0.15 in such splits, so it is better for
+comparing splits that check different numbers of variables. The rule of
+thumb of 0.1 is hard to meet with small sets: in the same random splits,
+one variable's absolute SMD was under 0.1 only about 40\% of the time. An
+\code{exact} column also can't do better than whole rows allow.
 }
 \examples{
 set.seed(1)
 folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 balance_check(folds)
 summary(balance_check(folds))
+summary(balance_check(folds), by = "variable")
 summary(balance_check(folds, variance_ratio = TRUE))
 
 # Compare with ordinary folds
