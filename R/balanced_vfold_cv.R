@@ -294,7 +294,7 @@ check_whole <- function(
 ) {
   ok <- is.numeric(x) &&
     length(x) == 1 &&
-    !is.na(x) &&
+    is.finite(x) &&
     x == round(x) &&
     x >= min &&
     x <= max
@@ -314,6 +314,22 @@ check_dots <- function(..., call = rlang::caller_env()) {
         "balancesample uses {.arg exact}, not {.arg strata}.",
         i = "Put categorical columns in {.arg exact}, for example {.code exact = class}.",
         i = "Put numeric columns in {.arg balance}."
+      ),
+      call = call
+    )
+  }
+  # rsample arguments with a counterpart in balancesample.
+  hints <- c(
+    pool = "{.code method = \"interaction\"} pools small cells with {.code options = list(pool = 0.1)}.",
+    breaks = "{.code method = \"interaction\"} sets the number of bins per numeric column with {.code options = list(n_bins = 4)}.",
+    times = "{.fn balanced_vfold_cv} takes {.arg repeats}, which repeats the whole V-fold partition."
+  )
+  used <- intersect(names(hints), ...names())
+  if (length(used) > 0) {
+    cli::cli_abort(
+      c(
+        "balancesample doesn't use {.arg {used}}.",
+        stats::setNames(hints[used], rep("i", length(used)))
       ),
       call = call
     )

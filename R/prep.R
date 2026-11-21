@@ -86,6 +86,9 @@ prepare_balance_data <- function(
 
   for (nm in names(exa_pos)) {
     col <- data[[nm]]
+    if (is.numeric(col) && any(!is.finite(col))) {
+      cli::cli_abort("{.field {nm}} has infinite values.", call = call)
+    }
     whole <- is.numeric(col) && all(col == round(col))
     if (!(is.factor(col) || is.character(col) || is.logical(col) || whole)) {
       cli::cli_abort(
