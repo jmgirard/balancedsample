@@ -476,3 +476,17 @@ is_whole_number <- function(x) {
     x == round(x) &&
     abs(x) <= .Machine$integer.max
 }
+
+check_flag <- function(
+  x,
+  arg = rlang::caller_arg(x),
+  call = rlang::caller_env()
+) {
+  if (!is_flag(x)) {
+    cli::cli_abort(
+      "{.arg {arg}} must be {.code TRUE} or {.code FALSE}.",
+      call = call
+    )
+  }
+  invisible(x)
+}

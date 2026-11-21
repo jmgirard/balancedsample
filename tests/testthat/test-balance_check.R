@@ -352,3 +352,62 @@ test_that("the SMD plot of a three-way split tells the sets apart", {
   built <- ggplot2::ggplot_build(ggplot2::autoplot(balance_check(folds)))
   expect_equal(length(unique(built$data[[length(built$data)]]$shape)), 1)
 })
+
+test_that("variance ratios show differences in spread", {
+  d <- data.frame(
+    x = c(-1, 1, -1, 1, -5, 5, -5, 5),
+    g = rep(c("a", "b"), 4),
+    k = c(1, 1, 1, 1, 2, 2, 2, 2)
+  )
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  bc <- balance_check(s, x, g, k, variance_ratio = TRUE)
+  vr <- bc[bc$statistic == "variance_ratio", ]
+  # Only numeric variables get one.
+  expect_equal(vr$variable, c("x", "k"))
+  expect_equal(bc$value[bc$variable %in% "x" & bc$statistic == "smd"], 0)
+  expect_equal(vr$value[1], 25)
+  # Two zero variances give 1.
+  expect_equal(vr$value[2], 1)
+  expect_equal(summary(bc)$variance_ratio, 25)
+  expect_false("variance_ratio" %in% names(summary(balance_check(s, x))))
+
+  # A zero variance on one side gives 0 or Inf, and a set of one gives NA.
+  d <- data.frame(x = c(1, 2, 3, 4, 4, 4))
+  s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
+  bc <- balance_check(s, x, variance_ratio = TRUE)
+  expect_equal(bc$value[bc$statistic == "variance_ratio"], 0)
+  s <- rsample::make_splits(list(analysis = 4:6, assessment = 1:3), d)
+  bc <- balance_check(s, x, variance_ratio = TRUE)
+  expect_equal(bc$value[bc$statistic == "variance_ratio"], Inf)
+  s <- rsample::make_splits(list(analysis = 1:5, assessment = 6L), d)
+  bc <- balance_check(s, x, variance_ratio = TRUE)
+  expect_true(is.na(bc$value[bc$statistic == "variance_ratio"]))
+  expect_true(is.na(summary(bc)$variance_ratio))
+
+  # The ratio farthest from 1 on the log scale is summarized.
+  d <- data.frame(
+    x = c(-2, 2, -2, 2, -1, 1, -1, 1),
+    y = c(-1, 1, -1, 1, -1.5, 1.5, -1.5, 1.5)
+  )
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  expect_equal(
+    summary(balance_check(s, x, y, variance_ratio = TRUE))$variance_ratio,
+    0.25
+  )
+
+  expect_snapshot(balance_check(s, x, variance_ratio = NA), error = TRUE)
+})
+
+test_that("variance ratios work for every kind of object", {
+  d <- sim_data()
+  set.seed(4)
+  folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, cat))
+  bc <- balance_check(folds, variance_ratio = TRUE)
+  expect_equal(sum(bc$statistic == "variance_ratio"), 3)
+  s3 <- balanced_initial_validation_split(d, balance = x1)
+  bc <- balance_check(s3, variance_ratio = TRUE)
+  expect_equal(bc$id[bc$statistic == "variance_ratio"], c("Validation", "Testing"))
+  expect_output(print(bc), "Balance check: 2 splits")
+  skip_if_not_installed("ggplot2")
+  expect_s3_class(ggplot2::autoplot(bc), "ggplot")
+})

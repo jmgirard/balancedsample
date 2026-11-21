@@ -56,5 +56,13 @@
       summary(bc[c(NA, seq_len(nrow(bc))), ])
     Condition
       Error in `summary()`:
-      ! `statistic` must be "smd" or "energy" in every row of `object`.
+      ! `statistic` must be "smd", "energy", or "variance_ratio" in every row of `object`.
+
+# variance ratios show differences in spread
+
+    Code
+      balance_check(s, x, variance_ratio = NA)
+    Condition
+      Error in `balance_check()`:
+      ! `variance_ratio` must be `TRUE` or `FALSE`.
 
