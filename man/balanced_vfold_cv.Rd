@@ -24,8 +24,8 @@ balanced_vfold_cv(
 \item{repeats}{The number of times to repeat the V-fold partitioning.}
 
 \item{balance}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to balance
-across the sets. Numeric columns are standardized. So are date,
-date-time, and difftime columns, as numbers of days or seconds. Factor,
+across the sets. Numeric columns are standardized. So are \code{Date},
+\code{POSIXct}, and \code{difftime} columns, as numbers of days or seconds. Factor,
 character, and logical columns become one indicator column per level.}
 
 \item{exact}{<\code{\link[tidyselect:language]{tidy-select}}> Categorical columns to
@@ -38,9 +38,10 @@ numbers of groups, not rows. \code{exact} does the job of \code{strata} in
 rsample, but it takes several columns and its counts are exact. Numeric
 columns with whole-number values are treated as categories. Put
 continuous columns in \code{balance}, or use \code{\link[=cut]{cut()}} to make a factor if you
-need exact counts within ranges. A stratum with too few rows (or groups)
-to expect one in the smallest set is missing from some sets. If more
-than half of the strata are like this, you get a warning.}
+need exact counts within ranges. A stratum whose share of the smallest
+set is under one row (or group) can be missing from some sets. If more
+than half of the strata are missing from at least one set, you get a
+warning.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}
@@ -105,10 +106,9 @@ strata become sparse. Options are \code{n_bins} (default 4) and \code{pool}
 (default 0.1): cells with less than this fraction of the rows are pooled.
 }
 
-The method balances the columns left after standardizing: constant and
-nearly constant columns (standard deviation within rounding error of zero,
-relative to the largest absolute value) are dropped, and with \code{group}, so
-are columns whose group means are all equal (see Groups).
+The method balances the columns left after standardizing: constant columns
+are dropped, and with \code{group}, so are columns whose group means are all
+equal up to rounding error (see Groups).
 If none are left, for example with only \code{exact} columns and no \code{group}, the
 method doesn't run and the sets are drawn at random, within the \code{exact}
 strata if there are any. The limits the method itself checks, such as

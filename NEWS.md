@@ -11,12 +11,12 @@
   share of that set's actual size, rounded up or down. `group` keeps the rows
   of a group in the same set; then the proportions and the exact counts are
   numbers of groups, and `exact` columns must be constant within each group.
-  If more than half of the `exact` strata are too small to expect a row (or
-  group) in every set, you get a warning. `balance` takes numeric, logical,
-  character, factor, date, date-time, and difftime columns. Selected columns
-  must not have missing values; the vignette shows how to balance on a
-  filled copy of a column instead. Printed splits and folds show the method
-  and the columns.
+  If more than half of the `exact` strata are missing from at least one
+  set, you get a warning. `balance` takes numeric, logical, character,
+  factor, `Date`, `POSIXct`, and `difftime` columns. Selected columns must
+  not have missing values; the vignette shows how to balance on a filled
+  copy of a column instead. Printed splits and folds show the method and
+  the columns.
 
 * Four balancing methods: `"anticlust"` (k-plus anticlustering, the
   default), `"twinning"` (data twinning; needs the twinning package),

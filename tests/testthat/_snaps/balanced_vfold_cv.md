@@ -202,8 +202,18 @@
       balanced_vfold_cv(data.frame(x = as.complex(1:4)), v = 2, balance = x)
     Condition
       Error in `balanced_vfold_cv()`:
-      ! `balance` columns must be numeric, logical, character, factor, date, date-time, or difftime.
+      ! `balance` columns must be numeric, logical, character, factor, Date, POSIXct, or difftime.
       x x is a complex vector.
+
+# dates, date-times, and durations can be balanced
+
+    Code
+      balanced_vfold_cv(d, v = 3, balance = lt)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! Selected columns must be plain vectors.
+      x lt is a matrix, data frame, or list column.
+      i Convert <POSIXlt> date-times with `as.POSIXct()`.
 
 # more anticlust options are checked
 
@@ -269,7 +279,7 @@
       f <- balanced_vfold_cv(d, v = 10, balance = x, exact = age)
     Condition
       Warning in `balanced_vfold_cv()`:
-      68 of 68 `exact` strata have too few rows for every set.
-      i A stratum needs at least 10 rows to expect one in the smallest set. Smaller strata are missing from some sets.
+      68 of 68 `exact` strata are missing from at least one set.
+      i Only strata with at least 10 rows are sure to be in every set.
       i Whole-number columns in `exact` are categories, and each value is a level: age. Put continuous columns in `balance`, or use `cut()`.
 

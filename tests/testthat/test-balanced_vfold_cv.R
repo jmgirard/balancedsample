@@ -579,6 +579,30 @@ test_that("dates, date-times, and durations can be balanced", {
   bc <- balance_check(a)
   expect_equal(unique(bc$variable[bc$statistic == "smd"]), c("day", "time", "days"))
   expect_false(anyNA(bc$value))
+
+  d$lt <- as.POSIXlt(d$time)
+  expect_snapshot(balanced_vfold_cv(d, v = 3, balance = lt), error = TRUE)
+})
+
+test_that("group means that are equal up to rounding are dropped", {
+  # Every group has a mean of 5, so the groups are assigned at random, and
+  # the units of x don't matter.
+  d <- data.frame(
+    x = c(1, 9, 2, 8, 3, 7, 4, 6, 5, 5, 0, 10),
+    g = rep(1:6, each = 2)
+  )
+  for (seed in 1:30) {
+    set.seed(seed)
+    a <- balanced_initial_split(d, prop = 0.5, balance = x, group = g)
+    set.seed(seed)
+    b <- balanced_initial_split(
+      transform(d, x = x / 10),
+      prop = 0.5,
+      balance = x,
+      group = g
+    )
+    expect_identical(a$in_id, b$in_id)
+  }
 })
 
 test_that("near-constant columns are judged relative to their size", {
@@ -820,10 +844,16 @@ test_that("most strata being too small gives one warning", {
   # The smallest set counts: 10 rows per stratum is enough for 10 folds.
   d$s <- rep(1:20, each = 10)
   expect_no_warning(balanced_vfold_cv(d, v = 10, balance = x, exact = s))
+  # With 8 testing rows, at least 12 of the 20 strata miss the testing set.
   expect_warning(
-    balanced_initial_split(d, prop = 0.95, balance = x, exact = s),
+    balanced_initial_split(d, prop = 0.96, balance = x, exact = s),
     class = "balancesample_sparse_strata"
   )
+  # One testing row per stratum: 1 - 0.8 is a little under 0.2, but every
+  # stratum is still in both sets.
+  d4 <- data.frame(s = rep(letters[1:4], each = 5))
+  expect_no_warning(balanced_initial_split(d4, prop = 0.8, exact = s))
+  expect_no_warning(balanced_initial_split(d4, prop = 0.81, exact = s))
   # With groups, strata are counted in groups.
   d$id <- rep(1:40, each = 5)
   d$site <- d$id %% 2

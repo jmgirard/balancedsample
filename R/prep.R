@@ -65,10 +65,14 @@ prepare_balance_data <- function(
     logical(1)
   )]
   if (length(not_vector) > 0) {
+    is_lt <- vapply(data[not_vector], inherits, logical(1), "POSIXlt")
     cli::cli_abort(
       c(
         "Selected columns must be plain vectors.",
-        x = "{.field {not_vector}} {?is a/are} matrix, data frame, or list column{?s}."
+        x = "{.field {not_vector}} {?is a/are} matrix, data frame, or list column{?s}.",
+        i = if (any(is_lt)) {
+          "Convert {.cls POSIXlt} date-times with {.fn as.POSIXct}."
+        }
       ),
       call = call
     )
@@ -160,11 +164,15 @@ build_balance_matrix <- function(df, call = rlang::caller_env()) {
       if (any(!is.finite(v))) {
         cli::cli_abort("{.field {nm}} has infinite values.", call = call)
       }
-      return(matrix(as.double(v), ncol = 1, dimnames = list(NULL, nm)))
+      # Measure from an observed value, so that a large origin (such as a
+      # date-time in seconds) doesn't swamp small differences.
+      v <- as.double(v)
+      v <- v - v[1]
+      return(matrix(v, ncol = 1, dimnames = list(NULL, nm)))
     }
     cli::cli_abort(
       c(
-        "{.arg balance} columns must be numeric, logical, character, factor, date, date-time, or difftime.",
+        "{.arg balance} columns must be numeric, logical, character, factor, Date, POSIXct, or difftime.",
         x = "{.field {nm}} is {.obj_type_friendly {v}}."
       ),
       call = call
@@ -187,14 +195,19 @@ as_balance_numeric <- function(v) {
 }
 
 # Columns whose standard deviation is within rounding error of zero are
-# dropped. The tolerance is relative to the largest absolute value in the
-# column, so it doesn't depend on the units.
-standardize_matrix <- function(x) {
+# dropped. By default, the tolerance is relative to the largest distance from
+# the column's first value, so it depends on neither the units nor the
+# origin. `size` gives the scale of the values that the columns were
+# computed from instead.
+standardize_matrix <- function(x, size = NULL) {
   if (ncol(x) == 0) {
     return(x)
   }
+  if (is.null(size)) {
+    size <- apply(x, 2, function(col) max(abs(col - col[1])))
+  }
   sds <- apply(x, 2, stats::sd)
-  keep <- is.finite(sds) & sds > near_zero(apply(abs(x), 2, max))
+  keep <- is.finite(sds) & sds > near_zero(size)
   x <- x[, keep, drop = FALSE]
   if (ncol(x) == 0) {
     return(x)
@@ -224,10 +237,14 @@ assign_grouped <- function(
   } else {
     xg <- matrix(numeric(0), nrow = n_grp, ncol = 0)
   }
+  # Rounding error in a group mean is relative to the row values, not to the
+  # means, which can all be equal up to rounding.
+  size <- if (ncol(x) > 0) apply(abs(x), 2, max) else numeric(0)
   if (ncol(x) > 0 || !is.null(exact)) {
     xg <- cbind(xg, .group_size = log(counts))
+    size <- c(size, max(log(counts)))
   }
-  xg <- standardize_matrix(xg)
+  xg <- standardize_matrix(xg, size)
 
   exact_g <- NULL
   if (!is.null(exact)) {
@@ -259,36 +276,33 @@ near_zero <- function(size) {
   64 * .Machine$double.eps * size
 }
 
-# Warn when most `exact` strata are too small to have a unit in every set,
-# that is, when their share of the smallest set is under one row (or group).
-# Proportions are used rather than set sizes, so the check doesn't use the
-# random number stream.
-warn_sparse_strata <- function(prep, props, call = rlang::caller_env()) {
+# Warn when more than half of the `exact` strata are missing from at least
+# one set of the assignment `labels`. Strata are counted in groups with
+# `group`. A stratum with at least n / (size of the smallest set) units has a
+# share of one or more in every set, so the exact counts put it in every set.
+warn_sparse_strata <- function(prep, labels, k, call = rlang::caller_env()) {
   if (is.null(prep$exact)) {
     return(invisible())
   }
   unit <- "rows"
-  strata <- prep$exact
+  strata <- as.integer(droplevels(prep$exact))
   if (!is.null(prep$group)) {
     unit <- "groups"
-    pairs <- unique(data.frame(g = prep$group, s = prep$exact))
-    # A group with several levels is an error later on.
-    if (anyDuplicated(pairs$g)) {
-      return(invisible())
-    }
-    strata <- pairs$s
+    first <- !duplicated(prep$group)
+    strata <- strata[first]
+    labels <- labels[first]
   }
-  m <- tabulate(as.integer(droplevels(strata)))
-  share <- min(props) / sum(props)
-  short <- sum(m * share < 1)
-  if (short <= length(m) / 2) {
+  n_sets <- tapply(labels, strata, function(z) length(unique(z)))
+  short <- sum(n_sets < k)
+  if (short <= length(n_sets) / 2) {
     return(invisible())
   }
+  needed <- ceiling(length(labels) / min(tabulate(labels, k)) - 1e-9)
   numeric_exact <- prep$exact_names[prep$exact_numeric]
   cli::cli_warn(
     c(
-      "{short} of {length(m)} {.arg exact} strata have too few {unit} for every set.",
-      i = "A stratum needs at least {format(signif(1 / share, 3))} {unit} to expect one in the smallest set. Smaller strata are missing from some sets.",
+      "{short} of {length(n_sets)} {.arg exact} strata are missing from at least one set.",
+      i = "Only strata with at least {needed} {unit} are sure to be in every set.",
       i = if (length(numeric_exact) > 0) {
         "Whole-number columns in {.arg exact} are categories, and each value is a level: {.field {numeric_exact}}. Put continuous columns in {.arg balance}, or use {.fn cut}."
       }

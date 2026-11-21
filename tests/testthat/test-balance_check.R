@@ -338,6 +338,19 @@ test_that("whole-number exact columns are checked as categories", {
   attr(stored, "exact") <- "code"
   bc <- balance_check(stored)
   expect_equal(bc$value[bc$variable %in% "code" & bc$level == "2"], Inf)
+  # Naming a stored exact column keeps it categorical, with no variance
+  # ratio, and the energy distance matches that of a factor.
+  bc <- balance_check(stored, code, variance_ratio = TRUE)
+  expect_equal(bc$level[bc$statistic == "smd"], c("1", "2", "3"))
+  expect_false(any(bc$statistic == "variance_ratio"))
+  as_factor <- rsample::make_splits(
+    list(analysis = 5:8, assessment = 1:4),
+    transform(d, code = factor(code))
+  )
+  expect_equal(
+    bc$value[bc$statistic == "energy"],
+    balance_check(as_factor, code)$value[4]
+  )
 })
 
 test_that("the SMD plot of a three-way split tells the sets apart", {
@@ -410,4 +423,31 @@ test_that("variance ratios work for every kind of object", {
   expect_output(print(bc), "Balance check: 2 splits")
   skip_if_not_installed("ggplot2")
   expect_s3_class(ggplot2::autoplot(bc), "ggplot")
+})
+
+test_that("each split of an rset is checked on its own data", {
+  a <- rsample::make_splits(
+    list(analysis = 1:4, assessment = 5:8),
+    data.frame(x = rep(0:1, each = 4))
+  )
+  b <- rsample::make_splits(
+    list(analysis = 1:4, assessment = 5:8),
+    data.frame(x = rep(0:1, 4))
+  )
+  r <- rsample::manual_rset(list(a, b), c("First", "Second"))
+  s <- summary(balance_check(r, x))
+  expect_equal(s$max_abs_smd, c(Inf, 0))
+  expect_equal(s$energy[2], 0)
+})
+
+test_that("small differences far from the origin are measured", {
+  t0 <- as.POSIXct("2026-01-01", tz = "UTC")
+  # Microseconds on a date-time in seconds.
+  d <- data.frame(t = t0 + c(0, 10, 0, 10, 10, 30, 10, 30) / 1e6)
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  bc <- balance_check(s, t, variance_ratio = TRUE)
+  d0 <- data.frame(t = c(0, 10, 0, 10, 10, 30, 10, 30))
+  s0 <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d0)
+  expect_equal(bc$value, balance_check(s0, t, variance_ratio = TRUE)$value)
+  expect_equal(ncol(build_balance_matrix(d)), 1)
 })
