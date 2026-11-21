@@ -102,6 +102,16 @@
     Condition
       Error in `balanced_vfold_cv()`:
       ! `v` (50) must not be more than the number of groups (38).
+    Code
+      balanced_vfold_cv(d, balance = x1, repeats = Inf)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! `repeats` must be a whole number of at least 1.
+    Code
+      balanced_vfold_cv(d, v = Inf, balance = x1)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! `v` must be a whole number of at least 2.
 
 ---
 
@@ -144,6 +154,25 @@
       ! `...` must be empty.
       x Problematic argument:
       * folds = 5
+    Code
+      balanced_vfold_cv(d, balance = x1, pool = 0.2)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! balancesample doesn't use `pool`.
+      i `method = "interaction"` pools small cells with `options = list(pool = 0.1)`.
+    Code
+      balanced_vfold_cv(d, balance = x1, breaks = 4, times = 2)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! balancesample doesn't use `breaks` and `times`.
+      i `method = "interaction"` sets the number of bins per numeric column with `options = list(n_bins = 4)`.
+      i `balanced_vfold_cv()` takes `repeats`, which repeats the whole V-fold partition.
+    Code
+      balanced_initial_split(d, balance = x1, times = 2)
+    Condition
+      Error in `balanced_initial_split()`:
+      ! balancesample doesn't use `times`.
+      i `balanced_vfold_cv()` takes `repeats`, which repeats the whole V-fold partition.
 
 # bad data give clear errors
 
@@ -159,6 +188,12 @@
       ! `data` must have at least two rows.
     Code
       balanced_vfold_cv(data.frame(x = c(1, Inf, 3, 4)), v = 2, balance = x)
+    Condition
+      Error in `balanced_vfold_cv()`:
+      ! x has infinite values.
+    Code
+      balanced_vfold_cv(data.frame(x = c(1, Inf, 2, -Inf), y = 1:4), v = 2, balance = y,
+      exact = x)
     Condition
       Error in `balanced_vfold_cv()`:
       ! x has infinite values.

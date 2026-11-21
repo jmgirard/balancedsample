@@ -432,6 +432,8 @@ test_that("bad inputs give clear errors", {
     balanced_vfold_cv(d, balance = c(x1, id), group = id)
     balanced_vfold_cv(d, balance = x1, group = c(id, sex))
     balanced_vfold_cv(d, v = 50, balance = x1, group = id)
+    balanced_vfold_cv(d, balance = x1, repeats = Inf)
+    balanced_vfold_cv(d, v = Inf, balance = x1)
   })
   d$x1[3] <- NA
   expect_snapshot(balanced_vfold_cv(d, balance = x1), error = TRUE)
@@ -445,6 +447,9 @@ test_that("strata and other extra arguments are rejected", {
     balanced_vfold_cv(d, balance = x1, strata = cat)
     balanced_initial_split(d, balance = x1, strata = cat)
     balanced_vfold_cv(d, balance = x1, folds = 5)
+    balanced_vfold_cv(d, balance = x1, pool = 0.2)
+    balanced_vfold_cv(d, balance = x1, breaks = 4, times = 2)
+    balanced_initial_split(d, balance = x1, times = 2)
   })
 })
 
@@ -536,6 +541,12 @@ test_that("bad data give clear errors", {
     balanced_vfold_cv(1:10, balance = x)
     balanced_vfold_cv(data.frame(x = 1), balance = x)
     balanced_vfold_cv(data.frame(x = c(1, Inf, 3, 4)), v = 2, balance = x)
+    balanced_vfold_cv(
+      data.frame(x = c(1, Inf, 2, -Inf), y = 1:4),
+      v = 2,
+      balance = y,
+      exact = x
+    )
     balanced_vfold_cv(
       data.frame(x = as.Date("2026-01-01") + 0:3),
       v = 2,
