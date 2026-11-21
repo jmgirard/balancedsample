@@ -311,3 +311,16 @@ test_that("calibration splits warn about their own small strata", {
     class = "balancesample_sparse_strata"
   )
 })
+
+test_that("a small-strata warning made an error doesn't fail the split", {
+  d <- mtcars
+  d$s <- rep(letters[1:16], each = 2)
+  set.seed(1)
+  outer <- balanced_initial_split(d, prop = 0.51, exact = s)
+  withr::local_options(warn = 2)
+  # The error is the warning itself, not a failed calibration split.
+  expect_error(
+    rsample::internal_calibration_split(outer, list()),
+    "converted from warning.*missing from at least one set"
+  )
+})
