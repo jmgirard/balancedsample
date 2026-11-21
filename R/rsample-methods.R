@@ -152,9 +152,9 @@ balanced_calibration_split <- function(
   class,
   share = function(args) args$prop
 ) {
-  # A small-strata warning is held back and given after the fallback below,
-  # so that options(warn = 2) doesn't turn it into a failed split.
-  sparse <- NULL
+  # Warnings are held back and given after the fallback below, so that
+  # options(warn = 2) doesn't turn them into a failed split.
+  warnings <- list()
   split <- tryCatch(
     withCallingHandlers(
       {
@@ -174,8 +174,8 @@ balanced_calibration_split <- function(
           options = options
         )
       },
-      balancesample_sparse_strata = function(cnd) {
-        sparse <<- cnd
+      warning = function(cnd) {
+        warnings[[length(warnings) + 1]] <<- cnd
         rlang::cnd_muffle(cnd)
       }
     ),
@@ -188,8 +188,8 @@ balanced_calibration_split <- function(
     }
   )
   class(split) <- class
-  if (!is.null(sparse)) {
-    warning(sparse)
+  for (cnd in warnings) {
+    warning(cnd)
   }
   split
 }
