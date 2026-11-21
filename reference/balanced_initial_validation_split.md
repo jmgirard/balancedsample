@@ -22,6 +22,7 @@ balanced_initial_validation_split(
   group = NULL,
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 )
 ```
@@ -81,6 +82,13 @@ balanced_initial_validation_split(
 - options:
 
   A named list of options for the method. See Details.
+
+- na:
+
+  What to do with missing values in the `balance` and `exact` columns.
+  `"error"` (the default) stops with an error. `"include"` balances on
+  which values are missing; see Missing values. The `group` column must
+  not have missing values either way.
 
 - ...:
 
@@ -160,22 +168,15 @@ split
 #> <Training/Validation/Testing/Total>
 #> <19/7/6/32>
 balance_check(split)
-#> # Balance check: 2 splits, max |SMD| = 0.286, mean energy distance = 0.32
-#> # A tibble: 12 × 5
-#>    id         variable level statistic    value
-#>    <chr>      <chr>    <chr> <chr>        <dbl>
-#>  1 Validation mpg      NA    smd        0.00158
-#>  2 Validation hp       NA    smd       -0.105  
-#>  3 Validation wt       NA    smd       -0.0231 
-#>  4 Validation am       0     smd        0.286  
-#>  5 Validation am       1     smd       -0.286  
-#>  6 Validation NA       NA    energy     0.408  
-#>  7 Testing    mpg      NA    smd        0.0343 
-#>  8 Testing    hp       NA    smd       -0.0188 
-#>  9 Testing    wt       NA    smd        0.124  
-#> 10 Testing    am       0     smd       -0.159  
-#> 11 Testing    am       1     smd        0.159  
-#> 12 Testing    NA       NA    energy     0.232  
+#> # Balance check: 2 splits, 4 variables
+#> # 2 of 2 splits have a variable with |SMD| > 0.1, mean energy distance 0.32
+#> 
+#> id          max |SMD|  variable  mean |SMD|  over 0.1  energy
+#> Validation      0.286  am: 0         0.104        2/4   0.408
+#> Testing         0.159  am: 0         0.0839       2/4   0.232
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
+#> # 12 rows.
 rsample::validation_set(split)
 #> # A tibble: 1 × 2
 #>   splits         id        

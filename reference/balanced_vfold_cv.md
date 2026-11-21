@@ -16,6 +16,7 @@ balanced_vfold_cv(
   group = NULL,
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 )
 ```
@@ -74,6 +75,13 @@ balanced_vfold_cv(
 - options:
 
   A named list of options for the method. See Details.
+
+- na:
+
+  What to do with missing values in the `balance` and `exact` columns.
+  `"error"` (the default) stops with an error. `"include"` balances on
+  which values are missing; see Missing values. The `group` column must
+  not have missing values either way.
 
 - ...:
 
@@ -159,6 +167,39 @@ and then each row gets the set of its group. The number of groups per
 set follows the target proportions, so the number of rows per set is
 only approximate. `exact` columns must be constant within each group.
 
+## Missing values
+
+With `na = "include"`, rows with missing values stay in the split, and
+the method also balances how often each column is missing. The data in
+the split keep their missing values, so your model can handle them its
+own way, for example with a recipe.
+
+- In a numeric, logical, `Date`, `POSIXct`, or `difftime` column in
+  `balance`, missing values get the mean of the observed values, and an
+  indicator column of which values are missing is balanced too. With the
+  share missing balanced, balancing the filled column also balances the
+  mean of the observed values. The filled values all sit at the mean, so
+  the spread of the observed values is balanced less closely.
+
+- In a factor or character column in `balance`, a missing value is one
+  more level.
+
+- In `exact`, a missing value is one more level, so the rows with a
+  missing value in a column are spread over the sets by exact counts
+  like any other stratum. With `group`, a missing value counts as a
+  level when `exact` columns are checked for being constant within each
+  group, so a group with some rows at site "A" and some with a missing
+  site is an error.
+
+Each indicator column is standardized like the other columns. When few
+values are missing, the rows with a missing value are far from the rest
+on that column (about 10 standard deviations at 1% missing), as rows of
+a rare level are. A column with no observed values is an error.
+
+Rows with a missing `group` ID could belong to one unit or to several,
+so `group` must not have missing values. Give those rows their own IDs,
+or one shared ID, depending on which is true.
+
 ## Use with tune
 
 tune and
@@ -177,8 +218,10 @@ If a workflow has a postprocessor that must be trained, such as a
 calibration from the tailor package, tune splits each analysis set
 again. That inner split is a
 [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
-with the same `balance`, `exact`, `group`, `method`, and `options`
-(without twinning's `strategy`), and with `prop = 1 - 1/v`.
+with the same `balance`, `exact`, `group`, `na`, `method`, and `options`
+(without twinning's `strategy`), and with `prop = 1 - 1/v`. With
+`na = "include"`, a column with no observed values in the analysis set
+is left out of the inner split.
 
 ## References
 
@@ -225,21 +268,17 @@ folds
 #> 3 <split [24/8]> Fold3
 #> 4 <split [24/8]> Fold4
 balance_check(folds)
-#> # Balance check: 4 splits, max |SMD| = 0.254, mean energy distance = 0.205
-#> # A tibble: 24 × 5
-#>    id    variable level statistic   value
-#>    <chr> <chr>    <chr> <chr>       <dbl>
-#>  1 Fold1 mpg      NA    smd       -0.0550
-#>  2 Fold1 hp       NA    smd       -0.0404
-#>  3 Fold1 wt       NA    smd       -0.0601
-#>  4 Fold1 am       0     smd        0.0853
-#>  5 Fold1 am       1     smd       -0.0853
-#>  6 Fold1 NA       NA    energy     0.254 
-#>  7 Fold2 mpg      NA    smd       -0.0142
-#>  8 Fold2 hp       NA    smd        0.0442
-#>  9 Fold2 wt       NA    smd        0.0234
-#> 10 Fold2 am       0     smd       -0.254 
-#> # ℹ 14 more rows
+#> # Balance check: 4 splits, 4 variables
+#> # 1 of 4 splits has a variable with |SMD| > 0.1, mean energy distance 0.205
+#> 
+#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
+#> Fold1     0.0853  am: 1         0.0602       0/4   0.254
+#> Fold2     0.254   am: 0         0.084        1/4   0.151
+#> Fold3     0.0853  am: 1         0.0495       0/4   0.267
+#> Fold4     0.0853  am: 1         0.0468       0/4   0.148
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
+#> # 24 rows.
 
 # Other methods
 balanced_vfold_cv(

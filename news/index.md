@@ -18,10 +18,17 @@
   are numbers of groups, and `exact` columns must be constant within
   each group. If more than half of the `exact` strata are missing from
   at least one set, you get a warning. `balance` takes numeric, logical,
-  character, factor, `Date`, `POSIXct`, and `difftime` columns. Selected
-  columns must not have missing values; the vignette shows how to
-  balance on a filled copy of a column instead. Printed splits and folds
-  show the method and the columns.
+  character, factor, `Date`, `POSIXct`, and `difftime` columns. Printed
+  splits and folds show the method and the columns.
+
+- By default, the selected columns must not have missing values. With
+  `na = "include"`, rows with missing values in `balance` and `exact`
+  columns stay in, and the split also balances which values are missing.
+  A numeric column gets the mean of its observed values plus a 0/1
+  column of which values are missing, and in a categorical or `exact`
+  column a missing value is one more level. The split’s data keep their
+  missing values. `group` must not have missing values either way. Inner
+  calibration splits made by tune use the same `na`.
 
 - Four balancing methods: `"anticlust"` (k-plus anticlustering, the
   default), `"twinning"` (data twinning; needs the twinning package),
@@ -46,9 +53,17 @@
   name the columns to check. A three-way split is checked as the
   validation set and the testing set, each against the training set.
   With `variance_ratio = TRUE`, it also reports the variance ratio of
-  each numeric variable.
-  [`summary()`](https://rdrr.io/r/base/summary.html) gives one row per
-  split, with its largest absolute SMD and its energy distance.
+  each numeric variable. A variable with missing values also gets the
+  SMD of its share missing, with `level` `"(missing)"`, and the energy
+  distance uses all rows, with missing values encoded as with
+  `na = "include"`. Printing the result shows a short table: the SMDs of
+  one split, one row per split for up to 10 splits, or one row per
+  variable for more. [`summary()`](https://rdrr.io/r/base/summary.html)
+  gives one row per split, with its largest absolute SMD and the
+  variable it belongs to, the mean over the variables of their largest
+  absolute SMD, the number of variables above `threshold` (0.1 by
+  default), and its energy distance. `summary(by = "variable")` gives
+  one row per variable across the splits.
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   plots the result with ggplot2.
 

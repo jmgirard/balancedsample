@@ -70,7 +70,7 @@ ordinary <code><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" 
 <span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'balance_check'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span>, threshold <span class="op">=</span> <span class="fl">0.1</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"split"</span>, <span class="st">"variable"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -103,6 +103,17 @@ numeric variable.</p></dd>
 <dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>A <code>balance_check</code> object.</p></dd>
 
+
+<dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
+<dd><p>The absolute SMD above which <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> counts a
+variable in <code>n_over</code>. A value within rounding error of <code>threshold</code>
+(1.5e-8) counts as equal to it, so it isn't counted.</p></dd>
+
+
+<dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
+<dd><p><code>"split"</code> for one row per split, or <code>"variable"</code> for one row per
+variable across the splits.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -110,17 +121,36 @@ numeric variable.</p></dd>
 and the columns <code>variable</code>, <code>level</code>, <code>statistic</code> (<code>"smd"</code>, <code>"energy"</code>, or
 <code>"variance_ratio"</code>), and <code>value</code>. Energy rows have <code>NA</code> in <code>variable</code> and
 <code>level</code>.</p>
-<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> returns a tibble with one row per split. It has the ID
-columns, <code>max_abs_smd</code> (the largest absolute SMD in the split), the
-<code>variable</code> and <code>level</code> with that SMD (the first one if several tie), and
-<code>energy</code>. With variance ratios, it also has <code>variance_ratio</code>, the ratio
-farthest from 1 on the log scale (so 0.25 is farther than 3). If the
-split has no SMD that isn't missing, <code>max_abs_smd</code>,
-<code>variable</code>, and <code>level</code> are <code>NA</code>. If it has no energy row, <code>energy</code> is
-<code>NA</code>. Each split must have its own ID, so no ID may have more than one
-energy row. Only the ID columns that <code>balance_check()</code> made are used, so
-columns you add are ignored. If you rename or drop an ID column, the
-columns whose names start with <code>id</code> are used instead.</p>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> with <code>by = "split"</code> returns a tibble with one row per split.
+It has the ID columns and these columns:</p><ul><li><p><code>max_abs_smd</code>: the largest absolute SMD in the split, with the
+<code>variable</code> and <code>level</code> it belongs to (the first one if several tie).</p></li>
+<li><p><code>mean_abs_smd</code>: the mean over the variables of their largest absolute
+SMD.</p></li>
+<li><p><code>n_over</code>: the number of variables whose largest absolute SMD is above
+<code>threshold</code>.</p></li>
+<li><p><code>n_variables</code>: the number of variables with an SMD that isn't
+missing.</p></li>
+<li><p><code>energy</code>: the energy distance.</p></li>
+<li><p>With variance ratios, <code>variance_ratio</code>, the ratio farthest from 1 on
+the log scale (so 0.25 is farther than 3), and
+<code>variance_ratio_variable</code>, the variable it belongs to.</p></li>
+</ul><p>If the split has no SMD that isn't missing, <code>max_abs_smd</code>,
+<code>mean_abs_smd</code>, <code>variable</code>, and <code>level</code> are <code>NA</code>. If it has no energy
+row, <code>energy</code> is <code>NA</code>.</p>
+<p>With <code>by = "variable"</code>, it returns one row per variable, with
+<code>median_abs_smd</code> and <code>max_abs_smd</code> (the median and the largest of the
+variable's largest absolute SMD in each split), the <code>level</code> and the ID
+columns of the split with the largest, <code>n_over</code> (the number of splits
+where it is above <code>threshold</code>), and <code>n_splits</code> (the number of splits
+where the variable has an SMD that isn't missing). With variance
+ratios, it also has <code>variance_ratio</code>, the ratio farthest from 1 over the
+splits.</p>
+<p>Each split must have its own ID, so no ID may have more than one energy
+row. Only the ID columns that <code>balance_check()</code> made are used, so
+columns you add are ignored. If you rename an ID column, the columns
+whose names start with <code>id</code> are used instead. If you drop one, splits
+that differ only in it would merge, so <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> gives an error and
+printing shows the rows.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -143,13 +173,36 @@ variance ratio shows which variable differs. A variance within rounding
 error of zero counts as zero: if both are zero, the ratio is 1, and if one
 is, it is 0 or <code>Inf</code>. With fewer than two values in a set, it is <code>NA</code>.</p>
 <p>Missing values are dropped variable by variable for the SMD and the
-variance ratio. The energy
-distance uses the rows that have no missing values in any checked column.</p>
+variance ratio. A variable with missing values also gets an SMD for the
+share of its values that are missing, with <code>level</code> <code>"(missing)"</code>. In
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, this row counts as one more level of the variable. The
+energy distance uses all rows. It encodes missing values as the split
+functions do with <code>na = "include"</code>: a numeric variable gets the mean of
+its observed values plus an indicator of which values are missing, and a
+categorical variable gets a level for them. So with missing values, it compares the encoded
+data, not only the observed values.</p>
 <p>The energy distance is the V-statistic
 <code>2 E|X - Y| - E|X - X'| - E|Y - Y'|</code> on the standardized variables (one
 indicator column per categorical level). It is 0 when the two sets have the
 same distribution, and it also detects differences in spread and shape.</p>
-<p>Use <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on the result to get one row per split.</p>
+<p>Printing the result shows a short table. For one split, it has the SMD
+of each variable and level. For up to 10 splits, it has one row per split,
+as from <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>. For more splits, it has one row per variable, as from
+<code>summary(by = "variable")</code>. Columns that don't fit the width of the
+console are left out, and a note names them. Printing counts SMDs over
+0.1; use <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> with <code>threshold</code> for another value. Use
+<code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">tibble::as_tibble()</a></code> to see all rows.</p>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> first reduces each variable in each split to its largest
+absolute SMD, over its levels and its <code>"(missing)"</code> row. So a variable
+with many levels counts once, like a numeric variable. The largest
+absolute SMD of a split shows the worst variable, but it tends to grow
+with the number of variables: in random splits of 30 rows against 270,
+it averaged 0.21 with 2 variables and 0.48 with 40. The mean across
+variables stayed near 0.15 in such splits, so it is better for
+comparing splits that check different numbers of variables. The rule of
+thumb of 0.1 is hard to meet with small sets: in the same random splits,
+one variable's absolute SMD was under 0.1 only about 40% of the time. An
+<code>exact</code> column also can't do better than whole rows allow.</p>
     </div>
 
     <div class="section level2">
@@ -157,52 +210,51 @@ same distribution, and it also detects differences in spread and shape.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span><span class="va">mtcars</span>, v <span class="op">=</span> <span class="fl">4</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 4 splits, max |SMD| = 0.138, mean energy distance = 0.133</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 16 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    id    variable level statistic     value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> Fold1 mpg      <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.099</span><span style="color: #BB0000; text-decoration: underline;">8</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> Fold1 hp       <span style="color: #BB0000;">NA</span>    smd        0.109   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> Fold1 wt       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.138</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> Fold1 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.212   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> Fold2 mpg      <span style="color: #BB0000;">NA</span>    smd        0.075<span style="text-decoration: underline;">9</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> Fold2 hp       <span style="color: #BB0000;">NA</span>    smd        0.005<span style="text-decoration: underline;">94</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> Fold2 wt       <span style="color: #BB0000;">NA</span>    smd        0.069<span style="text-decoration: underline;">1</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> Fold2 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.118   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> Fold3 mpg      <span style="color: #BB0000;">NA</span>    smd        0.015<span style="text-decoration: underline;">4</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> Fold3 hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.049</span><span style="color: #BB0000; text-decoration: underline;">8</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> Fold3 wt       <span style="color: #BB0000;">NA</span>    smd        0.060<span style="text-decoration: underline;">3</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> Fold3 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.096<span style="text-decoration: underline;">1</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> Fold4 mpg      <span style="color: #BB0000;">NA</span>    smd        0.004<span style="text-decoration: underline;">71</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> Fold4 hp       <span style="color: #BB0000;">NA</span>    smd       -<span style="color: #BB0000;">0.073</span><span style="color: #BB0000; text-decoration: underline;">4</span>  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> Fold4 wt       <span style="color: #BB0000;">NA</span>    smd        0.000<span style="text-decoration: underline;">164</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> Fold4 <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>    energy     0.105   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 4 splits, 3 variables</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 1 of 4 splits has a variable with |SMD| &gt; 0.1, mean energy distance 0.133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable  mean |SMD|  over 0.1  energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1     0.138   wt            0.116        2/3  0.212</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2     0.0759  mpg           0.0503       0/3  0.118</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3     0.0603  wt            0.0418       0/3  0.0961</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4     0.0734  hp            0.0261       0/3  0.105</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 16 rows.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1      0.138  wt       <span style="color: #BB0000;">NA</span>    0.212 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2      0.075<span style="text-decoration: underline;">9</span> mpg      <span style="color: #BB0000;">NA</span>    0.118 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3      0.060<span style="text-decoration: underline;">3</span> wt       <span style="color: #BB0000;">NA</span>    0.096<span style="text-decoration: underline;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4      0.073<span style="text-decoration: underline;">4</span> hp       <span style="color: #BB0000;">NA</span>    0.105 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 8</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1      0.138  wt       <span style="color: #BB0000;">NA</span>          0.116       2           3 0.212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2      0.075<span style="text-decoration: underline;">9</span> mpg      <span style="color: #BB0000;">NA</span>          0.050<span style="text-decoration: underline;">3</span>      0           3 0.118 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3      0.060<span style="text-decoration: underline;">3</span> wt       <span style="color: #BB0000;">NA</span>          0.041<span style="text-decoration: underline;">8</span>      0           3 0.096<span style="text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4      0.073<span style="text-decoration: underline;">4</span> hp       <span style="color: #BB0000;">NA</span>          0.026<span style="text-decoration: underline;">1</span>      0           3 0.105 </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"variable"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   variable median_abs_smd max_abs_smd level id    n_over n_splits</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> mpg              0.045<span style="text-decoration: underline;">6</span>      0.099<span style="text-decoration: underline;">8</span> <span style="color: #BB0000;">NA</span>    Fold1      0        4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> hp               0.061<span style="text-decoration: underline;">6</span>      0.109  <span style="color: #BB0000;">NA</span>    Fold1      1        4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> wt               0.064<span style="text-decoration: underline;">7</span>      0.138  <span style="color: #BB0000;">NA</span>    Fold1      1        4</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span>, variance_ratio <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level energy variance_ratio</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1      0.138  wt       <span style="color: #BB0000;">NA</span>    0.212            1.53</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2      0.075<span style="text-decoration: underline;">9</span> mpg      <span style="color: #BB0000;">NA</span>    0.118            1.25</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3      0.060<span style="text-decoration: underline;">3</span> wt       <span style="color: #BB0000;">NA</span>    0.096<span style="text-decoration: underline;">1</span>           1.27</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4      0.073<span style="text-decoration: underline;">4</span> hp       <span style="color: #BB0000;">NA</span>    0.105            1.18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 10</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1      0.138  wt       <span style="color: #BB0000;">NA</span>          0.116       2           3 0.212 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2      0.075<span style="text-decoration: underline;">9</span> mpg      <span style="color: #BB0000;">NA</span>          0.050<span style="text-decoration: underline;">3</span>      0           3 0.118 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3      0.060<span style="text-decoration: underline;">3</span> wt       <span style="color: #BB0000;">NA</span>          0.041<span style="text-decoration: underline;">8</span>      0           3 0.096<span style="text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4      0.073<span style="text-decoration: underline;">4</span> hp       <span style="color: #BB0000;">NA</span>          0.026<span style="text-decoration: underline;">1</span>      0           3 0.105 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: variance_ratio &lt;dbl&gt;, variance_ratio_variable &lt;chr&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare with ordinary folds</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">mtcars</span>, v <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>, <span class="va">mpg</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1       0.518 hp       <span style="color: #BB0000;">NA</span>     0.401</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2       0.904 hp       <span style="color: #BB0000;">NA</span>     0.687</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3       0.510 wt       <span style="color: #BB0000;">NA</span>     0.291</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4       0.232 hp       <span style="color: #BB0000;">NA</span>     0.333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 8</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1       0.518 hp       <span style="color: #BB0000;">NA</span>           0.223      2           3  0.401</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2       0.904 hp       <span style="color: #BB0000;">NA</span>           0.830      3           3  0.687</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3       0.510 wt       <span style="color: #BB0000;">NA</span>           0.336      2           3  0.291</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4       0.232 hp       <span style="color: #BB0000;">NA</span>           0.211      3           3  0.333</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

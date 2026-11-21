@@ -24,7 +24,7 @@ balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
 
 # S3 method for class 'balance_check'
-summary(object, ...)
+summary(object, ..., threshold = 0.1, by = c("split", "variable"))
 ```
 
 ## Arguments
@@ -62,6 +62,18 @@ summary(object, ...)
 
   A `balance_check` object.
 
+- threshold:
+
+  The absolute SMD above which
+  [`summary()`](https://rdrr.io/r/base/summary.html) counts a variable
+  in `n_over`. A value within rounding error of `threshold` (1.5e-8)
+  counts as equal to it, so it isn't counted.
+
+- by:
+
+  `"split"` for one row per split, or `"variable"` for one row per
+  variable across the splits.
+
 ## Value
 
 A tibble with class `balance_check`. It has the ID columns of `x`, and
@@ -69,18 +81,46 @@ the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`, or
 `"variance_ratio"`), and `value`. Energy rows have `NA` in `variable`
 and `level`.
 
-[`summary()`](https://rdrr.io/r/base/summary.html) returns a tibble with
-one row per split. It has the ID columns, `max_abs_smd` (the largest
-absolute SMD in the split), the `variable` and `level` with that SMD
-(the first one if several tie), and `energy`. With variance ratios, it
-also has `variance_ratio`, the ratio farthest from 1 on the log scale
-(so 0.25 is farther than 3). If the split has no SMD that isn't missing,
-`max_abs_smd`, `variable`, and `level` are `NA`. If it has no energy
-row, `energy` is `NA`. Each split must have its own ID, so no ID may
-have more than one energy row. Only the ID columns that
-`balance_check()` made are used, so columns you add are ignored. If you
-rename or drop an ID column, the columns whose names start with `id` are
-used instead.
+[`summary()`](https://rdrr.io/r/base/summary.html) with `by = "split"`
+returns a tibble with one row per split. It has the ID columns and these
+columns:
+
+- `max_abs_smd`: the largest absolute SMD in the split, with the
+  `variable` and `level` it belongs to (the first one if several tie).
+
+- `mean_abs_smd`: the mean over the variables of their largest absolute
+  SMD.
+
+- `n_over`: the number of variables whose largest absolute SMD is above
+  `threshold`.
+
+- `n_variables`: the number of variables with an SMD that isn't missing.
+
+- `energy`: the energy distance.
+
+- With variance ratios, `variance_ratio`, the ratio farthest from 1 on
+  the log scale (so 0.25 is farther than 3), and
+  `variance_ratio_variable`, the variable it belongs to.
+
+If the split has no SMD that isn't missing, `max_abs_smd`,
+`mean_abs_smd`, `variable`, and `level` are `NA`. If it has no energy
+row, `energy` is `NA`.
+
+With `by = "variable"`, it returns one row per variable, with
+`median_abs_smd` and `max_abs_smd` (the median and the largest of the
+variable's largest absolute SMD in each split), the `level` and the ID
+columns of the split with the largest, `n_over` (the number of splits
+where it is above `threshold`), and `n_splits` (the number of splits
+where the variable has an SMD that isn't missing). With variance ratios,
+it also has `variance_ratio`, the ratio farthest from 1 over the splits.
+
+Each split must have its own ID, so no ID may have more than one energy
+row. Only the ID columns that `balance_check()` made are used, so
+columns you add are ignored. If you rename an ID column, the columns
+whose names start with `id` are used instead. If you drop one, splits
+that differ only in it would merge, so
+[`summary()`](https://rdrr.io/r/base/summary.html) gives an error and
+printing shows the rows.
 
 ## Details
 
@@ -107,8 +147,15 @@ ratio is 1, and if one is, it is 0 or `Inf`. With fewer than two values
 in a set, it is `NA`.
 
 Missing values are dropped variable by variable for the SMD and the
-variance ratio. The energy distance uses the rows that have no missing
-values in any checked column.
+variance ratio. A variable with missing values also gets an SMD for the
+share of its values that are missing, with `level` `"(missing)"`. In
+[`summary()`](https://rdrr.io/r/base/summary.html), this row counts as
+one more level of the variable. The energy distance uses all rows. It
+encodes missing values as the split functions do with `na = "include"`:
+a numeric variable gets the mean of its observed values plus an
+indicator of which values are missing, and a categorical variable gets a
+level for them. So with missing values, it compares the encoded data,
+not only the observed values.
 
 The energy distance is the V-statistic
 `2 E|X - Y| - E|X - X'| - E|Y - Y'|` on the standardized variables (one
@@ -116,8 +163,29 @@ indicator column per categorical level). It is 0 when the two sets have
 the same distribution, and it also detects differences in spread and
 shape.
 
-Use [`summary()`](https://rdrr.io/r/base/summary.html) on the result to
-get one row per split.
+Printing the result shows a short table. For one split, it has the SMD
+of each variable and level. For up to 10 splits, it has one row per
+split, as from [`summary()`](https://rdrr.io/r/base/summary.html). For
+more splits, it has one row per variable, as from
+`summary(by = "variable")`. Columns that don't fit the width of the
+console are left out, and a note names them. Printing counts SMDs over
+0.1; use [`summary()`](https://rdrr.io/r/base/summary.html) with
+`threshold` for another value. Use
+[`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+to see all rows.
+
+[`summary()`](https://rdrr.io/r/base/summary.html) first reduces each
+variable in each split to its largest absolute SMD, over its levels and
+its `"(missing)"` row. So a variable with many levels counts once, like
+a numeric variable. The largest absolute SMD of a split shows the worst
+variable, but it tends to grow with the number of variables: in random
+splits of 30 rows against 270, it averaged 0.21 with 2 variables and
+0.48 with 40. The mean across variables stayed near 0.15 in such splits,
+so it is better for comparing splits that check different numbers of
+variables. The rule of thumb of 0.1 is hard to meet with small sets: in
+the same random splits, one variable's absolute SMD was under 0.1 only
+about 40% of the time. An `exact` column also can't do better than whole
+rows allow.
 
 ## Examples
 
@@ -125,50 +193,49 @@ get one row per split.
 set.seed(1)
 folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 balance_check(folds)
-#> # Balance check: 4 splits, max |SMD| = 0.138, mean energy distance = 0.133
-#> # A tibble: 16 × 5
-#>    id    variable level statistic     value
-#>    <chr> <chr>    <chr> <chr>         <dbl>
-#>  1 Fold1 mpg      NA    smd       -0.0998  
-#>  2 Fold1 hp       NA    smd        0.109   
-#>  3 Fold1 wt       NA    smd       -0.138   
-#>  4 Fold1 NA       NA    energy     0.212   
-#>  5 Fold2 mpg      NA    smd        0.0759  
-#>  6 Fold2 hp       NA    smd        0.00594 
-#>  7 Fold2 wt       NA    smd        0.0691  
-#>  8 Fold2 NA       NA    energy     0.118   
-#>  9 Fold3 mpg      NA    smd        0.0154  
-#> 10 Fold3 hp       NA    smd       -0.0498  
-#> 11 Fold3 wt       NA    smd        0.0603  
-#> 12 Fold3 NA       NA    energy     0.0961  
-#> 13 Fold4 mpg      NA    smd        0.00471 
-#> 14 Fold4 hp       NA    smd       -0.0734  
-#> 15 Fold4 wt       NA    smd        0.000164
-#> 16 Fold4 NA       NA    energy     0.105   
+#> # Balance check: 4 splits, 3 variables
+#> # 1 of 4 splits has a variable with |SMD| > 0.1, mean energy distance 0.133
+#> 
+#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
+#> Fold1     0.138   wt            0.116        2/3  0.212
+#> Fold2     0.0759  mpg           0.0503       0/3  0.118
+#> Fold3     0.0603  wt            0.0418       0/3  0.0961
+#> Fold4     0.0734  hp            0.0261       0/3  0.105
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
+#> # 16 rows.
 summary(balance_check(folds))
-#> # A tibble: 4 × 5
-#>   id    max_abs_smd variable level energy
-#>   <chr>       <dbl> <chr>    <chr>  <dbl>
-#> 1 Fold1      0.138  wt       NA    0.212 
-#> 2 Fold2      0.0759 mpg      NA    0.118 
-#> 3 Fold3      0.0603 wt       NA    0.0961
-#> 4 Fold4      0.0734 hp       NA    0.105 
+#> # A tibble: 4 × 8
+#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1      0.138  wt       NA          0.116       2           3 0.212 
+#> 2 Fold2      0.0759 mpg      NA          0.0503      0           3 0.118 
+#> 3 Fold3      0.0603 wt       NA          0.0418      0           3 0.0961
+#> 4 Fold4      0.0734 hp       NA          0.0261      0           3 0.105 
+summary(balance_check(folds), by = "variable")
+#> # A tibble: 3 × 7
+#>   variable median_abs_smd max_abs_smd level id    n_over n_splits
+#>   <chr>             <dbl>       <dbl> <chr> <chr>  <int>    <int>
+#> 1 mpg              0.0456      0.0998 NA    Fold1      0        4
+#> 2 hp               0.0616      0.109  NA    Fold1      1        4
+#> 3 wt               0.0647      0.138  NA    Fold1      1        4
 summary(balance_check(folds, variance_ratio = TRUE))
-#> # A tibble: 4 × 6
-#>   id    max_abs_smd variable level energy variance_ratio
-#>   <chr>       <dbl> <chr>    <chr>  <dbl>          <dbl>
-#> 1 Fold1      0.138  wt       NA    0.212            1.53
-#> 2 Fold2      0.0759 mpg      NA    0.118            1.25
-#> 3 Fold3      0.0603 wt       NA    0.0961           1.27
-#> 4 Fold4      0.0734 hp       NA    0.105            1.18
+#> # A tibble: 4 × 10
+#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1      0.138  wt       NA          0.116       2           3 0.212 
+#> 2 Fold2      0.0759 mpg      NA          0.0503      0           3 0.118 
+#> 3 Fold3      0.0603 wt       NA          0.0418      0           3 0.0961
+#> 4 Fold4      0.0734 hp       NA          0.0261      0           3 0.105 
+#> # ℹ 2 more variables: variance_ratio <dbl>, variance_ratio_variable <chr>
 
 # Compare with ordinary folds
 summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
-#> # A tibble: 4 × 5
-#>   id    max_abs_smd variable level energy
-#>   <chr>       <dbl> <chr>    <chr>  <dbl>
-#> 1 Fold1       0.518 hp       NA     0.401
-#> 2 Fold2       0.904 hp       NA     0.687
-#> 3 Fold3       0.510 wt       NA     0.291
-#> 4 Fold4       0.232 hp       NA     0.333
+#> # A tibble: 4 × 8
+#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1       0.518 hp       NA           0.223      2           3  0.401
+#> 2 Fold2       0.904 hp       NA           0.830      3           3  0.687
+#> 3 Fold3       0.510 wt       NA           0.336      2           3  0.291
+#> 4 Fold4       0.232 hp       NA           0.211      3           3  0.333
 ```

@@ -18,6 +18,7 @@ balanced_initial_split(
   group = NULL,
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 )
 ```
@@ -77,6 +78,13 @@ balanced_initial_split(
 - options:
 
   A named list of options for the method. See Details.
+
+- na:
+
+  What to do with missing values in the `balance` and `exact` columns.
+  `"error"` (the default) stops with an error. `"include"` balances on
+  which values are missing; see Missing values. The `group` column must
+  not have missing values either way.
 
 - ...:
 

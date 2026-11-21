@@ -132,42 +132,36 @@
 <span><span class="co">#&gt; 3 &lt;split [320/80]&gt; Fold3</span></span>
 <span><span class="co">#&gt; 4 &lt;split [320/80]&gt; Fold4</span></span>
 <span><span class="co">#&gt; 5 &lt;split [320/80]&gt; Fold5</span></span></code></pre></div>
-<p><code><a href="reference/balance_check.html">balance_check()</a></code> reports the standardized mean difference (SMD) of each variable in each fold. The SMD compares the assessment set with the analysis set. It also reports the energy distance, which compares the whole multivariate distribution. The function works with any rsample object, so you can compare balanced folds with ordinary folds.</p>
+<p><code><a href="reference/balance_check.html">balance_check()</a></code> reports the standardized mean difference (SMD) of each variable in each fold. The SMD compares the assessment set with the analysis set. It also reports the energy distance, which compares the whole multivariate distribution. The function works with any rsample object, so you can compare balanced folds with ordinary folds. The printed table has one row per fold: the largest absolute SMD and its variable, the mean over the variables, how many are over 0.1, and the energy distance. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> returns the same numbers as a tibble.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.0203</span></span>
-<span><span class="co">#&gt; # A tibble: 40 × 5</span></span>
-<span><span class="co">#&gt;    id    variable  level  statistic     value</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;         &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 Fold1 age       &lt;NA&gt;   smd       -0.000600</span></span>
-<span><span class="co">#&gt;  2 Fold1 income    &lt;NA&gt;   smd       -0.000770</span></span>
-<span><span class="co">#&gt;  3 Fold1 diagnosis mild   smd        0       </span></span>
-<span><span class="co">#&gt;  4 Fold1 diagnosis none   smd        0       </span></span>
-<span><span class="co">#&gt;  5 Fold1 diagnosis severe smd        0       </span></span>
-<span><span class="co">#&gt;  6 Fold1 site      A      smd       -0.00625 </span></span>
-<span><span class="co">#&gt;  7 Fold1 site      B      smd        0.00625 </span></span>
-<span><span class="co">#&gt;  8 Fold1 &lt;NA&gt;      &lt;NA&gt;   energy     0.0180  </span></span>
-<span><span class="co">#&gt;  9 Fold2 age       &lt;NA&gt;   smd        0.000412</span></span>
-<span><span class="co">#&gt; 10 Fold2 income    &lt;NA&gt;   smd       -0.000580</span></span>
-<span><span class="co">#&gt; # ℹ 30 more rows</span></span>
+<span><span class="co">#&gt; # Balance check: 5 splits, 4 variables</span></span>
+<span><span class="co">#&gt; # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0203</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; id     max |SMD|  variable  mean |SMD|  over 0.1  energy</span></span>
+<span><span class="co">#&gt; Fold1    0.00625  site: A      0.00191       0/4  0.018</span></span>
+<span><span class="co">#&gt; Fold2    0.00625  site: A      0.00181       0/4  0.0287</span></span>
+<span><span class="co">#&gt; Fold3    0.025    site: A      0.00657       0/4  0.0165</span></span>
+<span><span class="co">#&gt; Fold4    0.00625  site: A      0.00174       0/4  0.0223</span></span>
+<span><span class="co">#&gt; Fold5    0.00625  site: B      0.00167       0/4  0.016</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span></span>
+<span><span class="co">#&gt; # 40 rows.</span></span>
 <span></span>
 <span><span class="va">random_folds</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">d</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">random_folds</span>, <span class="va">age</span>, <span class="va">income</span>, <span class="va">diagnosis</span>, <span class="va">site</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Balance check: 5 splits, max |SMD| = 0.302, mean energy distance = 0.0653</span></span>
-<span><span class="co">#&gt; # A tibble: 40 × 5</span></span>
-<span><span class="co">#&gt;    id    variable  level  statistic    value</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;        &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 Fold1 age       &lt;NA&gt;   smd        0.00739</span></span>
-<span><span class="co">#&gt;  2 Fold1 income    &lt;NA&gt;   smd        0.0505 </span></span>
-<span><span class="co">#&gt;  3 Fold1 diagnosis mild   smd       -0.257  </span></span>
-<span><span class="co">#&gt;  4 Fold1 diagnosis none   smd        0.302  </span></span>
-<span><span class="co">#&gt;  5 Fold1 diagnosis severe smd       -0.109  </span></span>
-<span><span class="co">#&gt;  6 Fold1 site      A      smd       -0.163  </span></span>
-<span><span class="co">#&gt;  7 Fold1 site      B      smd        0.163  </span></span>
-<span><span class="co">#&gt;  8 Fold1 &lt;NA&gt;      &lt;NA&gt;   energy     0.0878 </span></span>
-<span><span class="co">#&gt;  9 Fold2 age       &lt;NA&gt;   smd       -0.0286 </span></span>
-<span><span class="co">#&gt; 10 Fold2 income    &lt;NA&gt;   smd       -0.0968 </span></span>
-<span><span class="co">#&gt; # ℹ 30 more rows</span></span></code></pre></div>
+<span><span class="co">#&gt; # Balance check: 5 splits, 4 variables</span></span>
+<span><span class="co">#&gt; # 4 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0653</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span></span>
+<span><span class="co">#&gt; Fold1     0.302   diagnosis: none      0.131        2/4  0.0878</span></span>
+<span><span class="co">#&gt; Fold2     0.0968  income               0.0416       0/4  0.0284</span></span>
+<span><span class="co">#&gt; Fold3     0.144   income               0.0843       1/4  0.0351</span></span>
+<span><span class="co">#&gt; Fold4     0.288   diagnosis: none      0.181        2/4  0.113</span></span>
+<span><span class="co">#&gt; Fold5     0.184   income               0.155        4/4  0.0622</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span></span>
+<span><span class="co">#&gt; # 40 rows.</span></span></code></pre></div>
 <p>Use <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> to see the SMD values. The dashed lines are at -0.1 and 0.1.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
@@ -197,13 +191,14 @@
 <span><span class="co">#&gt; &lt;Training/Testing/Total&gt;</span></span>
 <span><span class="co">#&gt; &lt;300/100/400&gt;</span></span>
 <span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Balance check: 1 split, max |SMD| = 0.0118, mean energy distance = 0.00206</span></span>
-<span><span class="co">#&gt; # A tibble: 3 × 5</span></span>
-<span><span class="co">#&gt;   id    variable level statistic    value</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;        &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 Split age      &lt;NA&gt;  smd       -0.00875</span></span>
-<span><span class="co">#&gt; 2 Split income   &lt;NA&gt;  smd        0.0118 </span></span>
-<span><span class="co">#&gt; 3 Split &lt;NA&gt;     &lt;NA&gt;  energy     0.00206</span></span></code></pre></div>
+<span><span class="co">#&gt; # Balance check: 1 split, 2 variables</span></span>
+<span><span class="co">#&gt; # |SMD| &gt; 0.1 in 0 of 2 variables, energy distance 0.00206</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; variable  level       SMD</span></span>
+<span><span class="co">#&gt; age              -0.00875</span></span>
+<span><span class="co">#&gt; income            0.0118</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # tibble::as_tibble() gives all 3 rows.</span></span></code></pre></div>
 <p><code><a href="reference/balanced_initial_validation_split.html">balanced_initial_validation_split()</a></code> makes one balanced training/validation/testing split. Pass it to <code><a href="https://rsample.tidymodels.org/reference/validation_set.html" class="external-link">rsample::validation_set()</a></code> to tune on the validation set.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">split3</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/balanced_initial_validation_split.html">balanced_initial_validation_split</a></span><span class="op">(</span><span class="va">d</span>, prop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.2</span><span class="op">)</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span><span class="op">)</span></span>
@@ -212,16 +207,15 @@
 <span><span class="co">#&gt; &lt;Training/Validation/Testing/Total&gt;</span></span>
 <span><span class="co">#&gt; &lt;240/80/80/400&gt;</span></span>
 <span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">split3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Balance check: 2 splits, max |SMD| = 6.82e-05, mean energy distance = 0.0158</span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 5</span></span>
-<span><span class="co">#&gt;   id         variable level statistic       value</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;           &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 Validation age      &lt;NA&gt;  smd        0.0000184 </span></span>
-<span><span class="co">#&gt; 2 Validation income   &lt;NA&gt;  smd       -0.00000979</span></span>
-<span><span class="co">#&gt; 3 Validation &lt;NA&gt;     &lt;NA&gt;  energy     0.0192    </span></span>
-<span><span class="co">#&gt; 4 Testing    age      &lt;NA&gt;  smd        0.0000682 </span></span>
-<span><span class="co">#&gt; 5 Testing    income   &lt;NA&gt;  smd       -0.0000322 </span></span>
-<span><span class="co">#&gt; 6 Testing    &lt;NA&gt;     &lt;NA&gt;  energy     0.0124</span></span></code></pre></div>
+<span><span class="co">#&gt; # Balance check: 2 splits, 2 variables</span></span>
+<span><span class="co">#&gt; # 0 of 2 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0158</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; id          max |SMD|  variable  mean |SMD|  over 0.1  energy</span></span>
+<span><span class="co">#&gt; Validation   1.84e-05  age         1.41e-05       0/2  0.0192</span></span>
+<span><span class="co">#&gt; Testing      6.82e-05  age         5.02e-05       0/2  0.0124</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives all 6</span></span>
+<span><span class="co">#&gt; # rows.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="groups">Groups<a class="anchor" aria-label="anchor" href="#groups"></a>
