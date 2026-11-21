@@ -376,6 +376,12 @@ balance_check(split)
 For a single split, the table shows the signed SMD of each variable and
 level, and the header gives the energy distance.
 
+To tune on one validation set instead of folds, use
+[`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md),
+which makes a balanced training/validation/testing split. Pass it to
+[`rsample::validation_set()`](https://rsample.tidymodels.org/reference/validation_set.html)
+to get an `rset` for tune.
+
 ``` r
 
 folds <- balanced_vfold_cv(
@@ -477,11 +483,10 @@ They differ in how they make the sets similar on the `balance` columns:
   for the set. The next group starts at the unused row closest to the
   last group’s farthest neighbour, so the set covers the data the way
   the whole data does. It does this within each `exact` stratum. For
-  folds, the default strategy repeats this on the rows that are left. In
-  one test with 10 folds, it took under 0.2 seconds for 1,000 to 10,000
-  rows (see the README). It needs the twinning package, allows only some
-  split proportions, and splits small strata at random (for folds,
-  strata with fewer than `2 * v` rows).
+  folds, the default strategy repeats this on the rows that are left. It
+  needs the twinning package, allows only some split proportions, and
+  splits small strata at random (for folds, strata with fewer than
+  `2 * v` rows).
 - `"rerandomize"` uses rerandomization ([Morgan and Rubin,
   2012](https://doi.org/10.1214/12-AOS1008)). It draws stratified random
   splits and scores each one by its Mahalanobis imbalance: a distance
@@ -538,12 +543,17 @@ smallest `mean_abs_smd` from anticlust (0.037), and the smallest
 method on one data set, so they don’t show which method does best in
 general, and small differences may be noise.
 
-Start with anticlust. On large data, set
-`options = list(k_neighbours = 20)` or try twinning, then check the
-balance again. With `k_neighbours = 20`, look at the categorical columns
-in particular: in one test with 5,000 rows, their largest SMD rose from
-about 0.005 to about 0.1, while the numeric columns stayed as well
-balanced. The README lists run times for both. See
+Start with anticlust, but watch its run time on large data. In one test
+on one computer, with 10 folds and four numeric variables, it took 0.5
+seconds for 1,000 rows, 3.7 seconds for 3,000 rows, 25 seconds for
+10,000 rows, and 3.6 minutes for 30,000 rows. With
+`options = list(k_neighbours = 20)`, each row can only swap with its 20
+nearest neighbours, and the same runs took 0.3, 1.6, 4.1, and 11.7
+seconds. Twinning took under 0.5 seconds for all four sizes. On large
+data, use `k_neighbours` or twinning, then check the balance again. With
+`k_neighbours = 20`, look at the categorical columns in particular: in
+one test with 5,000 rows, their largest SMD rose from about 0.005 to
+about 0.1, while the numeric columns stayed as well balanced. See
 [`?balanced_vfold_cv`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
 for the options of each method.
 
@@ -584,3 +594,9 @@ number of people, so the number of rows per fold varies with how many
 rows each person has.
 [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
 also compares rows.
+
+To make the split, the method sees each person as one row, with the
+person’s means of the `balance` columns and the log of their number of
+rows. anticlust has a `must_link` argument for groups. balancesample
+does not use it, because it needs fold sizes that the groups can fill
+exactly, and it was slow in tests.
