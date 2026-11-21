@@ -108,22 +108,23 @@
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>This example uses simulated data with two skewed numeric variables and two categorical variables.</p>
+<p>This example uses <code>sim_patients</code>, a simulated data set that comes with the package. It has 300 patients with two skewed numeric variables (<code>age</code> and <code>income</code>), a diagnosis with a rare level, three sites, and an outcome.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/balancesample" class="external-link">balancesample</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">400</span></span>
-<span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">rgamma</a></span><span class="op">(</span><span class="va">n</span>, shape <span class="op">=</span> <span class="fl">4</span>, rate <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>,</span>
-<span>  income <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="va">n</span>, meanlog <span class="op">=</span> <span class="fl">10</span>, sdlog <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span>,</span>
-<span>  diagnosis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mild"</span>, <span class="st">"severe"</span><span class="op">)</span>, <span class="va">n</span>, <span class="cn">TRUE</span>, prob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.3</span>, <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  site <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, <span class="va">n</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sim_patients</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         age    income diagnosis site  outcome</span></span>
+<span><span class="co">#&gt; 1 45.416862 10059.820      none    A 4.869271</span></span>
+<span><span class="co">#&gt; 2 17.715166 29593.157      none    B 4.029893</span></span>
+<span><span class="co">#&gt; 3  7.956037 16209.254      none    A 3.903540</span></span>
+<span><span class="co">#&gt; 4 23.639336  8132.757      none    C 5.043892</span></span>
+<span><span class="co">#&gt; 5 45.003459 31997.909      none    C 4.053658</span></span>
+<span><span class="co">#&gt; 6 56.925594 22235.349      mild    B 8.176950</span></span></code></pre></div>
 <p><code><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv()</a></code> makes folds that are similar on the columns in <code>balance</code>. Categorical columns in <code>exact</code> are stratified exactly: in each fold, the count of each level combination is as close to its proportional share as whole rows allow.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
-<span>  <span class="va">d</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
+<span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
+<span>  <span class="va">sim_patients</span>,</span>
 <span>  v <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span>, <span class="va">diagnosis</span><span class="op">)</span>,</span>
 <span>  exact <span class="op">=</span> <span class="va">site</span></span>
@@ -134,41 +135,41 @@
 <span><span class="co">#&gt; # A tibble: 5 × 2</span></span>
 <span><span class="co">#&gt;   splits           id   </span></span>
 <span><span class="co">#&gt;   &lt;list&gt;           &lt;chr&gt;</span></span>
-<span><span class="co">#&gt; 1 &lt;split [320/80]&gt; Fold1</span></span>
-<span><span class="co">#&gt; 2 &lt;split [320/80]&gt; Fold2</span></span>
-<span><span class="co">#&gt; 3 &lt;split [320/80]&gt; Fold3</span></span>
-<span><span class="co">#&gt; 4 &lt;split [320/80]&gt; Fold4</span></span>
-<span><span class="co">#&gt; 5 &lt;split [320/80]&gt; Fold5</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 &lt;split [240/60]&gt; Fold1</span></span>
+<span><span class="co">#&gt; 2 &lt;split [240/60]&gt; Fold2</span></span>
+<span><span class="co">#&gt; 3 &lt;split [240/60]&gt; Fold3</span></span>
+<span><span class="co">#&gt; 4 &lt;split [240/60]&gt; Fold4</span></span>
+<span><span class="co">#&gt; 5 &lt;split [240/60]&gt; Fold5</span></span></code></pre></div>
 <p><code><a href="reference/balance_check.html">balance_check()</a></code> compares the held-out rows of each fold with the other rows. The printed table gives the largest and the mean absolute standardized mean difference (SMD) over the variables, how many variables are over 0.1, and the energy distance, which compares all the variables at once. The function works with any rsample object, so you can compare balanced folds with ordinary folds.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Balance check: 5 splits, 4 variables</span></span>
-<span><span class="co">#&gt; # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0194</span></span>
+<span><span class="co">#&gt; # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.032</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; id     max |SMD|  variable  mean |SMD|  over 0.1  energy</span></span>
-<span><span class="co">#&gt; Fold1    0.025    site: A      0.00627       0/4  0.0148</span></span>
-<span><span class="co">#&gt; Fold2    0.00625  site: A      0.00209       0/4  0.021</span></span>
-<span><span class="co">#&gt; Fold3    0.00625  site: A      0.00193       0/4  0.0163</span></span>
-<span><span class="co">#&gt; Fold4    0.00625  site: A      0.0017        0/4  0.0226</span></span>
-<span><span class="co">#&gt; Fold5    0.00625  site: A      0.00168       0/4  0.0225</span></span>
+<span><span class="co">#&gt; id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span></span>
+<span><span class="co">#&gt; Fold1     0.0367  site: B             0.0126        0/4  0.0341</span></span>
+<span><span class="co">#&gt; Fold2     0.026   site: C             0.00922       0/4  0.0261</span></span>
+<span><span class="co">#&gt; Fold3     0.026   site: A             0.0091        0/4  0.04</span></span>
+<span><span class="co">#&gt; Fold4     0.026   site: C             0.00992       0/4  0.0291</span></span>
+<span><span class="co">#&gt; Fold5     0.0373  diagnosis: mild     0.0159        0/4  0.0306</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span></span>
-<span><span class="co">#&gt; # 40 rows.</span></span>
+<span><span class="co">#&gt; # 45 rows.</span></span>
 <span></span>
-<span><span class="va">random_folds</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">d</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">random_folds</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">sim_patients</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">random_folds</span>, <span class="va">age</span>, <span class="va">income</span>, <span class="va">diagnosis</span>, <span class="va">site</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Balance check: 5 splits, 4 variables</span></span>
-<span><span class="co">#&gt; # 5 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0529</span></span>
+<span><span class="co">#&gt; # 5 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0789</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; id     max |SMD|  variable           mean |SMD|  over 0.1  energy</span></span>
-<span><span class="co">#&gt; Fold1      0.195  site: A                0.143        3/4  0.0661</span></span>
-<span><span class="co">#&gt; Fold2      0.106  income                 0.0712       1/4  0.0193</span></span>
-<span><span class="co">#&gt; Fold3      0.283  diagnosis: severe      0.141        2/4  0.0708</span></span>
-<span><span class="co">#&gt; Fold4      0.334  income                 0.147        2/4  0.0491</span></span>
-<span><span class="co">#&gt; Fold5      0.214  site: B                0.129        3/4  0.0591</span></span>
+<span><span class="co">#&gt; id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span></span>
+<span><span class="co">#&gt; Fold1      0.305  site: B               0.148       2/4  0.0827</span></span>
+<span><span class="co">#&gt; Fold2      0.411  site: B               0.165       2/4  0.101</span></span>
+<span><span class="co">#&gt; Fold3      0.177  diagnosis: none       0.105       2/4  0.054</span></span>
+<span><span class="co">#&gt; Fold4      0.277  income                0.201       3/4  0.0883</span></span>
+<span><span class="co">#&gt; Fold5      0.282  income                0.136       3/4  0.0684</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span></span>
-<span><span class="co">#&gt; # 40 rows.</span></span></code></pre></div>
+<span><span class="co">#&gt; # 45 rows.</span></span></code></pre></div>
 <p>The folds work with tune. Attach balancesample with <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> first, because tune finds the function that made the folds by its name.</p>
 </div>
 <div class="section level2">

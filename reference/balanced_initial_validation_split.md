@@ -157,29 +157,29 @@ set.
 ``` r
 set.seed(1)
 split <- balanced_initial_validation_split(
-  mtcars,
+  sim_patients,
   prop = c(0.6, 0.2),
-  balance = c(mpg, hp, wt),
-  exact = am
+  balance = c(age, income),
+  exact = c(diagnosis, site)
 )
 split
-#> # Balanced training/validation/testing split (anticlust), balancing mpg, hp, wt,
-#> # stratified by am
+#> # Balanced training/validation/testing split (anticlust), balancing age, income,
+#> # stratified by diagnosis, site
 #> <Training/Validation/Testing/Total>
-#> <19/7/6/32>
+#> <180/60/60/300>
 balance_check(split)
 #> # Balance check: 2 splits, 4 variables
-#> # 2 of 2 splits have a variable with |SMD| > 0.1, mean energy distance 0.32
+#> # 0 of 2 splits have a variable with |SMD| > 0.1, mean energy distance 0.0271
 #> 
 #> id          max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Validation      0.286  am: 0         0.104        2/4   0.408
-#> Testing         0.159  am: 0         0.0839       2/4   0.232
+#> Validation     0.0367  site: B      0.0125        0/4  0.0282
+#> Testing        0.0232  site: C      0.00906       0/4  0.0259
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 12 rows.
+#> # 18 rows.
 rsample::validation_set(split)
 #> # A tibble: 1 × 2
-#>   splits         id        
-#>   <list>         <chr>     
-#> 1 <split [19/7]> validation
+#>   splits           id        
+#>   <list>           <chr>     
+#> 1 <split [180/60]> validation
 ```

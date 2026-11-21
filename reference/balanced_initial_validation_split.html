@@ -181,31 +181,31 @@ be split, you get a warning and an empty calibration set.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">split</span> <span class="op">&lt;-</span> <span class="fu">balanced_initial_validation_split</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">mtcars</span>,</span></span>
+<span class="r-in"><span>  <span class="va">sim_patients</span>,</span></span>
 <span class="r-in"><span>  prop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.2</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  exact <span class="op">=</span> <span class="va">am</span></span></span>
+<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">diagnosis</span>, <span class="va">site</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">split</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Balanced training/validation/testing split (anticlust), balancing mpg, hp, wt,</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by am</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balanced training/validation/testing split (anticlust), balancing age, income,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by diagnosis, site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;Training/Validation/Testing/Total&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;19/7/6/32&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;180/60/60/300&gt;</span>
 <span class="r-in"><span><span class="fu"><a href="balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 2 splits, 4 variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 2 of 2 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 2 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.0271</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> id          max |SMD|  variable  mean |SMD|  over 0.1  energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Validation      0.286  am: 0         0.104        2/4   0.408</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Testing         0.159  am: 0         0.0839       2/4   0.232</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Validation     0.0367  site: B      0.0125        0/4  0.0282</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Testing        0.0232  site: C      0.00906       0/4  0.0259</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 12 rows.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 18 rows.</span>
 <span class="r-in"><span><span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/validation_set.html" class="external-link">validation_set</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [19/7]&gt;</span> validation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   splits           id        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [180/60]&gt;</span> validation</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

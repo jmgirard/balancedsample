@@ -31,21 +31,23 @@ pak::pak("jmgirard/balancesample")
 
 ## Example
 
-This example uses simulated data with two skewed numeric variables and
-two categorical variables.
+This example uses `sim_patients`, a simulated data set that comes with
+the package. It has 300 patients with two skewed numeric variables
+(`age` and `income`), a diagnosis with a rare level, three sites, and an
+outcome.
 
 ``` r
 
 library(balancesample)
 
-set.seed(2026)
-n <- 400
-d <- data.frame(
-  age = rgamma(n, shape = 4, rate = 0.1),
-  income = rlnorm(n, meanlog = 10, sdlog = 0.6),
-  diagnosis = sample(c("none", "mild", "severe"), n, TRUE, prob = c(0.6, 0.3, 0.1)),
-  site = sample(c("A", "B"), n, TRUE)
-)
+head(sim_patients)
+#>         age    income diagnosis site  outcome
+#> 1 45.416862 10059.820      none    A 4.869271
+#> 2 17.715166 29593.157      none    B 4.029893
+#> 3  7.956037 16209.254      none    A 3.903540
+#> 4 23.639336  8132.757      none    C 5.043892
+#> 5 45.003459 31997.909      none    C 4.053658
+#> 6 56.925594 22235.349      mild    B 8.176950
 ```
 
 [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
@@ -56,8 +58,9 @@ rows allow.
 
 ``` r
 
+set.seed(2026)
 folds <- balanced_vfold_cv(
-  d,
+  sim_patients,
   v = 5,
   balance = c(age, income, diagnosis),
   exact = site
@@ -68,11 +71,11 @@ folds
 #> # A tibble: 5 × 2
 #>   splits           id   
 #>   <list>           <chr>
-#> 1 <split [320/80]> Fold1
-#> 2 <split [320/80]> Fold2
-#> 3 <split [320/80]> Fold3
-#> 4 <split [320/80]> Fold4
-#> 5 <split [320/80]> Fold5
+#> 1 <split [240/60]> Fold1
+#> 2 <split [240/60]> Fold2
+#> 3 <split [240/60]> Fold3
+#> 4 <split [240/60]> Fold4
+#> 5 <split [240/60]> Fold5
 ```
 
 [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
@@ -87,32 +90,32 @@ folds with ordinary folds.
 
 balance_check(folds)
 #> # Balance check: 5 splits, 4 variables
-#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0194
+#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.032
 #> 
-#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Fold1    0.025    site: A      0.00627       0/4  0.0148
-#> Fold2    0.00625  site: A      0.00209       0/4  0.021
-#> Fold3    0.00625  site: A      0.00193       0/4  0.0163
-#> Fold4    0.00625  site: A      0.0017        0/4  0.0226
-#> Fold5    0.00625  site: A      0.00168       0/4  0.0225
+#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
+#> Fold1     0.0367  site: B             0.0126        0/4  0.0341
+#> Fold2     0.026   site: C             0.00922       0/4  0.0261
+#> Fold3     0.026   site: A             0.0091        0/4  0.04
+#> Fold4     0.026   site: C             0.00992       0/4  0.0291
+#> Fold5     0.0373  diagnosis: mild     0.0159        0/4  0.0306
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 40 rows.
+#> # 45 rows.
 
-random_folds <- rsample::vfold_cv(d, v = 5)
+random_folds <- rsample::vfold_cv(sim_patients, v = 5)
 balance_check(random_folds, age, income, diagnosis, site)
 #> # Balance check: 5 splits, 4 variables
-#> # 5 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0529
+#> # 5 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0789
 #> 
-#> id     max |SMD|  variable           mean |SMD|  over 0.1  energy
-#> Fold1      0.195  site: A                0.143        3/4  0.0661
-#> Fold2      0.106  income                 0.0712       1/4  0.0193
-#> Fold3      0.283  diagnosis: severe      0.141        2/4  0.0708
-#> Fold4      0.334  income                 0.147        2/4  0.0491
-#> Fold5      0.214  site: B                0.129        3/4  0.0591
+#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
+#> Fold1      0.305  site: B               0.148       2/4  0.0827
+#> Fold2      0.411  site: B               0.165       2/4  0.101
+#> Fold3      0.177  diagnosis: none       0.105       2/4  0.054
+#> Fold4      0.277  income                0.201       3/4  0.0883
+#> Fold5      0.282  income                0.136       3/4  0.0684
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 40 rows.
+#> # 45 rows.
 ```
 
 The folds work with tune. Attach balancesample with
@@ -195,6 +198,11 @@ Analysis and Data Mining, 15*(5), 598-610.
   : Check the balance of a split or of a set of resamples
 - [`autoplot(`*`<balance_check>`*`)`](https://jmgirard.github.io/balancesample/reference/autoplot.balance_check.md)
   : Plot a balance check
+
+## Data
+
+- [`sim_patients`](https://jmgirard.github.io/balancesample/reference/sim_patients.md)
+  : Simulated patient data
 
 ## Package
 

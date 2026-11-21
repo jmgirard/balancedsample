@@ -37,7 +37,11 @@ A ggplot object.
 ``` r
 library(ggplot2)
 set.seed(1)
-folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+folds <- balanced_vfold_cv(
+  sim_patients,
+  v = 5,
+  balance = c(age, income, diagnosis)
+)
 autoplot(balance_check(folds))
 
 autoplot(balance_check(folds), type = "energy")

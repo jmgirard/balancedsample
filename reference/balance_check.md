@@ -191,51 +191,60 @@ rows allow.
 
 ``` r
 set.seed(1)
-folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+folds <- balanced_vfold_cv(
+  sim_patients,
+  v = 5,
+  balance = c(age, income, diagnosis)
+)
 balance_check(folds)
-#> # Balance check: 4 splits, 3 variables
-#> # 1 of 4 splits has a variable with |SMD| > 0.1, mean energy distance 0.133
+#> # Balance check: 5 splits, 3 variables
+#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.023
 #> 
-#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Fold1     0.138   wt            0.116        2/3  0.212
-#> Fold2     0.0759  mpg           0.0503       0/3  0.118
-#> Fold3     0.0603  wt            0.0418       0/3  0.0961
-#> Fold4     0.0734  hp            0.0261       0/3  0.105
+#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
+#> Fold1    0.00927  diagnosis: mild     0.00318       0/3  0.0218
+#> Fold2    0.00927  diagnosis: mild     0.00322       0/3  0.0152
+#> Fold3    0.00927  diagnosis: mild     0.00349       0/3  0.0193
+#> Fold4    0.00927  diagnosis: mild     0.00326       0/3  0.0243
+#> Fold5    0.0373   diagnosis: mild     0.0125        0/3  0.0343
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 16 rows.
+#> # 30 rows.
 summary(balance_check(folds))
-#> # A tibble: 4 × 8
-#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
-#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
-#> 1 Fold1      0.138  wt       NA          0.116       2           3 0.212 
-#> 2 Fold2      0.0759 mpg      NA          0.0503      0           3 0.118 
-#> 3 Fold3      0.0603 wt       NA          0.0418      0           3 0.0961
-#> 4 Fold4      0.0734 hp       NA          0.0261      0           3 0.105 
+#> # A tibble: 5 × 8
+#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1     0.00927 diagnosis mild       0.00318      0           3 0.0218
+#> 2 Fold2     0.00927 diagnosis mild       0.00322      0           3 0.0152
+#> 3 Fold3     0.00927 diagnosis mild       0.00349      0           3 0.0193
+#> 4 Fold4     0.00927 diagnosis mild       0.00326      0           3 0.0243
+#> 5 Fold5     0.0373  diagnosis mild       0.0125       0           3 0.0343
 summary(balance_check(folds), by = "variable")
 #> # A tibble: 3 × 7
-#>   variable median_abs_smd max_abs_smd level id    n_over n_splits
-#>   <chr>             <dbl>       <dbl> <chr> <chr>  <int>    <int>
-#> 1 mpg              0.0456      0.0998 NA    Fold1      0        4
-#> 2 hp               0.0616      0.109  NA    Fold1      1        4
-#> 3 wt               0.0647      0.138  NA    Fold1      1        4
+#>   variable  median_abs_smd max_abs_smd level id    n_over n_splits
+#>   <chr>              <dbl>       <dbl> <chr> <chr>  <int>    <int>
+#> 1 age             0.000230    0.000482 NA    Fold3      0        5
+#> 2 income          0.000242    0.000735 NA    Fold3      0        5
+#> 3 diagnosis       0.00927     0.0373   mild  Fold5      0        5
 summary(balance_check(folds, variance_ratio = TRUE))
-#> # A tibble: 4 × 10
-#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
-#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
-#> 1 Fold1      0.138  wt       NA          0.116       2           3 0.212 
-#> 2 Fold2      0.0759 mpg      NA          0.0503      0           3 0.118 
-#> 3 Fold3      0.0603 wt       NA          0.0418      0           3 0.0961
-#> 4 Fold4      0.0734 hp       NA          0.0261      0           3 0.105 
+#> # A tibble: 5 × 10
+#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1     0.00927 diagnosis mild       0.00318      0           3 0.0218
+#> 2 Fold2     0.00927 diagnosis mild       0.00322      0           3 0.0152
+#> 3 Fold3     0.00927 diagnosis mild       0.00349      0           3 0.0193
+#> 4 Fold4     0.00927 diagnosis mild       0.00326      0           3 0.0243
+#> 5 Fold5     0.0373  diagnosis mild       0.0125       0           3 0.0343
 #> # ℹ 2 more variables: variance_ratio <dbl>, variance_ratio_variable <chr>
 
 # Compare with ordinary folds
-summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
-#> # A tibble: 4 × 8
-#>   id    max_abs_smd variable level mean_abs_smd n_over n_variables energy
-#>   <chr>       <dbl> <chr>    <chr>        <dbl>  <int>       <int>  <dbl>
-#> 1 Fold1       0.518 hp       NA           0.223      2           3  0.401
-#> 2 Fold2       0.904 hp       NA           0.830      3           3  0.687
-#> 3 Fold3       0.510 wt       NA           0.336      2           3  0.291
-#> 4 Fold4       0.232 hp       NA           0.211      3           3  0.333
+random_folds <- rsample::vfold_cv(sim_patients, v = 5)
+summary(balance_check(random_folds, age, income, diagnosis))
+#> # A tibble: 5 × 8
+#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1       0.280 diagnosis mild         0.173      3           3 0.0857
+#> 2 Fold2       0.291 income    NA           0.237      3           3 0.102 
+#> 3 Fold3       0.343 diagnosis none         0.190      2           3 0.133 
+#> 4 Fold4       0.191 diagnosis mild         0.101      1           3 0.0567
+#> 5 Fold5       0.207 diagnosis none         0.128      2           3 0.0671
 ```

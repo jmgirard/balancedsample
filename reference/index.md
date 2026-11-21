@@ -17,6 +17,11 @@
 - [`autoplot(`*`<balance_check>`*`)`](https://jmgirard.github.io/balancesample/reference/autoplot.balance_check.md)
   : Plot a balance check
 
+## Data
+
+- [`sim_patients`](https://jmgirard.github.io/balancesample/reference/sim_patients.md)
+  : Simulated patient data
+
 ## Package
 
 - [`balancesample`](https://jmgirard.github.io/balancesample/reference/balancesample-package.md)

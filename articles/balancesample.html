@@ -75,27 +75,27 @@ method.</p>
 <div class="section level2">
 <h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
 </h2>
-<p>The example uses simulated data from 300 patients at three sites. Age
-and income are skewed, and diagnosis has a rare level. The outcome
-depends on age, income, and diagnosis.</p>
+<p>The package includes <code>sim_patients</code>, a simulated data set
+of 300 patients at three sites. Age and income are skewed, and diagnosis
+has a rare level. The outcome depends on age, income, and diagnosis.
+<code><a href="../reference/sim_patients.html">?sim_patients</a></code> gives the formula.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/balancesample" class="external-link">balancesample</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">300</span></span>
-<span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">rgamma</a></span><span class="op">(</span><span class="va">n</span>, shape <span class="op">=</span> <span class="fl">4</span>, rate <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>,</span>
-<span>  income <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="va">n</span>, meanlog <span class="op">=</span> <span class="fl">10</span>, sdlog <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span>,</span>
-<span>  diagnosis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"mild"</span>, <span class="st">"severe"</span><span class="op">)</span>,</span>
-<span>    <span class="va">n</span>,</span>
-<span>    replace <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    prob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.3</span>, <span class="fl">0.1</span><span class="op">)</span></span>
-<span>  <span class="op">)</span><span class="op">)</span>,</span>
-<span>  site <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">severe</span> <span class="op">&lt;-</span> <span class="va">d</span><span class="op">$</span><span class="va">diagnosis</span> <span class="op">==</span> <span class="st">"severe"</span></span>
-<span><span class="va">d</span><span class="op">$</span><span class="va">outcome</span> <span class="op">&lt;-</span> <span class="fl">0.05</span> <span class="op">*</span> <span class="va">d</span><span class="op">$</span><span class="va">age</span> <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">income</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1.5</span> <span class="op">*</span> <span class="va">severe</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">d</span> <span class="op">&lt;-</span> <span class="va">sim_patients</span></span>
+<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         age    income diagnosis site  outcome</span></span>
+<span><span class="co">#&gt; 1 45.416862 10059.820      none    A 4.869271</span></span>
+<span><span class="co">#&gt; 2 17.715166 29593.157      none    B 4.029893</span></span>
+<span><span class="co">#&gt; 3  7.956037 16209.254      none    A 3.903540</span></span>
+<span><span class="co">#&gt; 4 23.639336  8132.757      none    C 5.043892</span></span>
+<span><span class="co">#&gt; 5 45.003459 31997.909      none    C 4.053658</span></span>
+<span><span class="co">#&gt; 6 56.925594 22235.349      mild    B 8.176950</span></span></code></pre></div>
+<p>The splits are random, so set a seed to get the same splits each
+time:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="why-balance">Why balance?<a class="anchor" aria-label="anchor" href="#why-balance"></a>
@@ -146,25 +146,25 @@ SMD shows which variable to look at. The mean is steadier for comparing
 splits, because the largest grows with the number of variables checked.
 Here are ordinary folds from rsample, stratified on diagnosis. For
 these, you list the columns to check:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">random_folds</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">d</span>, v <span class="op">=</span> <span class="fl">10</span>, strata <span class="op">=</span> <span class="va">diagnosis</span><span class="op">)</span></span>
 <span><span class="va">random_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">random_folds</span>, <span class="va">age</span>, <span class="va">income</span>, <span class="va">diagnosis</span>, <span class="va">site</span><span class="op">)</span></span>
 <span><span class="va">random_check</span></span>
 <span><span class="co">#&gt; # Balance check: 10 splits, 4 variables</span></span>
 <span><span class="co">#&gt; # 10 of 10 splits have a variable with |SMD| &gt; 0.1,</span></span>
-<span><span class="co">#&gt; # mean energy distance 0.105</span></span>
+<span><span class="co">#&gt; # mean energy distance 0.0945</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; id      max |SMD|  variable  mean |SMD|  over 0.1  energy</span></span>
-<span><span class="co">#&gt; Fold01      0.349  income        0.158        3/4  0.0695</span></span>
-<span><span class="co">#&gt; Fold02      0.171  age           0.126        3/4  0.0696</span></span>
-<span><span class="co">#&gt; Fold03      0.158  site: C       0.112        3/4  0.0707</span></span>
-<span><span class="co">#&gt; Fold04      0.239  site: A       0.0774       1/4  0.0771</span></span>
-<span><span class="co">#&gt; Fold05      0.191  site: B       0.0994       2/4  0.0946</span></span>
-<span><span class="co">#&gt; Fold06      0.198  age           0.146        3/4  0.0877</span></span>
-<span><span class="co">#&gt; Fold07      0.109  site: A       0.0715       2/4  0.0943</span></span>
-<span><span class="co">#&gt; Fold08      0.575  site: A       0.227        2/4  0.204</span></span>
-<span><span class="co">#&gt; Fold09      0.527  site: A       0.172        1/4  0.193</span></span>
-<span><span class="co">#&gt; Fold10      0.258  income        0.143        3/4  0.0925</span></span>
+<span><span class="co">#&gt; Fold01      0.41   income        0.198        3/4  0.137</span></span>
+<span><span class="co">#&gt; Fold02      0.282  income        0.101        1/4  0.0658</span></span>
+<span><span class="co">#&gt; Fold03      0.158  site: A       0.0704       1/4  0.0619</span></span>
+<span><span class="co">#&gt; Fold04      0.24   site: B       0.101        2/4  0.0826</span></span>
+<span><span class="co">#&gt; Fold05      0.201  age           0.132        3/4  0.0897</span></span>
+<span><span class="co">#&gt; Fold06      0.175  site: A       0.0951       2/4  0.0772</span></span>
+<span><span class="co">#&gt; Fold07      0.22   site: B       0.0885       2/4  0.097</span></span>
+<span><span class="co">#&gt; Fold08      0.372  site: C       0.182        2/4  0.129</span></span>
+<span><span class="co">#&gt; Fold09      0.405  site: B       0.233        3/4  0.142</span></span>
+<span><span class="co">#&gt; Fold10      0.163  age           0.0817       1/4  0.0639</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives</span></span>
 <span><span class="co">#&gt; # all 90 rows.</span></span></code></pre></div>
@@ -173,7 +173,7 @@ to make similar, and <code>exact</code> takes the place of
 <code>strata</code>. The next section explains both. Balanced folds
 remember these columns, so <code><a href="../reference/balance_check.html">balance_check()</a></code> needs no column
 list:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
 <span>  <span class="va">d</span>,</span>
 <span>  v <span class="op">=</span> <span class="fl">10</span>,</span>
@@ -183,41 +183,43 @@ list:</p>
 <span><span class="va">balanced_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span>
 <span><span class="va">balanced_check</span></span>
 <span><span class="co">#&gt; # Balance check: 10 splits, 4 variables</span></span>
-<span><span class="co">#&gt; # 5 of 10 splits have a variable with |SMD| &gt; 0.1,</span></span>
-<span><span class="co">#&gt; # mean energy distance 0.0544</span></span>
+<span><span class="co">#&gt; # 8 of 10 splits have a variable with |SMD| &gt; 0.1,</span></span>
+<span><span class="co">#&gt; # mean energy distance 0.0549</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; id      max |SMD|  variable           mean |SMD|  over 0.1  energy</span></span>
-<span><span class="co">#&gt; Fold01     0.115   diagnosis: severe      0.0421       1/4  0.0528</span></span>
-<span><span class="co">#&gt; Fold02     0.119   diagnosis: mild        0.0483       1/4  0.0634</span></span>
-<span><span class="co">#&gt; Fold03     0.0545  site: C                0.0286       0/4  0.0412</span></span>
-<span><span class="co">#&gt; Fold04     0.115   diagnosis: severe      0.0442       1/4  0.0687</span></span>
-<span><span class="co">#&gt; Fold05     0.0545  site: A                0.0224       0/4  0.0442</span></span>
-<span><span class="co">#&gt; Fold06     0.0995  site: C                0.0373       0/4  0.0663</span></span>
-<span><span class="co">#&gt; Fold07     0.113   site: B                0.0549       2/4  0.0627</span></span>
-<span><span class="co">#&gt; Fold08     0.0496  site: B                0.0231       0/4  0.0488</span></span>
-<span><span class="co">#&gt; Fold09     0.0496  site: B                0.0255       0/4  0.0454</span></span>
-<span><span class="co">#&gt; Fold10     0.104   diagnosis: severe      0.0546       1/4  0.0501</span></span>
+<span><span class="co">#&gt; Fold01     0.119   diagnosis: mild        0.045        1/4  0.0568</span></span>
+<span><span class="co">#&gt; Fold02     0.104   diagnosis: severe      0.0567       1/4  0.0578</span></span>
+<span><span class="co">#&gt; Fold03     0.104   diagnosis: severe      0.0406       1/4  0.0437</span></span>
+<span><span class="co">#&gt; Fold04     0.0545  site: C                0.029        0/4  0.0561</span></span>
+<span><span class="co">#&gt; Fold05     0.104   diagnosis: severe      0.04         1/4  0.052</span></span>
+<span><span class="co">#&gt; Fold06     0.115   diagnosis: severe      0.0432       1/4  0.0513</span></span>
+<span><span class="co">#&gt; Fold07     0.0496  site: B                0.0254       0/4  0.0589</span></span>
+<span><span class="co">#&gt; Fold08     0.115   diagnosis: severe      0.0441       1/4  0.0674</span></span>
+<span><span class="co">#&gt; Fold09     0.129   diagnosis: mild        0.0483       1/4  0.0612</span></span>
+<span><span class="co">#&gt; Fold10     0.115   diagnosis: severe      0.0416       1/4  0.0441</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives</span></span>
 <span><span class="co">#&gt; # all 90 rows.</span></span></code></pre></div>
-<p>The largest absolute SMD in any fold fell from 0.58 to 0.12, the mean
-absolute SMD over folds fell from 0.133 to 0.038, and the mean energy
-distance fell from 0.105 to 0.054. With <code>by = "variable"</code>,
+<p>The largest absolute SMD in any fold fell from 0.41 to 0.13, the mean
+absolute SMD over folds fell from 0.128 to 0.041, and the mean energy
+distance fell from 0.095 to 0.055. With <code>by = "variable"</code>,
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> shows where what is left comes from:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">balanced_check</span>, by <span class="op">=</span> <span class="st">"variable"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 7</span></span></span>
 <span><span class="co">#&gt;   variable  median_abs_smd max_abs_smd level id     n_over n_splits</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> age              0.001<span style="text-decoration: underline;">27</span>     0.005<span style="text-decoration: underline;">27</span> <span style="color: #BB0000;">NA</span>    Fold02      0       10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> income           0.003<span style="text-decoration: underline;">82</span>     0.014<span style="text-decoration: underline;">8</span>  <span style="color: #BB0000;">NA</span>    Fold02      0       10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> diagnosis        0.076<span style="text-decoration: underline;">7</span>      0.119   mild  Fold02      5       10</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> site             0.054<span style="text-decoration: underline;">5</span>      0.113   B     Fold07      1       10</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> age              0.002<span style="text-decoration: underline;">05</span>     0.003<span style="text-decoration: underline;">00</span> <span style="color: #BB0000;">NA</span>    Fold05      0       10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> income           0.003<span style="text-decoration: underline;">83</span>     0.020<span style="text-decoration: underline;">7</span>  <span style="color: #BB0000;">NA</span>    Fold02      0       10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> diagnosis        0.110       0.129   mild  Fold09      8       10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> site             0.054<span style="text-decoration: underline;">5</span>      0.099<span style="text-decoration: underline;">5</span>  C     Fold02      0       10</span></span></code></pre></div>
 <p>It is mostly in the category proportions of the <code>exact</code>
-columns. These can’t come out exactly equal when a level’s count doesn’t
-divide evenly into 10 folds. In a fold of 30 rows, one row more or less
-of a level moves its SMD by 0.075 to 0.11 for the levels here, so 0.1 is
-not always within reach.</p>
+columns. The counts are rounded for each combination of diagnosis and
+site, not for each level on its own. So a level’s total in a fold can be
+one row off for each site, even when the total divides evenly into 10
+folds. For example, the 40 severe cases get 3 to 5 per fold. In a fold
+of 30 rows, one row more or less of a level moves its SMD by 0.075 to
+0.11 for the levels here, so 0.1 is not always within reach.</p>
 </div>
 <div class="section level2">
 <h2 id="choosing-columns-balance-and-exact">Choosing columns: <code>balance</code> and <code>exact</code><a class="anchor" aria-label="anchor" href="#choosing-columns-balance-and-exact"></a>
@@ -264,18 +266,19 @@ outcome is used only to assign rows to sets, as with
 <code>strata</code>. This assumes you have the outcome when you make the
 split. If the evaluation must hold out whole time periods or whole
 sites, split by those instead: put the site in <code>group</code>, or
-use rsample’s time-based splits. In this article, the outcome depends on
-age, income, and diagnosis, so balancing those already keeps the outcome
-similar across the sets, and it is left out.</p>
+use rsample’s time-based splits. In this article, the outcome is left
+out. It depends on age, income, and diagnosis, so balancing those also
+balances the part of the outcome they explain. The rest is random noise,
+so the outcome itself can still differ between the sets.</p>
 <p>Each column you add to <code>exact</code> splits the strata further.
 Here diagnosis and site together make 9 strata:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">diagnosis</span>, <span class="va">d</span><span class="op">$</span><span class="va">site</span><span class="op">)</span></span>
 <span><span class="va">tab</span></span>
 <span><span class="co">#&gt;         </span></span>
 <span><span class="co">#&gt;           A  B  C</span></span>
-<span><span class="co">#&gt;   mild   24 33 27</span></span>
 <span><span class="co">#&gt;   none   68 43 65</span></span>
+<span><span class="co">#&gt;   mild   24 33 27</span></span>
 <span><span class="co">#&gt;   severe 15 10 15</span></span></code></pre></div>
 <p>The smallest stratum is severe cases at site B, with 10 patients.
 After an 80% training split, 8 of them are spread over 5 folds, so each
@@ -290,7 +293,7 @@ and <code>group</code> must not have missing values. With
 <code>na = "include"</code>, the rows with missing values stay in, and
 the method also balances which values are missing. Here, 30 incomes and
 15 sites are missing:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d_na</span> <span class="op">&lt;-</span> <span class="va">d</span></span>
 <span><span class="va">d_na</span><span class="op">$</span><span class="va">income</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">30</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">d_na</span><span class="op">$</span><span class="va">site</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">15</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
@@ -312,10 +315,14 @@ observed incomes is balanced less closely.</li>
 <li>In a categorical <code>balance</code> column, a missing value is one
 more level.</li>
 <li>In an <code>exact</code> column such as site, a missing value is one
-more level too, so the 15 rows are spread over the folds by exact
-counts. With <code>group</code>, a group with some rows at site A and
-some with a missing site is an error, because a missing value counts as
-a level of its own.</li>
+more level too. The counts are exact for each combination of diagnosis
+and site, so the 15 rows are spread over the folds within each
+diagnosis. Their total in a fold can still be one row off for each
+diagnosis, so some folds get more of the 15 than others, and the
+<code>"(missing)"</code> SMD of site can be large. With
+<code>group</code>, a group with some rows at site A and some with a
+missing site is an error, because a missing value counts as a level of
+its own.</li>
 </ul>
 <p>These encodings are used only to make the split. The data in the
 folds keep their missing values, so your model can handle them its own
@@ -325,7 +332,7 @@ way, for example with a recipe.</p>
 the SMD of the share of values that are missing. In the summaries, it
 counts as one more level of its column. The other SMDs use the observed
 values only. The energy distance uses all rows, encoded as above.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">na_check</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds_na</span><span class="op">)</span></span>
 <span><span class="va">na_rows</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">na_check</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">na_rows</span><span class="op">[</span><span class="va">na_rows</span><span class="op">$</span><span class="va">level</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="st">"(missing)"</span>, <span class="op">]</span>, <span class="fl">4</span><span class="op">)</span></span>
@@ -333,25 +340,25 @@ values only. The energy distance uses all rows, encoded as above.</p>
 <span><span class="co">#&gt;   id     variable level     statistic   value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Fold01 income   (missing) smd        0     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Fold01 site     (missing) smd       -<span style="color: #BB0000;">0.091</span><span style="color: #BB0000; text-decoration: underline;">8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Fold01 site     (missing) smd        0.079<span style="text-decoration: underline;">7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Fold02 income   (missing) smd        0     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Fold02 site     (missing) smd       -<span style="color: #BB0000;">0.091</span><span style="color: #BB0000; text-decoration: underline;">8</span></span></span>
 <span><span class="va">na_check</span></span>
 <span><span class="co">#&gt; # Balance check: 10 splits, 4 variables</span></span>
-<span><span class="co">#&gt; # 5 of 10 splits have a variable with |SMD| &gt; 0.1,</span></span>
-<span><span class="co">#&gt; # mean energy distance 0.0658</span></span>
+<span><span class="co">#&gt; # 6 of 10 splits have a variable with |SMD| &gt; 0.1,</span></span>
+<span><span class="co">#&gt; # mean energy distance 0.0676</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; id      max |SMD|  variable           mean |SMD|  over 0.1  energy</span></span>
-<span><span class="co">#&gt; Fold01     0.0918  site: (missing)        0.0425       0/4  0.0749</span></span>
-<span><span class="co">#&gt; Fold02     0.119   diagnosis: mild        0.0574       1/4  0.0782</span></span>
-<span><span class="co">#&gt; Fold03     0.0797  site: (missing)        0.0356       0/4  0.0631</span></span>
-<span><span class="co">#&gt; Fold04     0.115   diagnosis: severe      0.0525       1/4  0.0612</span></span>
-<span><span class="co">#&gt; Fold05     0.115   diagnosis: severe      0.0503       1/4  0.0746</span></span>
-<span><span class="co">#&gt; Fold06     0.0918  site: (missing)        0.0338       0/4  0.0578</span></span>
-<span><span class="co">#&gt; Fold07     0.104   diagnosis: severe      0.0524       1/4  0.0665</span></span>
-<span><span class="co">#&gt; Fold08     0.0797  site: (missing)        0.0296       0/4  0.0665</span></span>
-<span><span class="co">#&gt; Fold09     0.104   diagnosis: severe      0.0474       1/4  0.053</span></span>
-<span><span class="co">#&gt; Fold10     0.0918  site: (missing)        0.0363       0/4  0.0627</span></span>
+<span><span class="co">#&gt; Fold01     0.0797  site: (missing)        0.0333       0/4  0.0574</span></span>
+<span><span class="co">#&gt; Fold02     0.115   diagnosis: severe      0.0528       1/4  0.0522</span></span>
+<span><span class="co">#&gt; Fold03     0.17    site: A                0.0524       1/4  0.0813</span></span>
+<span><span class="co">#&gt; Fold04     0.0918  site: (missing)        0.0386       0/4  0.058</span></span>
+<span><span class="co">#&gt; Fold05     0.343   site: (missing)        0.0951       1/4  0.0848</span></span>
+<span><span class="co">#&gt; Fold06     0.0797  site: (missing)        0.0299       0/4  0.0693</span></span>
+<span><span class="co">#&gt; Fold07     0.216   site: (missing)        0.0642       1/4  0.087</span></span>
+<span><span class="co">#&gt; Fold08     0.202   diagnosis: severe      0.0798       1/4  0.0685</span></span>
+<span><span class="co">#&gt; Fold09     0.0797  site: (missing)        0.0334       0/4  0.0629</span></span>
+<span><span class="co">#&gt; Fold10     0.115   diagnosis: severe      0.0494       1/4  0.0547</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # summary() gives this table as a tibble, and tibble::as_tibble() gives</span></span>
 <span><span class="co">#&gt; # all 110 rows.</span></span></code></pre></div>
@@ -361,7 +368,7 @@ column must not have missing values even with
 from one unit or from several. Give them their own IDs, or one shared
 ID, depending on which is true. For a character ID column
 <code>id</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One group per row with a missing ID</span></span>
 <span><span class="va">d</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"unknown_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co"># Or one group for all of them</span></span>
@@ -377,7 +384,7 @@ copy and the 0/1 column yourself and put both in
 <p>Start with a balanced training/testing split, with the same columns
 as above. Then make balanced folds from the training set only, so the
 test set plays no part in tuning.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">split</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_initial_split.html">balanced_initial_split</a></span><span class="op">(</span></span>
 <span>  <span class="va">d</span>,</span>
 <span>  prop <span class="op">=</span> <span class="fl">0.8</span>,</span>
@@ -387,16 +394,16 @@ test set plays no part in tuning.</p>
 <span><span class="va">train</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/initial_split.html" class="external-link">training</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Balance check: 1 split, 4 variables</span></span>
-<span><span class="co">#&gt; # |SMD| &gt; 0.1 in 0 of 4 variables, energy distance 0.0291</span></span>
+<span><span class="co">#&gt; # |SMD| &gt; 0.1 in 0 of 4 variables, energy distance 0.0222</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; variable   level         SMD</span></span>
-<span><span class="co">#&gt; age                -0.000652</span></span>
-<span><span class="co">#&gt; income             -9.91e-05</span></span>
-<span><span class="co">#&gt; diagnosis  mild     0.00927</span></span>
+<span><span class="co">#&gt; age                -0.000449</span></span>
+<span><span class="co">#&gt; income              0.00051</span></span>
 <span><span class="co">#&gt; diagnosis  none    -0.00846</span></span>
+<span><span class="co">#&gt; diagnosis  mild     0.00927</span></span>
 <span><span class="co">#&gt; diagnosis  severe   0</span></span>
-<span><span class="co">#&gt; site       A       -0.0174</span></span>
-<span><span class="co">#&gt; site       B        0.0367</span></span>
+<span><span class="co">#&gt; site       A        0.026</span></span>
+<span><span class="co">#&gt; site       B       -0.00923</span></span>
 <span><span class="co">#&gt; site       C       -0.0174</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; # tibble::as_tibble() gives all 9 rows.</span></span></code></pre></div>
@@ -407,7 +414,7 @@ and level, and the header gives the energy distance.</p>
 training/validation/testing split. Pass it to
 <code><a href="https://rsample.tidymodels.org/reference/validation_set.html" class="external-link">rsample::validation_set()</a></code> to get an <code>rset</code> for
 tune.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
 <span>  <span class="va">train</span>,</span>
 <span>  v <span class="op">=</span> <span class="fl">5</span>,</span>
@@ -416,12 +423,13 @@ tune.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Use <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> to see the SMD of every variable in every
 fold. The dashed lines are at -0.1 and 0.1.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="fu"><a href="../reference/balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="balancesample_files/figure-html/plot-1.png" class="r-plt" alt="" width="672"></p>
-<p>A diagnosis level can land outside the lines even though diagnosis is
-in <code>exact</code>. The counts are exact for each diagnosis and site
+<p>The diagnosis levels sit farther from 0 than age and income, even
+though diagnosis is in <code>exact</code>, and with other data they can
+land outside the lines. The counts are exact for each diagnosis and site
 combination. A fold can be one row off in each of the three sites, and
 these rows add up for the diagnosis as a whole. Rare levels show this
 most, because one row is a large share of a small level.</p>
@@ -432,7 +440,7 @@ fails if you only call
 <code><a href="../reference/balanced_vfold_cv.html">balancesample::balanced_vfold_cv()</a></code>.</p>
 <p>This example tunes the depth and the minimum node size of a decision
 tree:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/balancesample" class="external-link">balancesample</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tune.tidymodels.org/" class="external-link">tune</a></span><span class="op">)</span></span>
@@ -451,21 +459,21 @@ tree:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 8</span></span></span>
 <span><span class="co">#&gt;   tree_depth min_n .metric .estimator  mean     n std_err .config        </span></span>
 <span><span class="co">#&gt;        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>         12     9 rmse    standard    1.14     5  0.075<span style="text-decoration: underline;">1</span> pre0_mod5_post0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>          6     2 rmse    standard    1.16     5  0.083<span style="text-decoration: underline;">7</span> pre0_mod3_post0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>          9    24 rmse    standard    1.16     5  0.055<span style="text-decoration: underline;">8</span> pre0_mod4_post0</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>         12     9 rmse    standard    1.24     5  0.044<span style="text-decoration: underline;">6</span> pre0_mod5_post0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>          9    24 rmse    standard    1.26     5  0.050<span style="text-decoration: underline;">2</span> pre0_mod4_post0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>          6     2 rmse    standard    1.27     5  0.048<span style="text-decoration: underline;">3</span> pre0_mod3_post0</span></span></code></pre></div>
 <p>Finalize the workflow with the settings that had the lowest
 cross-validated RMSE. Then <code><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">last_fit()</a></code> fits it on the whole
 training set and evaluates it on the test set:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">final</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/finalize_model.html" class="external-link">finalize_workflow</a></span><span class="op">(</span><span class="va">wf</span>, <span class="fu"><a href="https://tune.tidymodels.org/reference/show_best.html" class="external-link">select_best</a></span><span class="op">(</span><span class="va">res</span>, metric <span class="op">=</span> <span class="st">"rmse"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">final_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">last_fit</a></span><span class="op">(</span><span class="va">final</span>, <span class="va">split</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
 <span><span class="co">#&gt;   .metric .estimator .estimate .config        </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> rmse    standard       1.10  pre0_mod0_post0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> rsq     standard       0.509 pre0_mod0_post0</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> rmse    standard       1.12  pre0_mod0_post0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> rsq     standard       0.470 pre0_mod0_post0</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="choosing-a-method">Choosing a method<a class="anchor" aria-label="anchor" href="#choosing-a-method"></a>
@@ -516,7 +524,7 @@ cells get small fast: here, with age and income in quartiles and 9
 strata become sparse.</li>
 </ul>
 <p>This compares all four on the full data with 10 folds:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">methods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"anticlust"</span>, <span class="st">"twinning"</span>, <span class="st">"rerandomize"</span>, <span class="st">"interaction"</span><span class="op">)</span></span>
 <span><span class="va">by_method</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">methods</span>, <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
@@ -539,14 +547,14 @@ strata become sparse.</li>
 <span><span class="va">shown</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">shown</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">shown</span></span>
 <span><span class="co">#&gt;        method max_abs_smd mean_abs_smd mean_energy</span></span>
-<span><span class="co">#&gt; 1   anticlust       0.119        0.037       0.054</span></span>
-<span><span class="co">#&gt; 2    twinning       0.426        0.099       0.045</span></span>
-<span><span class="co">#&gt; 3 rerandomize       0.268        0.087       0.055</span></span>
-<span><span class="co">#&gt; 4 interaction       0.419        0.104       0.066</span></span></code></pre></div>
+<span><span class="co">#&gt; 1   anticlust       0.134        0.043       0.054</span></span>
+<span><span class="co">#&gt; 2    twinning       0.287        0.090       0.043</span></span>
+<span><span class="co">#&gt; 3 rerandomize       0.263        0.091       0.066</span></span>
+<span><span class="co">#&gt; 4 interaction       0.425        0.103       0.068</span></span></code></pre></div>
 <p>In this run, the smallest <code>max_abs_smd</code> came from
-anticlust (0.119), the smallest <code>mean_abs_smd</code> from anticlust
-(0.037), and the smallest <code>mean_energy</code> from twinning
-(0.045). These come from one run of each method on one data set, so they
+anticlust (0.134), the smallest <code>mean_abs_smd</code> from anticlust
+(0.043), and the smallest <code>mean_energy</code> from twinning
+(0.043). These come from one run of each method on one data set, so they
 don’t show which method does best in general, and small differences may
 be noise.</p>
 <p>Start with anticlust, but watch its run time on large data. In one
@@ -571,7 +579,7 @@ the options of each method.</p>
 Columns in <code>exact</code> must be constant within each person, and
 the exact counts are counts of people, not rows. <code>group</code>
 works the same way in <code><a href="../reference/balanced_initial_split.html">balanced_initial_split()</a></code>.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span><span class="op">$</span><span class="va">person</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
 <span><span class="va">long</span> <span class="op">&lt;-</span> <span class="va">d</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="va">grouped</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
@@ -587,11 +595,11 @@ works the same way in <code><a href="../reference/balanced_initial_split.html">b
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 2</span></span></span>
 <span><span class="co">#&gt;   splits            id   </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [578/145]&gt;</span> Fold1</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [578/145]&gt;</span> Fold2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [579/144]&gt;</span> Fold3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [579/144]&gt;</span> Fold4</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [578/145]&gt;</span> Fold5</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [593/148]&gt;</span> Fold1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [593/148]&gt;</span> Fold2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [593/148]&gt;</span> Fold3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [592/149]&gt;</span> Fold4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [593/148]&gt;</span> Fold5</span></span></code></pre></div>
 <p>The split sizes are numbers of rows. Each fold gets about the same
 number of people, so the number of rows per fold varies with how many
 rows each person has. <code><a href="../reference/balance_check.html">balance_check()</a></code> also compares

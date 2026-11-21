@@ -252,56 +252,65 @@ Analysis and Data Mining, 15*(5), 598-610.
 ``` r
 set.seed(1)
 folds <- balanced_vfold_cv(
-  mtcars,
-  v = 4,
-  balance = c(mpg, hp, wt),
-  exact = am
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
+  exact = c(diagnosis, site)
 )
 folds
-#> # 4-fold balanced cross-validation (anticlust), balancing mpg, hp, wt,
-#> # stratified by am
-#> # A tibble: 4 × 2
-#>   splits         id   
-#>   <list>         <chr>
-#> 1 <split [24/8]> Fold1
-#> 2 <split [24/8]> Fold2
-#> 3 <split [24/8]> Fold3
-#> 4 <split [24/8]> Fold4
+#> # 5-fold balanced cross-validation (anticlust), balancing age, income,
+#> # stratified by diagnosis, site
+#> # A tibble: 5 × 2
+#>   splits           id   
+#>   <list>           <chr>
+#> 1 <split [240/60]> Fold1
+#> 2 <split [240/60]> Fold2
+#> 3 <split [240/60]> Fold3
+#> 4 <split [240/60]> Fold4
+#> 5 <split [240/60]> Fold5
 balance_check(folds)
-#> # Balance check: 4 splits, 4 variables
-#> # 1 of 4 splits has a variable with |SMD| > 0.1, mean energy distance 0.205
+#> # Balance check: 5 splits, 4 variables
+#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.031
 #> 
-#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Fold1     0.0853  am: 1         0.0602       0/4   0.254
-#> Fold2     0.254   am: 0         0.084        1/4   0.151
-#> Fold3     0.0853  am: 1         0.0495       0/4   0.267
-#> Fold4     0.0853  am: 1         0.0468       0/4   0.148
+#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
+#> Fold1     0.026   site: C             0.00967       0/4  0.0277
+#> Fold2     0.026   site: A             0.00941       0/4  0.0361
+#> Fold3     0.0373  diagnosis: mild     0.0187        0/4  0.0276
+#> Fold4     0.026   site: C             0.00955       0/4  0.0309
+#> Fold5     0.026   site: A             0.0091        0/4  0.0327
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 24 rows.
+#> # 45 rows.
 
 # Other methods
 balanced_vfold_cv(
-  mtcars,
-  v = 4,
-  balance = c(mpg, hp),
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
   method = "rerandomize"
 )
-#> # 4-fold balanced cross-validation (rerandomize), balancing mpg, hp
-#> # A tibble: 4 × 2
-#>   splits         id   
-#>   <list>         <chr>
-#> 1 <split [24/8]> Fold1
-#> 2 <split [24/8]> Fold2
-#> 3 <split [24/8]> Fold3
-#> 4 <split [24/8]> Fold4
-balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
-#> # 4-fold balanced cross-validation (twinning), balancing mpg, hp
-#> # A tibble: 4 × 2
-#>   splits         id   
-#>   <list>         <chr>
-#> 1 <split [24/8]> Fold1
-#> 2 <split [24/8]> Fold2
-#> 3 <split [24/8]> Fold3
-#> 4 <split [24/8]> Fold4
+#> # 5-fold balanced cross-validation (rerandomize), balancing age, income
+#> # A tibble: 5 × 2
+#>   splits           id   
+#>   <list>           <chr>
+#> 1 <split [240/60]> Fold1
+#> 2 <split [240/60]> Fold2
+#> 3 <split [240/60]> Fold3
+#> 4 <split [240/60]> Fold4
+#> 5 <split [240/60]> Fold5
+balanced_vfold_cv(
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
+  method = "twinning"
+)
+#> # 5-fold balanced cross-validation (twinning), balancing age, income
+#> # A tibble: 5 × 2
+#>   splits           id   
+#>   <list>           <chr>
+#> 1 <split [240/60]> Fold1
+#> 2 <split [240/60]> Fold2
+#> 3 <split [240/60]> Fold3
+#> 4 <split [240/60]> Fold4
+#> 5 <split [240/60]> Fold5
 ```

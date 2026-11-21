@@ -7,29 +7,33 @@ columns to balance, how to check the result, and how to choose a method.
 
 ## The data
 
-The example uses simulated data from 300 patients at three sites. Age
-and income are skewed, and diagnosis has a rare level. The outcome
-depends on age, income, and diagnosis.
+The package includes `sim_patients`, a simulated data set of 300
+patients at three sites. Age and income are skewed, and diagnosis has a
+rare level. The outcome depends on age, income, and diagnosis.
+[`?sim_patients`](https://jmgirard.github.io/balancesample/reference/sim_patients.md)
+gives the formula.
 
 ``` r
 
 library(balancesample)
 
+d <- sim_patients
+n <- nrow(d)
+head(d)
+#>         age    income diagnosis site  outcome
+#> 1 45.416862 10059.820      none    A 4.869271
+#> 2 17.715166 29593.157      none    B 4.029893
+#> 3  7.956037 16209.254      none    A 3.903540
+#> 4 23.639336  8132.757      none    C 5.043892
+#> 5 45.003459 31997.909      none    C 4.053658
+#> 6 56.925594 22235.349      mild    B 8.176950
+```
+
+The splits are random, so set a seed to get the same splits each time:
+
+``` r
+
 set.seed(2026)
-n <- 300
-d <- data.frame(
-  age = rgamma(n, shape = 4, rate = 0.1),
-  income = rlnorm(n, meanlog = 10, sdlog = 0.6),
-  diagnosis = factor(sample(
-    c("none", "mild", "severe"),
-    n,
-    replace = TRUE,
-    prob = c(0.6, 0.3, 0.1)
-  )),
-  site = factor(sample(c("A", "B", "C"), n, replace = TRUE))
-)
-severe <- d$diagnosis == "severe"
-d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + 1.5 * severe + rnorm(n)
 ```
 
 ## Why balance?
@@ -93,19 +97,19 @@ random_check <- balance_check(random_folds, age, income, diagnosis, site)
 random_check
 #> # Balance check: 10 splits, 4 variables
 #> # 10 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.105
+#> # mean energy distance 0.0945
 #> 
 #> id      max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Fold01      0.349  income        0.158        3/4  0.0695
-#> Fold02      0.171  age           0.126        3/4  0.0696
-#> Fold03      0.158  site: C       0.112        3/4  0.0707
-#> Fold04      0.239  site: A       0.0774       1/4  0.0771
-#> Fold05      0.191  site: B       0.0994       2/4  0.0946
-#> Fold06      0.198  age           0.146        3/4  0.0877
-#> Fold07      0.109  site: A       0.0715       2/4  0.0943
-#> Fold08      0.575  site: A       0.227        2/4  0.204
-#> Fold09      0.527  site: A       0.172        1/4  0.193
-#> Fold10      0.258  income        0.143        3/4  0.0925
+#> Fold01      0.41   income        0.198        3/4  0.137
+#> Fold02      0.282  income        0.101        1/4  0.0658
+#> Fold03      0.158  site: A       0.0704       1/4  0.0619
+#> Fold04      0.24   site: B       0.101        2/4  0.0826
+#> Fold05      0.201  age           0.132        3/4  0.0897
+#> Fold06      0.175  site: A       0.0951       2/4  0.0772
+#> Fold07      0.22   site: B       0.0885       2/4  0.097
+#> Fold08      0.372  site: C       0.182        2/4  0.129
+#> Fold09      0.405  site: B       0.233        3/4  0.142
+#> Fold10      0.163  age           0.0817       1/4  0.0639
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
 #> # all 90 rows.
@@ -128,28 +132,28 @@ folds <- balanced_vfold_cv(
 balanced_check <- balance_check(folds)
 balanced_check
 #> # Balance check: 10 splits, 4 variables
-#> # 5 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.0544
+#> # 8 of 10 splits have a variable with |SMD| > 0.1,
+#> # mean energy distance 0.0549
 #> 
 #> id      max |SMD|  variable           mean |SMD|  over 0.1  energy
-#> Fold01     0.115   diagnosis: severe      0.0421       1/4  0.0528
-#> Fold02     0.119   diagnosis: mild        0.0483       1/4  0.0634
-#> Fold03     0.0545  site: C                0.0286       0/4  0.0412
-#> Fold04     0.115   diagnosis: severe      0.0442       1/4  0.0687
-#> Fold05     0.0545  site: A                0.0224       0/4  0.0442
-#> Fold06     0.0995  site: C                0.0373       0/4  0.0663
-#> Fold07     0.113   site: B                0.0549       2/4  0.0627
-#> Fold08     0.0496  site: B                0.0231       0/4  0.0488
-#> Fold09     0.0496  site: B                0.0255       0/4  0.0454
-#> Fold10     0.104   diagnosis: severe      0.0546       1/4  0.0501
+#> Fold01     0.119   diagnosis: mild        0.045        1/4  0.0568
+#> Fold02     0.104   diagnosis: severe      0.0567       1/4  0.0578
+#> Fold03     0.104   diagnosis: severe      0.0406       1/4  0.0437
+#> Fold04     0.0545  site: C                0.029        0/4  0.0561
+#> Fold05     0.104   diagnosis: severe      0.04         1/4  0.052
+#> Fold06     0.115   diagnosis: severe      0.0432       1/4  0.0513
+#> Fold07     0.0496  site: B                0.0254       0/4  0.0589
+#> Fold08     0.115   diagnosis: severe      0.0441       1/4  0.0674
+#> Fold09     0.129   diagnosis: mild        0.0483       1/4  0.0612
+#> Fold10     0.115   diagnosis: severe      0.0416       1/4  0.0441
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
 #> # all 90 rows.
 ```
 
-The largest absolute SMD in any fold fell from 0.58 to 0.12, the mean
-absolute SMD over folds fell from 0.133 to 0.038, and the mean energy
-distance fell from 0.105 to 0.054. With `by = "variable"`,
+The largest absolute SMD in any fold fell from 0.41 to 0.13, the mean
+absolute SMD over folds fell from 0.128 to 0.041, and the mean energy
+distance fell from 0.095 to 0.055. With `by = "variable"`,
 [`summary()`](https://rdrr.io/r/base/summary.html) shows where what is
 left comes from:
 
@@ -159,17 +163,19 @@ summary(balanced_check, by = "variable")
 #> # A tibble: 4 × 7
 #>   variable  median_abs_smd max_abs_smd level id     n_over n_splits
 #>   <chr>              <dbl>       <dbl> <chr> <chr>   <int>    <int>
-#> 1 age              0.00127     0.00527 NA    Fold02      0       10
-#> 2 income           0.00382     0.0148  NA    Fold02      0       10
-#> 3 diagnosis        0.0767      0.119   mild  Fold02      5       10
-#> 4 site             0.0545      0.113   B     Fold07      1       10
+#> 1 age              0.00205     0.00300 NA    Fold05      0       10
+#> 2 income           0.00383     0.0207  NA    Fold02      0       10
+#> 3 diagnosis        0.110       0.129   mild  Fold09      8       10
+#> 4 site             0.0545      0.0995  C     Fold02      0       10
 ```
 
-It is mostly in the category proportions of the `exact` columns. These
-can’t come out exactly equal when a level’s count doesn’t divide evenly
-into 10 folds. In a fold of 30 rows, one row more or less of a level
-moves its SMD by 0.075 to 0.11 for the levels here, so 0.1 is not always
-within reach.
+It is mostly in the category proportions of the `exact` columns. The
+counts are rounded for each combination of diagnosis and site, not for
+each level on its own. So a level’s total in a fold can be one row off
+for each site, even when the total divides evenly into 10 folds. For
+example, the 40 severe cases get 3 to 5 per fold. In a fold of 30 rows,
+one row more or less of a level moves its SMD by 0.075 to 0.11 for the
+levels here, so 0.1 is not always within reach.
 
 ## Choosing columns: `balance` and `exact`
 
@@ -221,9 +227,10 @@ class has enough rows for every set. The outcome is used only to assign
 rows to sets, as with `strata`. This assumes you have the outcome when
 you make the split. If the evaluation must hold out whole time periods
 or whole sites, split by those instead: put the site in `group`, or use
-rsample’s time-based splits. In this article, the outcome depends on
-age, income, and diagnosis, so balancing those already keeps the outcome
-similar across the sets, and it is left out.
+rsample’s time-based splits. In this article, the outcome is left out.
+It depends on age, income, and diagnosis, so balancing those also
+balances the part of the outcome they explain. The rest is random noise,
+so the outcome itself can still differ between the sets.
 
 Each column you add to `exact` splits the strata further. Here diagnosis
 and site together make 9 strata:
@@ -234,8 +241,8 @@ tab <- table(d$diagnosis, d$site)
 tab
 #>         
 #>           A  B  C
-#>   mild   24 33 27
 #>   none   68 43 65
+#>   mild   24 33 27
 #>   severe 15 10 15
 ```
 
@@ -276,9 +283,13 @@ Each column type is handled in its own way:
   incomes is balanced less closely.
 - In a categorical `balance` column, a missing value is one more level.
 - In an `exact` column such as site, a missing value is one more level
-  too, so the 15 rows are spread over the folds by exact counts. With
-  `group`, a group with some rows at site A and some with a missing site
-  is an error, because a missing value counts as a level of its own.
+  too. The counts are exact for each combination of diagnosis and site,
+  so the 15 rows are spread over the folds within each diagnosis. Their
+  total in a fold can still be one row off for each diagnosis, so some
+  folds get more of the 15 than others, and the `"(missing)"` SMD of
+  site can be large. With `group`, a group with some rows at site A and
+  some with a missing site is an error, because a missing value counts
+  as a level of its own.
 
 These encodings are used only to make the split. The data in the folds
 keep their missing values, so your model can handle them its own way,
@@ -300,25 +311,25 @@ head(na_rows[na_rows$level %in% "(missing)", ], 4)
 #>   id     variable level     statistic   value
 #>   <chr>  <chr>    <chr>     <chr>       <dbl>
 #> 1 Fold01 income   (missing) smd        0     
-#> 2 Fold01 site     (missing) smd       -0.0918
+#> 2 Fold01 site     (missing) smd        0.0797
 #> 3 Fold02 income   (missing) smd        0     
 #> 4 Fold02 site     (missing) smd       -0.0918
 na_check
 #> # Balance check: 10 splits, 4 variables
-#> # 5 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.0658
+#> # 6 of 10 splits have a variable with |SMD| > 0.1,
+#> # mean energy distance 0.0676
 #> 
 #> id      max |SMD|  variable           mean |SMD|  over 0.1  energy
-#> Fold01     0.0918  site: (missing)        0.0425       0/4  0.0749
-#> Fold02     0.119   diagnosis: mild        0.0574       1/4  0.0782
-#> Fold03     0.0797  site: (missing)        0.0356       0/4  0.0631
-#> Fold04     0.115   diagnosis: severe      0.0525       1/4  0.0612
-#> Fold05     0.115   diagnosis: severe      0.0503       1/4  0.0746
-#> Fold06     0.0918  site: (missing)        0.0338       0/4  0.0578
-#> Fold07     0.104   diagnosis: severe      0.0524       1/4  0.0665
-#> Fold08     0.0797  site: (missing)        0.0296       0/4  0.0665
-#> Fold09     0.104   diagnosis: severe      0.0474       1/4  0.053
-#> Fold10     0.0918  site: (missing)        0.0363       0/4  0.0627
+#> Fold01     0.0797  site: (missing)        0.0333       0/4  0.0574
+#> Fold02     0.115   diagnosis: severe      0.0528       1/4  0.0522
+#> Fold03     0.17    site: A                0.0524       1/4  0.0813
+#> Fold04     0.0918  site: (missing)        0.0386       0/4  0.058
+#> Fold05     0.343   site: (missing)        0.0951       1/4  0.0848
+#> Fold06     0.0797  site: (missing)        0.0299       0/4  0.0693
+#> Fold07     0.216   site: (missing)        0.0642       1/4  0.087
+#> Fold08     0.202   diagnosis: severe      0.0798       1/4  0.0685
+#> Fold09     0.0797  site: (missing)        0.0334       0/4  0.0629
+#> Fold10     0.115   diagnosis: severe      0.0494       1/4  0.0547
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
 #> # all 110 rows.
@@ -358,16 +369,16 @@ split <- balanced_initial_split(
 train <- rsample::training(split)
 balance_check(split)
 #> # Balance check: 1 split, 4 variables
-#> # |SMD| > 0.1 in 0 of 4 variables, energy distance 0.0291
+#> # |SMD| > 0.1 in 0 of 4 variables, energy distance 0.0222
 #> 
 #> variable   level         SMD
-#> age                -0.000652
-#> income             -9.91e-05
-#> diagnosis  mild     0.00927
+#> age                -0.000449
+#> income              0.00051
 #> diagnosis  none    -0.00846
+#> diagnosis  mild     0.00927
 #> diagnosis  severe   0
-#> site       A       -0.0174
-#> site       B        0.0367
+#> site       A        0.026
+#> site       B       -0.00923
 #> site       C       -0.0174
 #> 
 #> # tibble::as_tibble() gives all 9 rows.
@@ -405,8 +416,9 @@ autoplot(balance_check(folds))
 
 ![](balancesample_files/figure-html/plot-1.png)
 
-A diagnosis level can land outside the lines even though diagnosis is in
-`exact`. The counts are exact for each diagnosis and site combination. A
+The diagnosis levels sit farther from 0 than age and income, even though
+diagnosis is in `exact`, and with other data they can land outside the
+lines. The counts are exact for each diagnosis and site combination. A
 fold can be one row off in each of the three sites, and these rows add
 up for the diagnosis as a whole. Rare levels show this most, because one
 row is a large share of a small level.
@@ -440,9 +452,9 @@ show_best(res, metric = "rmse", n = 3)
 #> # A tibble: 3 × 8
 #>   tree_depth min_n .metric .estimator  mean     n std_err .config        
 #>        <int> <int> <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1         12     9 rmse    standard    1.14     5  0.0751 pre0_mod5_post0
-#> 2          6     2 rmse    standard    1.16     5  0.0837 pre0_mod3_post0
-#> 3          9    24 rmse    standard    1.16     5  0.0558 pre0_mod4_post0
+#> 1         12     9 rmse    standard    1.24     5  0.0446 pre0_mod5_post0
+#> 2          9    24 rmse    standard    1.26     5  0.0502 pre0_mod4_post0
+#> 3          6     2 rmse    standard    1.27     5  0.0483 pre0_mod3_post0
 ```
 
 Finalize the workflow with the settings that had the lowest
@@ -458,8 +470,8 @@ collect_metrics(final_fit)
 #> # A tibble: 2 × 4
 #>   .metric .estimator .estimate .config        
 #>   <chr>   <chr>          <dbl> <chr>          
-#> 1 rmse    standard       1.10  pre0_mod0_post0
-#> 2 rsq     standard       0.509 pre0_mod0_post0
+#> 1 rmse    standard       1.12  pre0_mod0_post0
+#> 2 rsq     standard       0.470 pre0_mod0_post0
 ```
 
 ## Choosing a method
@@ -531,15 +543,15 @@ shown <- by_method
 shown[-1] <- round(shown[-1], 3)
 shown
 #>        method max_abs_smd mean_abs_smd mean_energy
-#> 1   anticlust       0.119        0.037       0.054
-#> 2    twinning       0.426        0.099       0.045
-#> 3 rerandomize       0.268        0.087       0.055
-#> 4 interaction       0.419        0.104       0.066
+#> 1   anticlust       0.134        0.043       0.054
+#> 2    twinning       0.287        0.090       0.043
+#> 3 rerandomize       0.263        0.091       0.066
+#> 4 interaction       0.425        0.103       0.068
 ```
 
-In this run, the smallest `max_abs_smd` came from anticlust (0.119), the
-smallest `mean_abs_smd` from anticlust (0.037), and the smallest
-`mean_energy` from twinning (0.045). These come from one run of each
+In this run, the smallest `max_abs_smd` came from anticlust (0.134), the
+smallest `mean_abs_smd` from anticlust (0.043), and the smallest
+`mean_energy` from twinning (0.043). These come from one run of each
 method on one data set, so they don’t show which method does best in
 general, and small differences may be noise.
 
@@ -582,11 +594,11 @@ grouped
 #> # A tibble: 5 × 2
 #>   splits            id   
 #>   <list>            <chr>
-#> 1 <split [578/145]> Fold1
-#> 2 <split [578/145]> Fold2
-#> 3 <split [579/144]> Fold3
-#> 4 <split [579/144]> Fold4
-#> 5 <split [578/145]> Fold5
+#> 1 <split [593/148]> Fold1
+#> 2 <split [593/148]> Fold2
+#> 3 <split [593/148]> Fold3
+#> 4 <split [592/149]> Fold4
+#> 5 <split [593/148]> Fold5
 ```
 
 The split sizes are numbers of rows. Each fold gets about the same

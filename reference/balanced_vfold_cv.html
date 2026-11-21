@@ -266,58 +266,67 @@ and Data Mining, 15</em>(5), 598-610.
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu">balanced_vfold_cv</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">mtcars</span>,</span></span>
-<span class="r-in"><span>  v <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  exact <span class="op">=</span> <span class="va">am</span></span></span>
+<span class="r-in"><span>  <span class="va">sim_patients</span>,</span></span>
+<span class="r-in"><span>  v <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  exact <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">diagnosis</span>, <span class="va">site</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">folds</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (anticlust), balancing mpg, hp, wt,</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by am</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 5-fold balanced cross-validation (anticlust), balancing age, income,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # stratified by diagnosis, site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   splits           id   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold5</span>
 <span class="r-in"><span><span class="fu"><a href="balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 4 splits, 4 variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 1 of 4 splits has a variable with |SMD| &gt; 0.1, mean energy distance 0.205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 5 splits, 4 variables</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.031</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable  mean |SMD|  over 0.1  energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1     0.0853  am: 1         0.0602       0/4   0.254</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2     0.254   am: 0         0.084        1/4   0.151</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3     0.0853  am: 1         0.0495       0/4   0.267</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4     0.0853  am: 1         0.0468       0/4   0.148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1     0.026   site: C             0.00967       0/4  0.0277</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2     0.026   site: A             0.00941       0/4  0.0361</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3     0.0373  diagnosis: mild     0.0187        0/4  0.0276</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4     0.026   site: C             0.00955       0/4  0.0309</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold5     0.026   site: A             0.0091        0/4  0.0327</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 24 rows.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 45 rows.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Other methods</span></span></span>
 <span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">mtcars</span>,</span></span>
-<span class="r-in"><span>  v <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="va">sim_patients</span>,</span></span>
+<span class="r-in"><span>  v <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  method <span class="op">=</span> <span class="st">"rerandomize"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (rerandomize), balancing mpg, hp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold4</span>
-<span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span><span class="va">mtcars</span>, v <span class="op">=</span> <span class="fl">4</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">hp</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"twinning"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 4-fold balanced cross-validation (twinning), balancing mpg, hp</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   splits         id   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [24/8]&gt;</span> Fold4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 5-fold balanced cross-validation (rerandomize), balancing age, income</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   splits           id   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold5</span>
+<span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">sim_patients</span>,</span></span>
+<span class="r-in"><span>  v <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>  balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"twinning"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 5-fold balanced cross-validation (twinning), balancing age, income</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   splits           id   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold5</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
