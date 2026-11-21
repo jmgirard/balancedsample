@@ -2,7 +2,7 @@
 #'
 #' Simulated data from 300 patients at three sites. Age and income are
 #' skewed, and diagnosis has a rare level. The README, the Get started
-#' article (`vignette("balancesample")`), and the examples use these data.
+#' article (`vignette("balancedsample")`), and the examples use these data.
 #'
 #' The data are simulated and have no missing values. The outcome is
 #'

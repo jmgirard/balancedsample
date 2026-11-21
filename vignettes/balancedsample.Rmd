@@ -1,8 +1,8 @@
 ---
-title: "Get started with balancesample"
+title: "Get started with balancedsample"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Get started with balancesample}
+  %\VignetteIndexEntry{Get started with balancedsample}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -28,14 +28,14 @@ if (length(missing) > 0) {
 }
 ```
 
-This article walks through a modeling project with balancesample: a balanced training/testing split, balanced folds on the training set, tuning with tune, and a final fit. It also shows how to choose the columns to balance, how to check the result, and how to choose a method.
+This article walks through a modeling project with balancedsample: a balanced training/testing split, balanced folds on the training set, tuning with tune, and a final fit. It also shows how to choose the columns to balance, how to check the result, and how to choose a method.
 
 ## The data
 
 The package includes `sim_patients`, a simulated data set of 300 patients at three sites. Age and income are skewed, and diagnosis has a rare level. The outcome depends on age, income, and diagnosis. `?sim_patients` gives the formula.
 
 ```{r data}
-library(balancesample)
+library(balancedsample)
 
 d <- sim_patients
 n <- nrow(d)
@@ -102,7 +102,7 @@ It is mostly in the category proportions of the `exact` columns. The counts are 
 
 `exact` takes categorical columns and is a rule. Each combination of levels is one stratum. In each set, the count of each stratum is its share of that set, rounded up or down to a whole row. This is fixed before the method runs, so it holds for every method.
 
-`exact` does the job of `strata` in rsample, with two differences. It can take several columns, which it crosses, and its counts are exact rather than approximate. If you write `strata` out of habit, balancesample stops and tells you to use `exact`.
+`exact` does the job of `strata` in rsample, with two differences. It can take several columns, which it crosses, and its counts are exact rather than approximate. If you write `strata` out of habit, balancedsample stops and tells you to use `exact`.
 
 A categorical column can go in either argument. Use `exact` when you need the counts as close as whole rows allow. Use `balance` when close is enough. In the folds above, diagnosis is in `exact` because the outcome depends on it, and severe cases are rare. Site is in `exact` so that each site is represented in proportion in every fold, and later in the test set. If a slightly uneven mix of sites were fine, site could go in `balance` instead.
 
@@ -206,12 +206,12 @@ autoplot(balance_check(folds))
 
 The diagnosis levels sit farther from 0 than age and income, even though diagnosis is in `exact`, and with other data they can land outside the lines. The counts are exact for each diagnosis and site combination. A fold can be one row off in each of the three sites, and these rows add up for the diagnosis as a whole. Rare levels show this most, because one row is a large share of a small level.
 
-The folds work with tune like any other `rset`, as long as balancesample is attached with `library()`, as in the chunk below. tune finds the function that made the folds by its name, so it fails if you only call `balancesample::balanced_vfold_cv()`.
+The folds work with tune like any other `rset`, as long as balancedsample is attached with `library()`, as in the chunk below. tune finds the function that made the folds by its name, so it fails if you only call `balancedsample::balanced_vfold_cv()`.
 
 This example tunes the depth and the minimum node size of a decision tree:
 
 ```{r tune, message = FALSE}
-library(balancesample)
+library(balancedsample)
 library(parsnip)
 library(tune)
 library(workflows)
@@ -238,7 +238,7 @@ collect_metrics(final_fit)
 
 ## Choosing a method
 
-balancesample has four methods. All of them keep the `exact` counts. They differ in how they make the sets similar on the `balance` columns:
+balancedsample has four methods. All of them keep the `exact` counts. They differ in how they make the sets similar on the `balance` columns:
 
 - `"anticlust"` (the default) uses k-plus anticlustering from the [anticlust](https://cran.r-project.org/package=anticlust) package ([Papenberg, 2024](https://doi.org/10.1111/bmsp.12315)). It starts from a random assignment and swaps rows of the same `exact` stratum between sets when the swap improves one score for how similar the means and variances of the sets are. By default, it considers every row of the same stratum as a swap partner, so its run time grows quickly with the number of rows.
 - `"twinning"` uses data twinning from the [twinning](https://cran.r-project.org/package=twinning) package ([Vakayil and Joseph, 2022](https://doi.org/10.1002/sam.11574)). It takes one set out of the data at a time. It takes a row and its nearest unused neighbours as a small group and keeps that first row for the set. The next group starts at the unused row closest to the last group's farthest neighbour, so the set covers the data the way the whole data does. It does this within each `exact` stratum. For folds, the default strategy repeats this on the rows that are left. It needs the twinning package, allows only some split proportions, and splits small strata at random (for folds, strata with fewer than `2 * v` rows).
@@ -294,4 +294,4 @@ grouped
 
 The split sizes are numbers of rows. Each fold gets about the same number of people, so the number of rows per fold varies with how many rows each person has. `balance_check()` also compares rows.
 
-To make the split, the method sees each person as one row, with the person's means of the `balance` columns and the log of their number of rows. anticlust has a `must_link` argument for groups. balancesample does not use it, because it needs fold sizes that the groups can fill exactly, and it was slow in tests.
+To make the split, the method sees each person as one row, with the person's means of the `balance` columns and the log of their number of rows. anticlust has a `must_link` argument for groups. balancedsample does not use it, because it needs fold sizes that the groups can fill exactly, and it was slow in tests.

@@ -1,4 +1,4 @@
 library(testthat)
-library(balancesample)
+library(balancedsample)
 
-test_check("balancesample")
+test_check("balancedsample")

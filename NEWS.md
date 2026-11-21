@@ -1,4 +1,4 @@
-# balancesample 0.1.0
+# balancedsample 0.1.0
 
 * First CRAN release.
 
@@ -56,7 +56,7 @@
 * Balanced folds work with `tune::fit_resamples()` and `tune::tune_grid()`,
   and balanced splits with `tune::last_fit()`. To tune on the validation set
   of a balanced three-way split, pass it to `rsample::validation_set()`
-  first. To tune on balanced folds, attach balancesample with `library()`:
+  first. To tune on balanced folds, attach balancedsample with `library()`:
   rsample finds the function that made the folds by its name
   ([tidymodels/rsample#619](https://github.com/tidymodels/rsample/issues/619)).
 

@@ -35,7 +35,7 @@
       balanced_initial_validation_split(d, balance = x1, strata = cat)
     Condition
       Error in `balanced_initial_validation_split()`:
-      ! balancesample uses `exact`, not `strata`.
+      ! balancedsample uses `exact`, not `strata`.
       i Put categorical columns in `exact`, for example `exact = class`.
       i Put numeric columns in `balance`.
     Code

@@ -121,7 +121,7 @@
       Error in `balanced_vfold_cv()`:
       ! Selected columns must not have missing values.
       x Missing values in x1 (1 row).
-      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancesample")`.
+      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancedsample")`.
 
 ---
 
@@ -138,14 +138,14 @@
       balanced_vfold_cv(d, balance = x1, strata = cat)
     Condition
       Error in `balanced_vfold_cv()`:
-      ! balancesample uses `exact`, not `strata`.
+      ! balancedsample uses `exact`, not `strata`.
       i Put categorical columns in `exact`, for example `exact = class`.
       i Put numeric columns in `balance`.
     Code
       balanced_initial_split(d, balance = x1, strata = cat)
     Condition
       Error in `balanced_initial_split()`:
-      ! balancesample uses `exact`, not `strata`.
+      ! balancedsample uses `exact`, not `strata`.
       i Put categorical columns in `exact`, for example `exact = class`.
       i Put numeric columns in `balance`.
     Code
@@ -159,20 +159,20 @@
       balanced_vfold_cv(d, balance = x1, pool = 0.2)
     Condition
       Error in `balanced_vfold_cv()`:
-      ! balancesample doesn't use `pool`.
+      ! balancedsample doesn't use `pool`.
       i `method = "interaction"` pools small cells with `options = list(pool = 0.1)`.
     Code
       balanced_vfold_cv(d, balance = x1, breaks = 4, times = 2)
     Condition
       Error in `balanced_vfold_cv()`:
-      ! balancesample doesn't use `breaks` and `times`.
+      ! balancedsample doesn't use `breaks` and `times`.
       i `method = "interaction"` sets the number of bins per numeric column with `options = list(n_bins = 4)`.
       i `balanced_vfold_cv()` takes `repeats`, which repeats the whole V-fold partition.
     Code
       balanced_initial_split(d, balance = x1, times = 2)
     Condition
       Error in `balanced_initial_split()`:
-      ! balancesample doesn't use `times`.
+      ! balancedsample doesn't use `times`.
       i `balanced_vfold_cv()` takes `repeats`, which repeats the whole V-fold partition.
 
 # bad data give clear errors

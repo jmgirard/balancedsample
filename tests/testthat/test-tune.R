@@ -211,7 +211,7 @@ test_that("tune trains a postprocessor on a balanced calibration split", {
     stats::predict(model, new_data[c("hp", "wt")])$.pred
   }
 
-  # Record the inner splits that tune gets from balancesample. All the
+  # Record the inner splits that tune gets from balancedsample. All the
   # internal_calibration_split() methods make them with
   # balanced_calibration_split(). The splits themselves are tested above.
   inner <- list()
@@ -308,7 +308,7 @@ test_that("calibration splits warn about their own small strata", {
   outer <- expect_no_warning(balanced_initial_split(d, prop = 0.51, exact = s))
   expect_warning(
     rsample::internal_calibration_split(outer, list()),
-    class = "balancesample_sparse_strata"
+    class = "balancedsample_sparse_strata"
   )
 })
 
