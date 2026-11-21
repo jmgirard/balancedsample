@@ -186,23 +186,28 @@ split.
 \examples{
 set.seed(1)
 folds <- balanced_vfold_cv(
-  mtcars,
-  v = 4,
-  balance = c(mpg, hp, wt),
-  exact = am
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
+  exact = c(diagnosis, site)
 )
 folds
 balance_check(folds)
 
 # Other methods
 balanced_vfold_cv(
-  mtcars,
-  v = 4,
-  balance = c(mpg, hp),
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
   method = "rerandomize"
 )
 \dontshow{if (rlang::is_installed("twinning")) withAutoprint(\{ # examplesIf}
-balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp), method = "twinning")
+balanced_vfold_cv(
+  sim_patients,
+  v = 5,
+  balance = c(age, income),
+  method = "twinning"
+)
 \dontshow{\}) # examplesIf}
 }
 \references{

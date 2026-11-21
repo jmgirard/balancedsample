@@ -154,12 +154,17 @@ one variable's absolute SMD was under 0.1 only about 40\% of the time. An
 }
 \examples{
 set.seed(1)
-folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+folds <- balanced_vfold_cv(
+  sim_patients,
+  v = 5,
+  balance = c(age, income, diagnosis)
+)
 balance_check(folds)
 summary(balance_check(folds))
 summary(balance_check(folds), by = "variable")
 summary(balance_check(folds, variance_ratio = TRUE))
 
 # Compare with ordinary folds
-summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
+random_folds <- rsample::vfold_cv(sim_patients, v = 5)
+summary(balance_check(random_folds, age, income, diagnosis))
 }

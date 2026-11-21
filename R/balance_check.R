@@ -119,14 +119,19 @@
 #'
 #' @examples
 #' set.seed(1)
-#' folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+#' folds <- balanced_vfold_cv(
+#'   sim_patients,
+#'   v = 5,
+#'   balance = c(age, income, diagnosis)
+#' )
 #' balance_check(folds)
 #' summary(balance_check(folds))
 #' summary(balance_check(folds), by = "variable")
 #' summary(balance_check(folds, variance_ratio = TRUE))
 #'
 #' # Compare with ordinary folds
-#' summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
+#' random_folds <- rsample::vfold_cv(sim_patients, v = 5)
+#' summary(balance_check(random_folds, age, income, diagnosis))
 #' @export
 balance_check <- function(x, ..., max_n = 2000, variance_ratio = FALSE) {
   UseMethod("balance_check")

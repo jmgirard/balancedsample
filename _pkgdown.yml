@@ -13,6 +13,9 @@ reference:
     contents:
       - balance_check
       - autoplot.balance_check
+  - title: Data
+    contents:
+      - sim_patients
   - title: Package
     contents:
       - balancesample-package

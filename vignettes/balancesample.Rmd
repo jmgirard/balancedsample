@@ -32,26 +32,20 @@ This article walks through a modeling project with balancesample: a balanced tra
 
 ## The data
 
-The example uses simulated data from 300 patients at three sites. Age and income are skewed, and diagnosis has a rare level. The outcome depends on age, income, and diagnosis.
+The package includes `sim_patients`, a simulated data set of 300 patients at three sites. Age and income are skewed, and diagnosis has a rare level. The outcome depends on age, income, and diagnosis. `?sim_patients` gives the formula.
 
 ```{r data}
 library(balancesample)
 
+d <- sim_patients
+n <- nrow(d)
+head(d)
+```
+
+The splits are random, so set a seed to get the same splits each time:
+
+```{r seed}
 set.seed(2026)
-n <- 300
-d <- data.frame(
-  age = rgamma(n, shape = 4, rate = 0.1),
-  income = rlnorm(n, meanlog = 10, sdlog = 0.6),
-  diagnosis = factor(sample(
-    c("none", "mild", "severe"),
-    n,
-    replace = TRUE,
-    prob = c(0.6, 0.3, 0.1)
-  )),
-  site = factor(sample(c("A", "B", "C"), n, replace = TRUE))
-)
-severe <- d$diagnosis == "severe"
-d$outcome <- 0.05 * d$age + 0.3 * log(d$income) + 1.5 * severe + rnorm(n)
 ```
 
 ## Why balance?
@@ -87,6 +81,11 @@ balanced_check
 ```{r compare, include = FALSE}
 random_sum <- summary(random_check)
 balanced_sum <- summary(balanced_check)
+severe_n <- vapply(
+  folds$splits,
+  function(s) sum(rsample::assessment(s)$diagnosis == "severe"),
+  integer(1)
+)
 ```
 
 The largest absolute SMD in any fold fell from `r round(max(random_sum$max_abs_smd), 2)` to `r round(max(balanced_sum$max_abs_smd), 2)`, the mean absolute SMD over folds fell from `r round(mean(random_sum$mean_abs_smd), 3)` to `r round(mean(balanced_sum$mean_abs_smd), 3)`, and the mean energy distance fell from `r round(mean(random_sum$energy), 3)` to `r round(mean(balanced_sum$energy), 3)`. With `by = "variable"`, `summary()` shows where what is left comes from:
@@ -95,7 +94,7 @@ The largest absolute SMD in any fold fell from `r round(max(random_sum$max_abs_s
 summary(balanced_check, by = "variable")
 ```
 
-It is mostly in the category proportions of the `exact` columns. These can't come out exactly equal when a level's count doesn't divide evenly into 10 folds. In a fold of 30 rows, one row more or less of a level moves its SMD by 0.075 to 0.11 for the levels here, so 0.1 is not always within reach.
+It is mostly in the category proportions of the `exact` columns. The counts are rounded for each combination of diagnosis and site, not for each level on its own. So a level's total in a fold can be one row off for each site, even when the total divides evenly into 10 folds. For example, the `r sum(d$diagnosis == "severe")` severe cases get `r min(severe_n)` to `r max(severe_n)` per fold. In a fold of 30 rows, one row more or less of a level moves its SMD by 0.075 to 0.11 for the levels here, so 0.1 is not always within reach.
 
 ## Choosing columns: `balance` and `exact`
 
@@ -109,7 +108,7 @@ A categorical column can go in either argument. Use `exact` when you need the co
 
 Continuous columns belong in `balance`. If you need exact counts within ranges of a continuous column, make a factor of those ranges and put that in `exact`. Base R has `cut()`. In the tidyverse, `ggplot2::cut_number()` makes ranges with about the same number of rows, and `ggplot2::cut_interval()` and `ggplot2::cut_width()` make ranges of the same width. `dplyr::ntile()` also works: it returns whole numbers, which `exact` treats as categories.
 
-What about the outcome? In rsample, `strata` is usually the outcome, so that every set has a similar mix of outcomes. You can do the same here. A numeric outcome can go in `balance`, next to the predictors, and a class outcome can go in `exact` if the class counts matter and every class has enough rows for every set. The outcome is used only to assign rows to sets, as with `strata`. This assumes you have the outcome when you make the split. If the evaluation must hold out whole time periods or whole sites, split by those instead: put the site in `group`, or use rsample's time-based splits. In this article, the outcome depends on age, income, and diagnosis, so balancing those already keeps the outcome similar across the sets, and it is left out.
+What about the outcome? In rsample, `strata` is usually the outcome, so that every set has a similar mix of outcomes. You can do the same here. A numeric outcome can go in `balance`, next to the predictors, and a class outcome can go in `exact` if the class counts matter and every class has enough rows for every set. The outcome is used only to assign rows to sets, as with `strata`. This assumes you have the outcome when you make the split. If the evaluation must hold out whole time periods or whole sites, split by those instead: put the site in `group`, or use rsample's time-based splits. In this article, the outcome is left out. It depends on age, income, and diagnosis, so balancing those also balances the part of the outcome they explain. The rest is random noise, so the outcome itself can still differ between the sets.
 
 Each column you add to `exact` splits the strata further. Here diagnosis and site together make 9 strata:
 
@@ -146,7 +145,7 @@ Each column type is handled in its own way:
 
 - In a numeric `balance` column such as income, the missing values get the mean of the observed values, and a 0/1 column of which values are missing is balanced too. Once the share missing is balanced, balancing the filled column also balances the mean of the observed incomes. The filled values all sit at the mean, so the spread of the observed incomes is balanced less closely.
 - In a categorical `balance` column, a missing value is one more level.
-- In an `exact` column such as site, a missing value is one more level too, so the 15 rows are spread over the folds by exact counts. With `group`, a group with some rows at site A and some with a missing site is an error, because a missing value counts as a level of its own.
+- In an `exact` column such as site, a missing value is one more level too. The counts are exact for each combination of diagnosis and site, so the 15 rows are spread over the folds within each diagnosis. Their total in a fold can still be one row off for each diagnosis, so some folds get more of the 15 than others, and the `"(missing)"` SMD of site can be large. With `group`, a group with some rows at site A and some with a missing site is an error, because a missing value counts as a level of its own.
 
 These encodings are used only to make the split. The data in the folds keep their missing values, so your model can handle them its own way, for example with a recipe.
 
@@ -205,7 +204,7 @@ library(ggplot2)
 autoplot(balance_check(folds))
 ```
 
-A diagnosis level can land outside the lines even though diagnosis is in `exact`. The counts are exact for each diagnosis and site combination. A fold can be one row off in each of the three sites, and these rows add up for the diagnosis as a whole. Rare levels show this most, because one row is a large share of a small level.
+The diagnosis levels sit farther from 0 than age and income, even though diagnosis is in `exact`, and with other data they can land outside the lines. The counts are exact for each diagnosis and site combination. A fold can be one row off in each of the three sites, and these rows add up for the diagnosis as a whole. Rare levels show this most, because one row is a large share of a small level.
 
 The folds work with tune like any other `rset`, as long as balancesample is attached with `library()`, as in the chunk below. tune finds the function that made the folds by its name, so it fails if you only call `balancesample::balanced_vfold_cv()`.
 

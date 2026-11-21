@@ -11,3 +11,4 @@
 ^\.vscode$
 ^\.git$
 ^cran-comments\.md$
+^data-raw$

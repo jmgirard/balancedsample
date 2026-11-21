@@ -72,3 +72,7 @@
   * `tune::last_fit()` can't train such a postprocessor on any three-way
     split
     ([tidymodels/tune#1213](https://github.com/tidymodels/tune/issues/1213)).
+
+* `sim_patients` is a simulated data set of 300 patients with skewed age and
+  income, a diagnosis with a rare level, three sites, and an outcome. The
+  README, the Get started article, and the examples use it.

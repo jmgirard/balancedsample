@@ -30,13 +30,13 @@
 #' @examples
 #' set.seed(1)
 #' split <- balanced_initial_split(
-#'   mtcars,
+#'   sim_patients,
 #'   prop = 3 / 4,
-#'   balance = c(mpg, hp, wt),
-#'   exact = am
+#'   balance = c(age, income),
+#'   exact = c(diagnosis, site)
 #' )
 #' split
-#' rsample::training(split)
+#' head(rsample::training(split))
 #' @export
 balanced_initial_split <- function(
   data,
