@@ -198,11 +198,11 @@
       Error in `balanced_vfold_cv()`:
       ! x has infinite values.
     Code
-      balanced_vfold_cv(data.frame(x = as.Date("2026-01-01") + 0:3), v = 2, balance = x)
+      balanced_vfold_cv(data.frame(x = as.complex(1:4)), v = 2, balance = x)
     Condition
       Error in `balanced_vfold_cv()`:
-      ! `balance` columns must be numeric, logical, character, or factor.
-      x x is a <Date> object.
+      ! `balance` columns must be numeric, logical, character, factor, date, date-time, or difftime.
+      x x is a complex vector.
 
 # more anticlust options are checked
 

@@ -547,12 +547,39 @@ test_that("bad data give clear errors", {
       balance = y,
       exact = x
     )
-    balanced_vfold_cv(
-      data.frame(x = as.Date("2026-01-01") + 0:3),
-      v = 2,
-      balance = x
-    )
+    balanced_vfold_cv(data.frame(x = as.complex(1:4)), v = 2, balance = x)
   })
+})
+
+test_that("dates, date-times, and durations can be balanced", {
+  set.seed(1)
+  d <- data.frame(
+    day = as.Date("2020-01-01") + sample(0:1000, 60),
+    x = stats::rnorm(60)
+  )
+  d$time <- as.POSIXct("2020-01-01", tz = "UTC") + d$x * 1e5
+  d$days <- as.difftime(d$x * 3, units = "days")
+  d$hours <- as.difftime(d$x * 72, units = "hours")
+  set.seed(2)
+  a <- balanced_vfold_cv(d, v = 3, balance = c(day, time, days))
+  set.seed(2)
+  b <- balanced_vfold_cv(d, v = 3, balance = c(day, time, hours))
+  # The same durations in other units give the same folds.
+  expect_identical(
+    lapply(a$splits, rsample::complement),
+    lapply(b$splits, rsample::complement)
+  )
+  expect_s3_class(rsample::analysis(a$splits[[1]])$day, "Date")
+  bc <- balance_check(a)
+  expect_equal(unique(bc$variable[bc$statistic == "smd"]), c("day", "time", "days"))
+  expect_false(anyNA(bc$value))
+})
+
+test_that("near-constant columns are judged relative to their size", {
+  x <- c(-2, -1, 1, 2, -1.5, 0.5)
+  expect_equal(ncol(build_balance_matrix(data.frame(x = x * 1e-14))), 1)
+  expect_equal(ncol(build_balance_matrix(data.frame(x = rep(0.1, 6)))), 0)
+  expect_equal(ncol(build_balance_matrix(data.frame(x = rep(3e12, 6)))), 0)
 })
 
 test_that("more anticlust options are checked", {

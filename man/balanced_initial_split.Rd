@@ -26,8 +26,9 @@ as \code{0.67}. A value within a relative 1e-8 of such a fraction counts as
 that fraction.}
 
 \item{balance}{<\code{\link[tidyselect:language]{tidy-select}}> Columns to balance
-across the sets. Numeric columns are standardized. Factor, character, and
-logical columns become one indicator column per level.}
+across the sets. Numeric columns are standardized. So are date,
+date-time, and difftime columns, as numbers of days or seconds. Factor,
+character, and logical columns become one indicator column per level.}
 
 \item{exact}{<\code{\link[tidyselect:language]{tidy-select}}> Categorical columns to
 stratify exactly. Each combination of levels is one stratum. In each

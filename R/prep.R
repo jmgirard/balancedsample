@@ -151,6 +151,7 @@ build_balance_matrix <- function(df, call = rlang::caller_env()) {
       colnames(m) <- paste0(nm, "_", levels(v))
       return(m)
     }
+    v <- as_balance_numeric(v)
     if (is.numeric(v)) {
       if (any(!is.finite(v))) {
         cli::cli_abort("{.field {nm}} has infinite values.", call = call)
@@ -159,7 +160,7 @@ build_balance_matrix <- function(df, call = rlang::caller_env()) {
     }
     cli::cli_abort(
       c(
-        "{.arg balance} columns must be numeric, logical, character, or factor.",
+        "{.arg balance} columns must be numeric, logical, character, factor, date, date-time, or difftime.",
         x = "{.field {nm}} is {.obj_type_friendly {v}}."
       ),
       call = call
@@ -168,12 +169,28 @@ build_balance_matrix <- function(df, call = rlang::caller_env()) {
   standardize_matrix(do.call(cbind, cols))
 }
 
+# Dates count in days, date-times in seconds, and durations in seconds, so
+# that durations in different units give the same values. Other vectors are
+# returned unchanged.
+as_balance_numeric <- function(v) {
+  if (inherits(v, "difftime")) {
+    return(as.numeric(v, units = "secs"))
+  }
+  if (inherits(v, c("Date", "POSIXct"))) {
+    return(as.numeric(v))
+  }
+  v
+}
+
+# Columns whose standard deviation is within rounding error of zero are
+# dropped. The tolerance is relative to the largest absolute value in the
+# column, so it doesn't depend on the units.
 standardize_matrix <- function(x) {
   if (ncol(x) == 0) {
     return(x)
   }
   sds <- apply(x, 2, stats::sd)
-  keep <- is.finite(sds) & sds > 1e-12
+  keep <- is.finite(sds) & sds > near_zero(apply(abs(x), 2, max))
   x <- x[, keep, drop = FALSE]
   if (ncol(x) == 0) {
     return(x)
@@ -231,4 +248,9 @@ assign_grouped <- function(
   sizes_g <- sizes_from_props(n_grp, props)
   out_g <- assign_fun(xg, sizes_g, exact_g)
   out_g[g]
+}
+
+# Rounding error for values up to `size` in absolute value.
+near_zero <- function(size) {
+  64 * .Machine$double.eps * size
 }
