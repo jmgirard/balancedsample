@@ -152,8 +152,9 @@ balanced_calibration_split <- function(
   class,
   share = function(args) args$prop
 ) {
-  # Warnings are held back and given after the fallback below, so that
-  # options(warn = 2) doesn't turn them into a failed split.
+  # Warnings are held back and given once the split is made or has failed,
+  # so that options(warn = 2) doesn't turn them into a failed split. They
+  # come in their original order, before the fallback warning.
   warnings <- list()
   split <- tryCatch(
     withCallingHandlers(
@@ -179,18 +180,22 @@ balanced_calibration_split <- function(
         rlang::cnd_muffle(cnd)
       }
     ),
-    error = function(cnd) {
-      cli::cli_warn(
-        "Cannot create calibration split; creating an empty calibration set.",
-        parent = cnd
-      )
-      rsample::make_splits(analysis_set, analysis_set[0, , drop = FALSE])
-    }
+    error = identity
   )
-  class(split) <- class
   for (cnd in warnings) {
     warning(cnd)
   }
+  if (inherits(split, "error")) {
+    cli::cli_warn(
+      "Cannot create calibration split; creating an empty calibration set.",
+      parent = split
+    )
+    split <- rsample::make_splits(
+      analysis_set,
+      analysis_set[0, , drop = FALSE]
+    )
+  }
+  class(split) <- class
   split
 }
 
