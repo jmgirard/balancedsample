@@ -44,9 +44,14 @@
   ratio of each numeric variable. A variable with missing values also gets
   the SMD of its share missing, with `level` `"(missing)"`, and the energy
   distance uses all rows, with missing values encoded as with
-  `na = "include"`. `summary()` gives one row per split, with
-  its largest absolute SMD and its energy distance. `autoplot()` plots the
-  result with ggplot2.
+  `na = "include"`. Printing the result shows a short table: the SMDs of
+  one split, one row per split for up to 10 splits, or one row per variable
+  for more. `summary()` gives one row per split, with its largest absolute
+  SMD and the variable it belongs to, the mean over the variables of their
+  largest absolute SMD, the number of variables above `threshold` (0.1 by
+  default), and its energy distance. `summary(by = "variable")` gives one
+  row per variable across the splits. `autoplot()` plots the result with
+  ggplot2.
 
 * Balanced folds work with `tune::fit_resamples()` and `tune::tune_grid()`,
   and balanced splits with `tune::last_fit()`. To tune on the validation set

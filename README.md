@@ -89,43 +89,40 @@ folds
 variable in each fold. The SMD compares the assessment set with the
 analysis set. It also reports the energy distance, which compares the
 whole multivariate distribution. The function works with any rsample
-object, so you can compare balanced folds with ordinary folds.
+object, so you can compare balanced folds with ordinary folds. The
+printed table has one row per fold: the largest absolute SMD and its
+variable, the mean over the variables, how many are over 0.1, and the
+energy distance. `summary()` returns the same numbers as a tibble.
 
 ``` r
 balance_check(folds)
-#> # Balance check: 5 splits, max |SMD| = 0.025, mean energy distance = 0.0203
-#> # A tibble: 40 × 5
-#>    id    variable  level  statistic     value
-#>    <chr> <chr>     <chr>  <chr>         <dbl>
-#>  1 Fold1 age       <NA>   smd       -0.000600
-#>  2 Fold1 income    <NA>   smd       -0.000770
-#>  3 Fold1 diagnosis mild   smd        0       
-#>  4 Fold1 diagnosis none   smd        0       
-#>  5 Fold1 diagnosis severe smd        0       
-#>  6 Fold1 site      A      smd       -0.00625 
-#>  7 Fold1 site      B      smd        0.00625 
-#>  8 Fold1 <NA>      <NA>   energy     0.0180  
-#>  9 Fold2 age       <NA>   smd        0.000412
-#> 10 Fold2 income    <NA>   smd       -0.000580
-#> # ℹ 30 more rows
+#> # Balance check: 5 splits, 4 variables
+#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0203
+#> 
+#> id     max |SMD|  variable  mean |SMD|  over 0.1  energy
+#> Fold1    0.00625  site: A      0.00191       0/4  0.018
+#> Fold2    0.00625  site: A      0.00181       0/4  0.0287
+#> Fold3    0.025    site: A      0.00657       0/4  0.0165
+#> Fold4    0.00625  site: A      0.00174       0/4  0.0223
+#> Fold5    0.00625  site: B      0.00167       0/4  0.016
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
+#> # 40 rows.
 
 random_folds <- rsample::vfold_cv(d, v = 5)
 balance_check(random_folds, age, income, diagnosis, site)
-#> # Balance check: 5 splits, max |SMD| = 0.302, mean energy distance = 0.0653
-#> # A tibble: 40 × 5
-#>    id    variable  level  statistic    value
-#>    <chr> <chr>     <chr>  <chr>        <dbl>
-#>  1 Fold1 age       <NA>   smd        0.00739
-#>  2 Fold1 income    <NA>   smd        0.0505 
-#>  3 Fold1 diagnosis mild   smd       -0.257  
-#>  4 Fold1 diagnosis none   smd        0.302  
-#>  5 Fold1 diagnosis severe smd       -0.109  
-#>  6 Fold1 site      A      smd       -0.163  
-#>  7 Fold1 site      B      smd        0.163  
-#>  8 Fold1 <NA>      <NA>   energy     0.0878 
-#>  9 Fold2 age       <NA>   smd       -0.0286 
-#> 10 Fold2 income    <NA>   smd       -0.0968 
-#> # ℹ 30 more rows
+#> # Balance check: 5 splits, 4 variables
+#> # 4 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0653
+#> 
+#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
+#> Fold1     0.302   diagnosis: none      0.131        2/4  0.0878
+#> Fold2     0.0968  income               0.0416       0/4  0.0284
+#> Fold3     0.144   income               0.0843       1/4  0.0351
+#> Fold4     0.288   diagnosis: none      0.181        2/4  0.113
+#> Fold5     0.184   income               0.155        4/4  0.0622
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
+#> # 40 rows.
 ```
 
 Use `autoplot()` to see the SMD values. The dashed lines are at -0.1 and
@@ -168,13 +165,14 @@ split
 #> <Training/Testing/Total>
 #> <300/100/400>
 balance_check(split)
-#> # Balance check: 1 split, max |SMD| = 0.0118, mean energy distance = 0.00206
-#> # A tibble: 3 × 5
-#>   id    variable level statistic    value
-#>   <chr> <chr>    <chr> <chr>        <dbl>
-#> 1 Split age      <NA>  smd       -0.00875
-#> 2 Split income   <NA>  smd        0.0118 
-#> 3 Split <NA>     <NA>  energy     0.00206
+#> # Balance check: 1 split, 2 variables
+#> # 0 of 2 variables have |SMD| > 0.1, energy distance 0.00206
+#> 
+#> variable  level       SMD
+#> age              -0.00875
+#> income            0.0118
+#> 
+#> # tibble::as_tibble() gives all 3 rows.
 ```
 
 `balanced_initial_validation_split()` makes one balanced
@@ -188,16 +186,15 @@ split3
 #> <Training/Validation/Testing/Total>
 #> <240/80/80/400>
 balance_check(split3)
-#> # Balance check: 2 splits, max |SMD| = 6.82e-05, mean energy distance = 0.0158
-#> # A tibble: 6 × 5
-#>   id         variable level statistic       value
-#>   <chr>      <chr>    <chr> <chr>           <dbl>
-#> 1 Validation age      <NA>  smd        0.0000184 
-#> 2 Validation income   <NA>  smd       -0.00000979
-#> 3 Validation <NA>     <NA>  energy     0.0192    
-#> 4 Testing    age      <NA>  smd        0.0000682 
-#> 5 Testing    income   <NA>  smd       -0.0000322 
-#> 6 Testing    <NA>     <NA>  energy     0.0124
+#> # Balance check: 2 splits, 2 variables
+#> # 0 of 2 splits have a variable with |SMD| > 0.1, mean energy distance 0.0158
+#> 
+#> id          max |SMD|  variable  mean |SMD|  over 0.1  energy
+#> Validation   1.84e-05  age         1.41e-05       0/2  0.0192
+#> Testing      6.82e-05  age         5.02e-05       0/2  0.0124
+#> 
+#> # summary() gives this table as a tibble, and tibble::as_tibble() gives all 6
+#> # rows.
 ```
 
 ## Groups

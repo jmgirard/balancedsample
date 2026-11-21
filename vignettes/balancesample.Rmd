@@ -63,12 +63,12 @@ In tidymodels, a modeling project usually starts with `rsample::initial_split()`
 - The standardized mean difference (SMD) is computed for each variable on its own. It is the difference in means (held-out rows minus the other rows) divided by the pooled standard deviation. For a categorical variable, there is one SMD per level, from the proportions of that level. An absolute SMD under 0.1 is a common rule of thumb for good balance.
 - The energy distance compares all the variables at once. It turns each level of a categorical variable into a 0/1 column, standardizes all the columns, and then looks at the distances between rows. It is twice the average distance between a row of one set and a row of the other, minus the average distance between two rows of the same set (once for each set, counting each row paired with itself). It is 0 when the two sets have the same distribution, and it grows as they differ. Unlike the SMD, it also picks up differences in spread and shape, and in how the variables relate to each other. It has no fixed cutoff like 0.1, so use it to compare splits of the same data on the same variables.
 
-For each fold, `balance_check()` returns one SMD row per numeric variable, one per level of each categorical variable, and one energy row. `summary()` turns this into one row per fold, with the largest absolute SMD, the variable and level it belongs to, and the energy distance. Here are ordinary folds from rsample, stratified on diagnosis. For these, you list the columns to check:
+For each fold, `balance_check()` returns one SMD row per numeric variable, one per level of each categorical variable, and one energy row. Printing the result shows one row per fold. Each variable first counts with its largest absolute SMD, so a variable with three levels counts once, like a numeric one. The row then gives the largest absolute SMD and the variable it belongs to, the mean over the variables, how many of them are over 0.1, and the energy distance. `summary()` returns the same numbers as a tibble. The largest SMD shows which variable to look at. The mean is steadier for comparing splits, because the largest grows with the number of variables checked. Here are ordinary folds from rsample, stratified on diagnosis. For these, you list the columns to check:
 
 ```{r random}
 random_folds <- rsample::vfold_cv(d, v = 10, strata = diagnosis)
 random_check <- balance_check(random_folds, age, income, diagnosis, site)
-summary(random_check)
+random_check
 ```
 
 And here are balanced folds. `balance` lists the columns to make similar, and `exact` takes the place of `strata`. The next section explains both. Balanced folds remember these columns, so `balance_check()` needs no column list:
@@ -81,7 +81,7 @@ folds <- balanced_vfold_cv(
   exact = c(diagnosis, site)
 )
 balanced_check <- balance_check(folds)
-summary(balanced_check)
+balanced_check
 ```
 
 ```{r compare, include = FALSE}
@@ -89,7 +89,13 @@ random_sum <- summary(random_check)
 balanced_sum <- summary(balanced_check)
 ```
 
-The largest absolute SMD in any fold fell from `r round(max(random_sum$max_abs_smd), 2)` to `r round(max(balanced_sum$max_abs_smd), 2)`, and the mean energy distance fell from `r round(mean(random_sum$energy), 3)` to `r round(mean(balanced_sum$energy), 3)`. What is left is mostly in the category proportions. These can't come out exactly equal when a level's count doesn't divide evenly into 10 folds.
+The largest absolute SMD in any fold fell from `r round(max(random_sum$max_abs_smd), 2)` to `r round(max(balanced_sum$max_abs_smd), 2)`, the mean absolute SMD over folds fell from `r round(mean(random_sum$mean_abs_smd), 3)` to `r round(mean(balanced_sum$mean_abs_smd), 3)`, and the mean energy distance fell from `r round(mean(random_sum$energy), 3)` to `r round(mean(balanced_sum$energy), 3)`. With `by = "variable"`, `summary()` shows where what is left comes from:
+
+```{r by-variable}
+summary(balanced_check, by = "variable")
+```
+
+It is mostly in the category proportions of the `exact` columns. These can't come out exactly equal when a level's count doesn't divide evenly into 10 folds. In a fold of 30 rows, one row more or less of a level moves its SMD by 0.075 to 0.11 for the levels here, so 0.1 is not always within reach.
 
 ## Choosing columns: `balance` and `exact`
 
@@ -144,13 +150,13 @@ Each column type is handled in its own way:
 
 These encodings are used only to make the split. The data in the folds keep their missing values, so your model can handle them its own way, for example with a recipe.
 
-`balance_check()` adds a row with `level` `"(missing)"` for each column with missing values. It gives the SMD of the share of values that are missing, and it counts towards the largest SMD in `summary()`. The other SMDs use the observed values only. The energy distance uses all rows, encoded as above.
+`balance_check()` adds a row with `level` `"(missing)"` for each column with missing values. It gives the SMD of the share of values that are missing. In the summaries, it counts as one more level of its column. The other SMDs use the observed values only. The energy distance uses all rows, encoded as above.
 
 ```{r missing-check}
 na_check <- balance_check(folds_na)
 na_rows <- tibble::as_tibble(na_check)
 head(na_rows[na_rows$level %in% "(missing)", ], 4)
-summary(na_check)
+na_check
 ```
 
 A column with no observed values is an error. A `group` column must not have missing values even with `na = "include"`, because rows with a missing ID could come from one unit or from several. Give them their own IDs, or one shared ID, depending on which is true. For a character ID column `id`:
@@ -254,6 +260,7 @@ by_method <- lapply(methods, function(m) {
   data.frame(
     method = m,
     max_abs_smd = max(s$max_abs_smd),
+    mean_abs_smd = mean(s$mean_abs_smd),
     mean_energy = mean(s$energy)
   )
 })
@@ -263,7 +270,7 @@ shown[-1] <- round(shown[-1], 3)
 shown
 ```
 
-In this run, `r by_method$method[which.min(by_method$max_abs_smd)]` had the smallest `max_abs_smd` (`r round(min(by_method$max_abs_smd), 3)`), and `r by_method$method[which.min(by_method$mean_energy)]` had the smallest `mean_energy` (`r round(min(by_method$mean_energy), 3)`). These come from one run of each method on one data set, so they don't show which method does best in general, and small differences may be noise.
+In this run, the smallest `max_abs_smd` came from `r by_method$method[which.min(by_method$max_abs_smd)]` (`r round(min(by_method$max_abs_smd), 3)`), the smallest `mean_abs_smd` from `r by_method$method[which.min(by_method$mean_abs_smd)]` (`r round(min(by_method$mean_abs_smd), 3)`), and the smallest `mean_energy` from `r by_method$method[which.min(by_method$mean_energy)]` (`r round(min(by_method$mean_energy), 3)`). These come from one run of each method on one data set, so they don't show which method does best in general, and small differences may be noise.
 
 Start with anticlust. On large data, set `options = list(k_neighbours = 20)` or try twinning, then check the balance again. With `k_neighbours = 20`, look at the categorical columns in particular: in one test with 5,000 rows, their largest SMD rose from about 0.005 to about 0.1, while the numeric columns stayed as well balanced. The README lists run times for both. See `?balanced_vfold_cv` for the options of each method.
 
