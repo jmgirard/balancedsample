@@ -100,7 +100,8 @@ With `method = "twinning"`, the data are split into `m` similar parts
 with
 [`twinning::multiplet()`](https://rdrr.io/pkg/twinning/man/multiplet.html),
 and each set gets a whole number of parts. `strategy` 2 needs `m` to be
-a power of 2.
+a power of 2. Strata with fewer than `2 * m` rows (or groups) are split
+at random.
 
 ## Use with tune
 
@@ -110,8 +111,9 @@ turns the split into an `rset` for
 and
 [`tune::fit_resamples()`](https://tune.tidymodels.org/reference/fit_resamples.html).
 [`tune::last_fit()`](https://tune.tidymodels.org/reference/last_fit.html)
-takes the split itself and fits on the training set, or on the training
-and validation sets with `add_validation_set = TRUE`.
+(tune 1.1.2 or later) takes the split itself and fits on the training
+set, or on the training and validation sets with
+`add_validation_set = TRUE`.
 
 If a workflow has a postprocessor that must be trained, tune splits the
 training set again. Through
@@ -146,27 +148,26 @@ split <- balanced_initial_validation_split(
   mtcars,
   prop = c(0.6, 0.2),
   balance = c(mpg, hp, wt),
-  exact = am,
-  method = "rerandomize"
+  exact = am
 )
 split
 #> <Training/Validation/Testing/Total>
 #> <19/7/6/32>
 balance_check(split)
-#> # Balance check: 2 splits, max |SMD| = 0.471, mean energy distance = 0.403
+#> # Balance check: 2 splits, max |SMD| = 0.272, mean energy distance = 0.282
 #> # A tibble: 10 × 5
-#>    id         variable level statistic   value
-#>    <chr>      <chr>    <chr> <chr>       <dbl>
-#>  1 Validation mpg      NA    smd        0.435 
-#>  2 Validation hp       NA    smd       -0.458 
-#>  3 Validation wt       NA    smd       -0.471 
-#>  4 Validation am       NA    smd       -0.272 
-#>  5 Validation NA       NA    energy     0.345 
-#>  6 Testing    mpg      NA    smd       -0.113 
-#>  7 Testing    hp       NA    smd       -0.0810
-#>  8 Testing    wt       NA    smd        0.159 
-#>  9 Testing    am       NA    smd        0.150 
-#> 10 Testing    NA       NA    energy     0.460 
+#>    id         variable level statistic    value
+#>    <chr>      <chr>    <chr> <chr>        <dbl>
+#>  1 Validation mpg      NA    smd        0.00158
+#>  2 Validation hp       NA    smd       -0.105  
+#>  3 Validation wt       NA    smd       -0.0231 
+#>  4 Validation am       NA    smd       -0.272  
+#>  5 Validation NA       NA    energy     0.353  
+#>  6 Testing    mpg      NA    smd        0.0343 
+#>  7 Testing    hp       NA    smd       -0.0188 
+#>  8 Testing    wt       NA    smd        0.124  
+#>  9 Testing    am       NA    smd        0.150  
+#> 10 Testing    NA       NA    energy     0.210  
 rsample::validation_set(split)
 #> # A tibble: 1 × 2
 #>   splits         id        

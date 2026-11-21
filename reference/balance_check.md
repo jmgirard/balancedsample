@@ -22,6 +22,9 @@ balance_check(x, ..., max_n = 2000)
 
 # S3 method for class 'three_way_split'
 balance_check(x, ..., max_n = 2000)
+
+# S3 method for class 'balance_check'
+summary(object, ...)
 ```
 
 ## Arguments
@@ -39,20 +42,38 @@ balance_check(x, ..., max_n = 2000)
 
 - ...:
 
+  For `balance_check()`,
   \<[`tidy-select`](https://tidyselect.r-lib.org/reference/language.html)\>
-  Columns to check. If empty, the `balance` and `exact` columns stored
-  in `x` are used.
+  columns to check. If empty, the `balance` and `exact` columns stored
+  in `x` are used. For
+  [`summary()`](https://rdrr.io/r/base/summary.html), not used and must
+  be empty.
 
 - max_n:
 
   The largest number of rows per set for the energy distance. Larger
   sets are subsampled at random to keep memory use low.
 
+- object:
+
+  A `balance_check` object.
+
 ## Value
 
 A tibble with class `balance_check`. It has the ID columns of `x`, and
 the columns `variable`, `level`, `statistic` (`"smd"` or `"energy"`),
 and `value`. Energy rows have `NA` in `variable` and `level`.
+
+[`summary()`](https://rdrr.io/r/base/summary.html) returns a tibble with
+one row per split. It has the ID columns, `max_abs_smd` (the largest
+absolute SMD in the split), the `variable` and `level` with that SMD
+(the first one if several tie), and `energy`. If the split has no SMD
+that isn't missing, `max_abs_smd`, `variable`, and `level` are `NA`. If
+it has no energy row, `energy` is `NA`. Each split must have its own ID,
+so no ID may have more than one energy row. Only the ID columns that
+`balance_check()` made are used, so columns you add are ignored. If you
+rename or drop an ID column, the columns whose names start with `id` are
+used instead.
 
 ## Details
 
@@ -74,55 +95,51 @@ indicator column per categorical level). It is 0 when the two sets have
 the same distribution, and it also detects differences in spread and
 shape.
 
+Use [`summary()`](https://rdrr.io/r/base/summary.html) on the result to
+get one row per split.
+
 ## Examples
 
 ``` r
 set.seed(1)
-folds <- balanced_vfold_cv(
-  mtcars, v = 4, balance = c(mpg, hp, wt), method = "rerandomize"
-)
+folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
 balance_check(folds)
-#> # Balance check: 4 splits, max |SMD| = 0.508, mean energy distance = 0.313
+#> # Balance check: 4 splits, max |SMD| = 0.138, mean energy distance = 0.133
 #> # A tibble: 16 × 5
-#>    id    variable level statistic  value
-#>    <chr> <chr>    <chr> <chr>      <dbl>
-#>  1 Fold1 mpg      NA    smd       -0.242
-#>  2 Fold1 hp       NA    smd        0.244
-#>  3 Fold1 wt       NA    smd        0.317
-#>  4 Fold1 NA       NA    energy     0.220
-#>  5 Fold2 mpg      NA    smd        0.223
-#>  6 Fold2 hp       NA    smd       -0.168
-#>  7 Fold2 wt       NA    smd       -0.380
-#>  8 Fold2 NA       NA    energy     0.164
-#>  9 Fold3 mpg      NA    smd        0.425
-#> 10 Fold3 hp       NA    smd       -0.154
-#> 11 Fold3 wt       NA    smd       -0.332
-#> 12 Fold3 NA       NA    energy     0.496
-#> 13 Fold4 mpg      NA    smd       -0.508
-#> 14 Fold4 hp       NA    smd        0.118
-#> 15 Fold4 wt       NA    smd        0.424
-#> 16 Fold4 NA       NA    energy     0.371
+#>    id    variable level statistic     value
+#>    <chr> <chr>    <chr> <chr>         <dbl>
+#>  1 Fold1 mpg      NA    smd       -0.0998  
+#>  2 Fold1 hp       NA    smd        0.109   
+#>  3 Fold1 wt       NA    smd       -0.138   
+#>  4 Fold1 NA       NA    energy     0.212   
+#>  5 Fold2 mpg      NA    smd        0.0759  
+#>  6 Fold2 hp       NA    smd        0.00594 
+#>  7 Fold2 wt       NA    smd        0.0691  
+#>  8 Fold2 NA       NA    energy     0.118   
+#>  9 Fold3 mpg      NA    smd        0.0154  
+#> 10 Fold3 hp       NA    smd       -0.0498  
+#> 11 Fold3 wt       NA    smd        0.0603  
+#> 12 Fold3 NA       NA    energy     0.0961  
+#> 13 Fold4 mpg      NA    smd        0.00471 
+#> 14 Fold4 hp       NA    smd       -0.0734  
+#> 15 Fold4 wt       NA    smd        0.000164
+#> 16 Fold4 NA       NA    energy     0.105   
+summary(balance_check(folds))
+#> # A tibble: 4 × 5
+#>   id    max_abs_smd variable level energy
+#>   <chr>       <dbl> <chr>    <chr>  <dbl>
+#> 1 Fold1      0.138  wt       NA    0.212 
+#> 2 Fold2      0.0759 mpg      NA    0.118 
+#> 3 Fold3      0.0603 wt       NA    0.0961
+#> 4 Fold4      0.0734 hp       NA    0.105 
 
 # Compare with ordinary folds
-balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt)
-#> # Balance check: 4 splits, max |SMD| = 0.461, mean energy distance = 0.224
-#> # A tibble: 16 × 5
-#>    id    variable level statistic   value
-#>    <chr> <chr>    <chr> <chr>       <dbl>
-#>  1 Fold1 mpg      NA    smd        0.437 
-#>  2 Fold1 hp       NA    smd       -0.339 
-#>  3 Fold1 wt       NA    smd       -0.461 
-#>  4 Fold1 NA       NA    energy     0.345 
-#>  5 Fold2 mpg      NA    smd       -0.232 
-#>  6 Fold2 hp       NA    smd        0.236 
-#>  7 Fold2 wt       NA    smd        0.0354
-#>  8 Fold2 NA       NA    energy     0.191 
-#>  9 Fold3 mpg      NA    smd        0.0839
-#> 10 Fold3 hp       NA    smd       -0.0976
-#> 11 Fold3 wt       NA    smd        0.0562
-#> 12 Fold3 NA       NA    energy     0.0758
-#> 13 Fold4 mpg      NA    smd       -0.272 
-#> 14 Fold4 hp       NA    smd        0.184 
-#> 15 Fold4 wt       NA    smd        0.301 
-#> 16 Fold4 NA       NA    energy     0.282 
+summary(balance_check(rsample::vfold_cv(mtcars, v = 4), mpg, hp, wt))
+#> # A tibble: 4 × 5
+#>   id    max_abs_smd variable level energy
+#>   <chr>       <dbl> <chr>    <chr>  <dbl>
+#> 1 Fold1       0.518 hp       NA     0.401
+#> 2 Fold2       0.904 hp       NA     0.687
+#> 3 Fold3       0.510 wt       NA     0.291
+#> 4 Fold4       0.232 hp       NA     0.333
 ```

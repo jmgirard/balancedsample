@@ -34,12 +34,10 @@ A ggplot object.
 ## Examples
 
 ``` r
-if (rlang::is_installed("ggplot2")) {
-  library(ggplot2)
-  set.seed(1)
-  folds <- balanced_vfold_cv(
-    mtcars, v = 4, balance = c(mpg, hp, wt), method = "rerandomize"
-  )
-  autoplot(balance_check(folds))
-}
+library(ggplot2)
+set.seed(1)
+folds <- balanced_vfold_cv(mtcars, v = 4, balance = c(mpg, hp, wt))
+autoplot(balance_check(folds))
+
+autoplot(balance_check(folds), type = "energy")
 ```
