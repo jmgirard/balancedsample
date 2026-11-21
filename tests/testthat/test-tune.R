@@ -321,6 +321,33 @@ test_that("a small-strata warning made an error doesn't fail the split", {
   # The error is the warning itself, not a failed calibration split.
   expect_error(
     rsample::internal_calibration_split(outer, list()),
-    "converted from warning.*missing from at least one set"
+    "^\\(converted from warning\\) 16 of 16 `exact` strata"
+  )
+
+  # The same for other warnings, such as rerandomization's.
+  withr::local_options(warn = 0)
+  set.seed(5)
+  outer <- balanced_initial_split(
+    mtcars,
+    balance = c(mpg, hp, wt),
+    method = "rerandomize",
+    options = list(p_accept = 0.05, max_draws = 20L)
+  )
+  expect_warning(
+    cal <- rsample::internal_calibration_split(outer, list()),
+    "No draw met"
+  )
+  expect_equal(nrow(rsample::calibration(cal)), 6)
+  withr::local_options(warn = 2)
+  set.seed(5)
+  outer <- balanced_initial_split(
+    mtcars,
+    balance = c(mpg, hp, wt),
+    method = "rerandomize",
+    options = list(p_accept = 0.05, max_draws = 20L)
+  )
+  expect_error(
+    rsample::internal_calibration_split(outer, list()),
+    "^\\(converted from warning\\) No draw met"
   )
 })

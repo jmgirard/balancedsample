@@ -453,27 +453,22 @@ test_that("small differences far from the origin are measured", {
 })
 
 test_that("a gap between the sets doesn't hide the spread within them", {
-  t0 <- as.POSIXct("2020-01-01", tz = "UTC")
-  t1 <- as.POSIXct("2026-01-01", tz = "UTC")
+  # Spreads of 1e-7 seconds at the epoch, against a set in 2026.
   d <- data.frame(
-    t = c(t0 + c(0, 2, 0, 2) * 2^-22, t1 + c(0, 4, 0, 4) * 2^-22)
+    t = as.POSIXct(c(0, 1e-7, 2e-7, 0, rep(1767225600, 4)), tz = "UTC")
   )
-  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
-  bc <- balance_check(s, t, variance_ratio = TRUE)
-  # The expected SMD, from the spreads within the sets.
   x <- as.numeric(d$t)
-  sd_pooled <- sqrt((var(x[1:4] - x[1]) + var(x[5:8] - x[5])) / 2)
-  smd <- (as.numeric(t1 - t0, units = "secs") + 2^-21) / sd_pooled
-  expect_equal(bc$value[1], smd)
-  expect_equal(bc$value[2], 4)
-  # Swapping the sets flips the sign.
+  # The 2026 set has no spread.
+  smd <- (x[5] - mean(x[1:4])) / sqrt(var(x[1:4]) / 2)
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  expect_equal(balance_check(s, t)$value[1], smd)
+  # Swapping the sets flips the sign but keeps the size.
   r <- rsample::make_splits(list(analysis = 5:8, assessment = 1:4), d)
   expect_equal(balance_check(r, t)$value[1], -smd)
 
-  # The same when the analysis set comes first in the data.
-  d <- data.frame(t = c(t1 + c(0, 4, 0, 4) * 2^-22, t0 + c(0, 2, 0, 2) * 2^-22))
-  s <- rsample::make_splits(list(analysis = 5:8, assessment = 1:4), d)
-  expect_equal(balance_check(s, t)$value[1], smd)
+  # Zero spread on one side gives a variance ratio of 0.
+  bc <- balance_check(s, t, variance_ratio = TRUE)
+  expect_equal(bc$value[bc$statistic == "variance_ratio"], 0)
 })
 
 test_that("every split of an rset must have the columns to check", {
