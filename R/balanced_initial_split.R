@@ -44,6 +44,7 @@ balanced_initial_split <- function(
   balance = NULL,
   exact = NULL,
   group = NULL,
+  na = "error",
   method = "anticlust",
   options = list(),
   ...
@@ -72,6 +73,7 @@ balanced_initial_split <- function(
     rlang::enquo(balance),
     rlang::enquo(exact),
     rlang::enquo(group),
+    na = na,
     call = call
   )
   if (!is.null(prep$group) && nlevels(prep$group) < 2) {
@@ -107,6 +109,7 @@ balanced_initial_split <- function(
     balance = prep$balance_names,
     exact = prep$exact_names,
     group = prep$group_name,
+    na = prep$na,
     method = method,
     options = options
   )
