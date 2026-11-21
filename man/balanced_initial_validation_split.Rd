@@ -40,7 +40,9 @@ numbers of groups, not rows. \code{exact} does the job of \code{strata} in
 rsample, but it takes several columns and its counts are exact. Numeric
 columns with whole-number values are treated as categories. Put
 continuous columns in \code{balance}, or use \code{\link[=cut]{cut()}} to make a factor if you
-need exact counts within ranges.}
+need exact counts within ranges. A stratum with too few rows (or groups)
+to expect one in the smallest set is missing from some sets. If more
+than half of the strata are like this, you get a warning.}
 
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}

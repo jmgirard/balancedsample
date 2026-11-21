@@ -57,7 +57,11 @@ test_that("exact strata follow the actual fold sizes", {
   d <- data.frame(s = factor(rep(letters[1:3], c(2, 5, 3))))
   for (seed in 1:20) {
     set.seed(seed)
-    folds <- balanced_vfold_cv(d, v = 4, exact = s, method = "interaction")
+    # Two of the three strata have fewer rows than folds, on purpose.
+    expect_warning(
+      folds <- balanced_vfold_cv(d, v = 4, exact = s, method = "interaction"),
+      class = "balancesample_sparse_strata"
+    )
     expect_true(shares_respected(folds, d$s))
     expect_true(strata_exact(folds, d$s))
   }
@@ -794,5 +798,37 @@ test_that("option names must not be missing", {
     ),
     "unique names",
     class = "rlang_error"
+  )
+})
+
+test_that("most strata being too small gives one warning", {
+  set.seed(1)
+  d <- data.frame(x = stats::rnorm(200), age = sample(18:90, 200, TRUE))
+  expect_snapshot(f <- balanced_vfold_cv(d, v = 10, balance = x, exact = age))
+  # One warning even with repeats.
+  n_warn <- 0
+  withCallingHandlers(
+    balanced_vfold_cv(d, v = 10, repeats = 2, balance = x, exact = age),
+    warning = function(cnd) {
+      n_warn <<- n_warn + 1
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_warn, 1)
+  # The smallest set counts: 10 rows per stratum is enough for 10 folds.
+  d$s <- rep(1:20, each = 10)
+  expect_no_warning(balanced_vfold_cv(d, v = 10, balance = x, exact = s))
+  expect_warning(
+    balanced_initial_split(d, prop = 0.95, balance = x, exact = s),
+    class = "balancesample_sparse_strata"
+  )
+  # With groups, strata are counted in groups.
+  d$id <- rep(1:40, each = 5)
+  d$site <- d$id %% 2
+  expect_no_warning(balanced_vfold_cv(d, v = 10, balance = x, exact = site, group = id))
+  d$site <- d$id %% 8
+  expect_warning(
+    balanced_vfold_cv(d, v = 10, balance = x, exact = site, group = id),
+    class = "balancesample_sparse_strata"
   )
 })

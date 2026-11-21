@@ -117,6 +117,7 @@ prepare_balance_data <- function(
     group = group_fct,
     balance_names = names(bal_pos),
     exact_names = names(exa_pos),
+    exact_numeric = vapply(data[exa_pos], is.numeric, logical(1)),
     group_name = names(grp_pos)
   )
 }
@@ -253,4 +254,44 @@ assign_grouped <- function(
 # Rounding error for values up to `size` in absolute value.
 near_zero <- function(size) {
   64 * .Machine$double.eps * size
+}
+
+# Warn when most `exact` strata are too small to have a unit in every set,
+# that is, when their share of the smallest set is under one row (or group).
+# Proportions are used rather than set sizes, so the check doesn't use the
+# random number stream.
+warn_sparse_strata <- function(prep, props, call = rlang::caller_env()) {
+  if (is.null(prep$exact)) {
+    return(invisible())
+  }
+  unit <- "rows"
+  strata <- prep$exact
+  if (!is.null(prep$group)) {
+    unit <- "groups"
+    pairs <- unique(data.frame(g = prep$group, s = prep$exact))
+    # A group with several levels is an error later on.
+    if (anyDuplicated(pairs$g)) {
+      return(invisible())
+    }
+    strata <- pairs$s
+  }
+  m <- tabulate(as.integer(droplevels(strata)))
+  share <- min(props) / sum(props)
+  short <- sum(m * share < 1)
+  if (short <= length(m) / 2) {
+    return(invisible())
+  }
+  numeric_exact <- prep$exact_names[prep$exact_numeric]
+  cli::cli_warn(
+    c(
+      "{short} of {length(m)} {.arg exact} strata have too few {unit} for every set.",
+      i = "A stratum needs at least {format(signif(1 / share, 3))} {unit} to expect one in the smallest set. Smaller strata are missing from some sets.",
+      i = if (length(numeric_exact) > 0) {
+        "Whole-number columns in {.arg exact} are categories, and each value is a level: {.field {numeric_exact}}. Put continuous columns in {.arg balance}, or use {.fn cut}."
+      }
+    ),
+    class = "balancesample_sparse_strata",
+    call = call
+  )
+  invisible()
 }
