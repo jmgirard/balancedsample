@@ -605,6 +605,17 @@ test_that("group means that are equal up to rounding are dropped", {
   }
 })
 
+test_that("derived anticlust features that are constant are dropped", {
+  # x * (1 / x) is constant, up to rounding, after standardizing.
+  x <- c(1, 2, 4, 5, 8, 10, -1, -2, -4, -5, -8, -10)
+  features <- kplus_features(
+    build_balance_matrix(data.frame(x = x, y = 1 / x)),
+    moments = 2,
+    covariances = TRUE
+  )
+  expect_equal(ncol(features), 4)
+})
+
 test_that("near-constant columns are judged relative to their size", {
   x <- c(-2, -1, 1, 2, -1.5, 0.5)
   expect_equal(ncol(build_balance_matrix(data.frame(x = x * 1e-14))), 1)

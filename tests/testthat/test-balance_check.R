@@ -451,3 +451,29 @@ test_that("small differences far from the origin are measured", {
   expect_equal(bc$value, balance_check(s0, t, variance_ratio = TRUE)$value)
   expect_equal(ncol(build_balance_matrix(d)), 1)
 })
+
+test_that("a gap between the sets doesn't hide the spread within them", {
+  t0 <- as.POSIXct("2020-01-01", tz = "UTC")
+  t1 <- as.POSIXct("2026-01-01", tz = "UTC")
+  d <- data.frame(
+    t = c(t0 + c(0, 2, 0, 2) * 2^-22, t1 + c(0, 4, 0, 4) * 2^-22)
+  )
+  s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  bc <- balance_check(s, t, variance_ratio = TRUE)
+  expect_true(is.finite(bc$value[1]))
+  expect_gt(bc$value[1], 1e14)
+  expect_equal(bc$value[2], 4)
+})
+
+test_that("every split of an rset must have the columns to check", {
+  a <- rsample::make_splits(
+    list(analysis = 1:4, assessment = 5:8),
+    data.frame(x = 1:8, y = 1:8)
+  )
+  b <- rsample::make_splits(
+    list(analysis = 1:4, assessment = 5:8),
+    data.frame(y = 1:8)
+  )
+  r <- rsample::manual_rset(list(a, b), c("A", "B"))
+  expect_snapshot(balance_check(r, x), error = TRUE)
+})

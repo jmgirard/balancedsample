@@ -66,3 +66,12 @@
       Error in `balance_check()`:
       ! `variance_ratio` must be `TRUE` or `FALSE`.
 
+# every split of an rset must have the columns to check
+
+    Code
+      balance_check(r, x)
+    Condition
+      Error in `balance_check()`:
+      ! Every split of `x` must have the columns to check.
+      x Split 2 has no x.
+

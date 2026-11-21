@@ -280,6 +280,8 @@ near_zero <- function(size) {
 # one set of the assignment `labels`. Strata are counted in groups with
 # `group`. A stratum with at least n / (size of the smallest set) units has a
 # share of one or more in every set, so the exact counts put it in every set.
+# Smaller strata can be in every set too, so the message gives this count as
+# enough, not as needed.
 warn_sparse_strata <- function(prep, labels, k, call = rlang::caller_env()) {
   if (is.null(prep$exact)) {
     return(invisible())
@@ -302,7 +304,7 @@ warn_sparse_strata <- function(prep, labels, k, call = rlang::caller_env()) {
   cli::cli_warn(
     c(
       "{short} of {length(n_sets)} {.arg exact} strata are missing from at least one set.",
-      i = "Only strata with at least {needed} {unit} are sure to be in every set.",
+      i = "A stratum with at least {needed} {unit} is in every set.",
       i = if (length(numeric_exact) > 0) {
         "Whole-number columns in {.arg exact} are categories, and each value is a level: {.field {numeric_exact}}. Put continuous columns in {.arg balance}, or use {.fn cut}."
       }
