@@ -30,8 +30,9 @@
 #' plot shows these values at the edge of the panel.
 #'
 #' Stored `exact` columns with whole numbers are treated as categories, as
-#' the split functions treat them, so they get one SMD per level. Whole-number
-#' columns that you name yourself, or that were not in `exact`, are numeric.
+#' the split functions treat them, so they get one SMD per level and no
+#' variance ratio. This holds whether you name them or not. Other
+#' whole-number columns are numeric.
 #'
 #' With `variance_ratio = TRUE`, each numeric variable also gets the variance
 #' of the assessment set divided by the variance of the analysis set. It is 1
@@ -108,14 +109,15 @@ balance_check.rset <- function(
   if (nrow(x) == 0) {
     cli::cli_abort("{.arg x} has no splits.")
   }
-  data <- x$splits[[1]]$data
-  cols <- check_columns(data, x, ...)
-  data <- exact_as_factors(data, x, cols)
+  cols <- check_columns(x$splits[[1]]$data, x, ...)
   id_cols <- grep("^id", names(x), value = TRUE)
   ids <- tibble::as_tibble(as.data.frame(x)[id_cols])
 
   res <- lapply(seq_len(nrow(x)), function(i) {
-    out <- split_balance(x$splits[[i]], cols, max_n, data, variance_ratio)
+    # Splits of a manual_rset() can have different data.
+    split <- x$splits[[i]]
+    data <- exact_as_factors(split$data, x, cols)
+    out <- split_balance(split, cols, max_n, data, variance_ratio)
     id_rows <- ids[rep(i, nrow(out)), , drop = FALSE]
     cbind(id_rows, out)
   })
@@ -295,6 +297,14 @@ smd_value <- function(a, b, binary = FALSE) {
   if (length(a) == 0 || length(b) == 0) {
     return(NA_real_)
   }
+  # Measure from an observed value, so that a large origin (such as a
+  # date-time in seconds) doesn't swamp small differences. Proportions need
+  # their own origin.
+  if (!binary) {
+    ref <- c(a, b)[1]
+    a <- a - ref
+    b <- b - ref
+  }
   diff <- mean(a) - mean(b)
   if (binary) {
     pa <- mean(a)
@@ -324,6 +334,9 @@ variance_ratio_value <- function(a, b) {
   if (length(a) < 2 || length(b) < 2) {
     return(NA_real_)
   }
+  ref <- a[1]
+  a <- a - ref
+  b <- b - ref
   va <- stats::var(a)
   vb <- stats::var(b)
   tol <- near_zero(max(abs(c(a, b))))^2

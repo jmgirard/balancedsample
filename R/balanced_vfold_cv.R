@@ -8,8 +8,8 @@
 #' @param v The number of folds.
 #' @param repeats The number of times to repeat the V-fold partitioning.
 #' @param balance <[`tidy-select`][tidyselect::language]> Columns to balance
-#'   across the sets. Numeric columns are standardized. So are date,
-#'   date-time, and difftime columns, as numbers of days or seconds. Factor,
+#'   across the sets. Numeric columns are standardized. So are `Date`,
+#'   `POSIXct`, and `difftime` columns, as numbers of days or seconds. Factor,
 #'   character, and logical columns become one indicator column per level.
 #' @param exact <[`tidy-select`][tidyselect::language]> Categorical columns to
 #'   stratify exactly. Each combination of levels is one stratum. In each
@@ -21,9 +21,10 @@
 #'   rsample, but it takes several columns and its counts are exact. Numeric
 #'   columns with whole-number values are treated as categories. Put
 #'   continuous columns in `balance`, or use [cut()] to make a factor if you
-#'   need exact counts within ranges. A stratum with too few rows (or groups)
-#'   to expect one in the smallest set is missing from some sets. If more
-#'   than half of the strata are like this, you get a warning.
+#'   need exact counts within ranges. A stratum whose share of the smallest
+#'   set is under one row (or group) can be missing from some sets. If more
+#'   than half of the strata are missing from at least one set, you get a
+#'   warning.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
 #' @param method The balancing method: `"anticlust"`, `"twinning"`,
@@ -73,10 +74,9 @@
 #'   strata become sparse. Options are `n_bins` (default 4) and `pool`
 #'   (default 0.1): cells with less than this fraction of the rows are pooled.
 #'
-#' The method balances the columns left after standardizing: constant and
-#' nearly constant columns (standard deviation within rounding error of zero,
-#' relative to the largest absolute value) are dropped, and with `group`, so
-#' are columns whose group means are all equal (see Groups).
+#' The method balances the columns left after standardizing: constant columns
+#' are dropped, and with `group`, so are columns whose group means are all
+#' equal up to rounding error (see Groups).
 #' If none are left, for example with only `exact` columns and no `group`, the
 #' method doesn't run and the sets are drawn at random, within the `exact`
 #' strata if there are any. The limits the method itself checks, such as
@@ -189,10 +189,12 @@ balanced_vfold_cv <- function(
   }
 
   props <- rep(1 / v, v)
-  warn_sparse_strata(prep, props, call = call)
   splits <- vector("list", v * repeats)
   for (r in seq_len(repeats)) {
     a <- assign_balanced(prep, props, entry, options, call = call)
+    if (r == 1) {
+      warn_sparse_strata(prep, a, v, call = call)
+    }
     for (k in seq_len(v)) {
       splits[[(r - 1) * v + k]] <- rsample::make_splits(
         list(analysis = which(a != k), assessment = which(a == k)),

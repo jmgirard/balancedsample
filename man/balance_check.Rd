@@ -73,8 +73,9 @@ have zero variance but different means, the SMD is \code{Inf} or \code{-Inf}; th
 plot shows these values at the edge of the panel.
 
 Stored \code{exact} columns with whole numbers are treated as categories, as
-the split functions treat them, so they get one SMD per level. Whole-number
-columns that you name yourself, or that were not in \code{exact}, are numeric.
+the split functions treat them, so they get one SMD per level and no
+variance ratio. This holds whether you name them or not. Other
+whole-number columns are numeric.
 
 With \code{variance_ratio = TRUE}, each numeric variable also gets the variance
 of the assessment set divided by the variance of the analysis set. It is 1

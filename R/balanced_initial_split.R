@@ -79,7 +79,6 @@ balanced_initial_split <- function(
   }
 
   props <- c(prop, 1 - prop)
-  warn_sparse_strata(prep, props, call = call)
   method_options <- options
   if (method == "twinning") {
     method_options$parts <- twin_split_parts(prop)
@@ -96,6 +95,7 @@ balanced_initial_split <- function(
     props <- method_options$parts / sum(method_options$parts)
   }
   a <- assign_balanced(prep, props, entry, method_options, call = call)
+  warn_sparse_strata(prep, a, length(props), call = call)
   res <- rsample::make_splits(
     list(analysis = which(a == 1L), assessment = which(a == 2L)),
     data = data,

@@ -104,7 +104,6 @@ balanced_initial_validation_split <- function(
   }
 
   props <- c(prop, 1 - sum(prop))
-  warn_sparse_strata(prep, props, call = call)
   method_options <- options
   if (method == "twinning") {
     method_options$parts <- twin_parts(props)
@@ -121,6 +120,7 @@ balanced_initial_validation_split <- function(
     props <- method_options$parts / sum(method_options$parts)
   }
   a <- assign_balanced(prep, props, entry, method_options, call = call)
+  warn_sparse_strata(prep, a, length(props), call = call)
   res <- list(
     data = data,
     train_id = which(a == 1L),
