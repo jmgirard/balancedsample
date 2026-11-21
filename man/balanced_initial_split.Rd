@@ -10,9 +10,9 @@ balanced_initial_split(
   balance = NULL,
   exact = NULL,
   group = NULL,
-  na = "error",
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 )
 }
@@ -49,15 +49,15 @@ warning.}
 \item{group}{<\code{\link[tidyselect:language]{tidy-select}}> One column with group
 IDs. All rows of a group go to the same set. See Details.}
 
-\item{na}{What to do with missing values in the \code{balance} and \code{exact}
-columns. \code{"error"} (the default) stops with an error. \code{"include"}
-balances on which values are missing; see Missing values. The \code{group}
-column must not have missing values either way.}
-
 \item{method}{The balancing method: \code{"anticlust"}, \code{"twinning"},
 \code{"rerandomize"}, or \code{"interaction"}. See Details.}
 
 \item{options}{A named list of options for the method. See Details.}
+
+\item{na}{What to do with missing values in the \code{balance} and \code{exact}
+columns. \code{"error"} (the default) stops with an error. \code{"include"}
+balances on which values are missing; see Missing values. The \code{group}
+column must not have missing values either way.}
 
 \item{...}{Not used. Must be empty.}
 }
