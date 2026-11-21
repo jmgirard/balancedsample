@@ -262,3 +262,13 @@
       Caused by error:
       ! `pool` must be a number from 0 up to (not including) 1.
 
+# most strata being too small gives one warning
+
+    Code
+      f <- balanced_vfold_cv(d, v = 10, balance = x, exact = age)
+    Condition
+      Warning in `balanced_vfold_cv()`:
+      68 of 68 `exact` strata have too few rows for every set.
+      i A stratum needs at least 10 rows to expect one in the smallest set. Smaller strata are missing from some sets.
+      i Whole-number columns in `exact` are categories, and each value is a level: age. Put continuous columns in `balance`, or use `cut()`.
+

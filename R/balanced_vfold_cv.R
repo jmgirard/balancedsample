@@ -21,7 +21,9 @@
 #'   rsample, but it takes several columns and its counts are exact. Numeric
 #'   columns with whole-number values are treated as categories. Put
 #'   continuous columns in `balance`, or use [cut()] to make a factor if you
-#'   need exact counts within ranges.
+#'   need exact counts within ranges. A stratum with too few rows (or groups)
+#'   to expect one in the smallest set is missing from some sets. If more
+#'   than half of the strata are like this, you get a warning.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
 #' @param method The balancing method: `"anticlust"`, `"twinning"`,
@@ -185,6 +187,7 @@ balanced_vfold_cv <- function(
   }
 
   props <- rep(1 / v, v)
+  warn_sparse_strata(prep, props, call = call)
   splits <- vector("list", v * repeats)
   for (r in seq_len(repeats)) {
     a <- assign_balanced(prep, props, entry, options, call = call)

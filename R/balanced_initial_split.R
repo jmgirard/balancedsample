@@ -79,6 +79,7 @@ balanced_initial_split <- function(
   }
 
   props <- c(prop, 1 - prop)
+  warn_sparse_strata(prep, props, call = call)
   method_options <- options
   if (method == "twinning") {
     method_options$parts <- twin_split_parts(prop)

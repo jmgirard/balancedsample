@@ -104,6 +104,7 @@ balanced_initial_validation_split <- function(
   }
 
   props <- c(prop, 1 - sum(prop))
+  warn_sparse_strata(prep, props, call = call)
   method_options <- options
   if (method == "twinning") {
     method_options$parts <- twin_parts(props)
