@@ -220,11 +220,13 @@ stored_args <- function(x) {
   attr(x, "val_att") %||% attributes(x)
 }
 
-# The split functions treat whole-number `exact` columns as categories, so
-# the check does too, with one SMD per level.
+# The split functions treat whole-number and logical `exact` columns as
+# categories, so the check does too, with one SMD per level. The energy
+# distance then gives missing values a level, as the split does, instead of
+# a fill and an indicator.
 exact_as_factors <- function(data, x, cols) {
   for (nm in intersect(cols, stored_args(x)$exact)) {
-    if (is.numeric(data[[nm]])) {
+    if (is.numeric(data[[nm]]) || is.logical(data[[nm]])) {
       data[[nm]] <- factor(data[[nm]])
     }
   }

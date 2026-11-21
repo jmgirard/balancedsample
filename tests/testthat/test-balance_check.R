@@ -544,3 +544,23 @@ test_that("every split of an rset must have the columns to check", {
   r <- rsample::manual_rset(list(a, b), c("A", "B"))
   expect_snapshot(balance_check(r, x), error = TRUE)
 })
+
+test_that("logical exact columns are checked as categories", {
+  set.seed(3)
+  d <- data.frame(
+    flag = rep(c(FALSE, TRUE, NA), c(11, 12, 10)),
+    x = rnorm(33)
+  )
+  split <- balanced_initial_split(d, balance = x, exact = flag, na = "include")
+  bc <- balance_check(split)
+  expect_equal(
+    bc$level[bc$variable %in% "flag"],
+    c("FALSE", "TRUE", "(missing)")
+  )
+  as_factor <- rsample::make_splits(
+    list(analysis = split$in_id, assessment = rsample::complement(split)),
+    transform(d, flag = factor(flag))
+  )
+  energy <- function(bc) bc$value[bc$statistic == "energy"]
+  expect_equal(energy(bc), energy(balance_check(as_factor, x, flag)))
+})

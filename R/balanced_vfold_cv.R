@@ -27,13 +27,13 @@
 #'   warning.
 #' @param group <[`tidy-select`][tidyselect::language]> One column with group
 #'   IDs. All rows of a group go to the same set. See Details.
+#' @param method The balancing method: `"anticlust"`, `"twinning"`,
+#'   `"rerandomize"`, or `"interaction"`. See Details.
+#' @param options A named list of options for the method. See Details.
 #' @param na What to do with missing values in the `balance` and `exact`
 #'   columns. `"error"` (the default) stops with an error. `"include"`
 #'   balances on which values are missing; see Missing values. The `group`
 #'   column must not have missing values either way.
-#' @param method The balancing method: `"anticlust"`, `"twinning"`,
-#'   `"rerandomize"`, or `"interaction"`. See Details.
-#' @param options A named list of options for the method. See Details.
 #' @param ... Not used. Must be empty.
 #'
 #' @details
@@ -198,9 +198,9 @@ balanced_vfold_cv <- function(
   balance = NULL,
   exact = NULL,
   group = NULL,
-  na = "error",
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 ) {
   call <- rlang::current_env()

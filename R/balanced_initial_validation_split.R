@@ -69,9 +69,9 @@ balanced_initial_validation_split <- function(
   balance = NULL,
   exact = NULL,
   group = NULL,
-  na = "error",
   method = "anticlust",
   options = list(),
+  na = "error",
   ...
 ) {
   call <- rlang::current_env()
