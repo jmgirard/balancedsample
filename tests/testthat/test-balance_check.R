@@ -339,3 +339,16 @@ test_that("whole-number exact columns are checked as categories", {
   bc <- balance_check(stored)
   expect_equal(bc$value[bc$variable %in% "code" & bc$level == "2"], Inf)
 })
+
+test_that("the SMD plot of a three-way split tells the sets apart", {
+  skip_if_not_installed("ggplot2")
+  d <- sim_data()
+  set.seed(3)
+  s <- balanced_initial_validation_split(d, balance = c(x1, x2))
+  built <- ggplot2::ggplot_build(ggplot2::autoplot(balance_check(s)))
+  points <- built$data[[length(built$data)]]
+  expect_equal(length(unique(points$shape)), 2)
+  folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, x2))
+  built <- ggplot2::ggplot_build(ggplot2::autoplot(balance_check(folds)))
+  expect_equal(length(unique(built$data[[length(built$data)]]$shape)), 1)
+})
