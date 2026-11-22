@@ -1,13 +1,13 @@
 # Changelog
 
-## balancesample 0.1.0
+## balancedsample 0.1.0
 
 - First CRAN release.
 
-- [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md),
-  [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md),
+- [`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md),
+  [`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md),
   and
-  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.md)
   make v-fold cross-validation folds, training/testing splits, and
   training/validation/testing splits that are balanced on several
   variables at once. The three sets of a three-way split are balanced in
@@ -35,17 +35,17 @@
   `"rerandomize"` (rerandomization on the Mahalanobis imbalance), and
   `"interaction"` (random stratification on crossed quantile bins, as a
   baseline).
-  [`?balanced_vfold_cv`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
+  [`?balanced_vfold_cv`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md)
   describes each one and its options.
 
 - With `method = "twinning"`, only some proportions are allowed (for
   example, `2 / 3` but not `0.67`), and small strata are split at
   random. See
-  [`?balanced_initial_split`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
+  [`?balanced_initial_split`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md)
   and
-  [`?balanced_initial_validation_split`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md).
+  [`?balanced_initial_validation_split`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.md).
 
-- [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+- [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
   reports standardized mean differences and the energy distance of
   balanced splits and of rsample’s own splits and resamples. For objects
   that don’t store `balance` or `exact` columns, such as those from
@@ -76,7 +76,7 @@
   To tune on the validation set of a balanced three-way split, pass it
   to
   [`rsample::validation_set()`](https://rsample.tidymodels.org/reference/validation_set.html)
-  first. To tune on balanced folds, attach balancesample with
+  first. To tune on balanced folds, attach balancedsample with
   [`library()`](https://rdrr.io/r/base/library.html): rsample finds the
   function that made the folds by its name
   ([tidymodels/rsample#619](https://github.com/tidymodels/rsample/issues/619)).

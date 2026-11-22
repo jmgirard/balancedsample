@@ -32,11 +32,11 @@ summary(object, ..., threshold = 0.1, by = c("split", "variable"))
 - x:
 
   An `rset` (for example from
-  [`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)),
+  [`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md)),
   an `rsplit` (for example from
-  [`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)),
+  [`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md)),
   or a three-way split (from
-  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.md)
+  [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.md)
   or
   [`rsample::initial_validation_split()`](https://rsample.tidymodels.org/reference/initial_validation_split.html)).
 

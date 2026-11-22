@@ -1,13 +1,13 @@
-# balancesample
+# balancedsample
 
-balancesample makes training/testing splits and cross-validation folds
+balancedsample makes training/testing splits and cross-validation folds
 that are similar on several variables at once. The results are
 [rsample](https://rsample.tidymodels.org) objects, so you can use them
 with tune and the rest of tidymodels.
 
 rsample can stratify on one variable. If you need folds that match on
 age, income, and diagnosis together, rsample cannot do that.
-balancesample fills this gap with four methods:
+balancedsample fills this gap with four methods:
 
 | Method | What it does | Package |
 |----|----|----|
@@ -17,7 +17,7 @@ balancesample fills this gap with four methods:
 | `"interaction"` | Crosses quantile bins of all variables and stratifies at random. This is a baseline. | none |
 
 twinning is a suggested package. If you select `method = "twinning"` and
-it is not installed, balancesample asks you to install it.
+it is not installed, balancedsample asks you to install it.
 
 ## Installation
 
@@ -26,7 +26,7 @@ Install the development version from GitHub:
 ``` r
 
 # install.packages("pak")
-pak::pak("jmgirard/balancesample")
+pak::pak("jmgirard/balancedsample")
 ```
 
 ## Example
@@ -38,7 +38,7 @@ outcome.
 
 ``` r
 
-library(balancesample)
+library(balancedsample)
 
 head(sim_patients)
 #>         age    income diagnosis site  outcome
@@ -50,7 +50,7 @@ head(sim_patients)
 #> 6 56.925594 22235.349      mild    B 8.176950
 ```
 
-[`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md)
+[`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md)
 makes folds that are similar on the columns in `balance`. Categorical
 columns in `exact` are stratified exactly: in each fold, the count of
 each level combination is as close to its proportional share as whole
@@ -78,7 +78,7 @@ folds
 #> 5 <split [240/60]> Fold5
 ```
 
-[`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 compares the held-out rows of each fold with the other rows. The printed
 table gives the largest and the mean absolute standardized mean
 difference (SMD) over the variables, how many variables are over 0.1,
@@ -118,15 +118,15 @@ balance_check(random_folds, age, income, diagnosis, site)
 #> # 45 rows.
 ```
 
-The folds work with tune. Attach balancesample with
+The folds work with tune. Attach balancedsample with
 [`library()`](https://rdrr.io/r/base/library.html) first, because tune
 finds the function that made the folds by its name.
 
 ## Learn more
 
 The [Get started
-article](https://jmgirard.github.io/balancesample/articles/balancesample.html)
-([`vignette("balancesample")`](https://jmgirard.github.io/balancesample/articles/balancesample.md))
+article](https://jmgirard.github.io/balancedsample/articles/balancedsample.html)
+([`vignette("balancedsample")`](https://jmgirard.github.io/balancedsample/articles/balancedsample.md))
 goes through a full modeling project: a balanced training/testing split,
 balanced folds, tuning with tune, and a final fit. It also shows how to
 choose the columns for `balance` and `exact`, how to handle missing
@@ -137,7 +137,7 @@ run times for large data.
 
 In 2021, I asked for multivariate stratification in rsample
 ([tidymodels/rsample#266](https://github.com/tidymodels/rsample/issues/266)).
-Julia Silge suggested an extension package, and balancesample is that
+Julia Silge suggested an extension package, and balancedsample is that
 package. Its design follows
 [spatialsample](https://spatialsample.tidymodels.org): it builds folds
 with
@@ -150,7 +150,7 @@ Two other rsample issues are related.
 proposes twinning as the multi-variable strata method for rsample.
 [tidymodels/rsample#109](https://github.com/tidymodels/rsample/issues/109)
 records Max Kuhn’s concern that crossed strata become sparse. The
-`"interaction"` method is in balancesample so that you can see this
+`"interaction"` method is in balancedsample so that you can see this
 problem next to the other methods.
 
 ## Prior art

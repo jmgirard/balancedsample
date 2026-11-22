@@ -107,7 +107,7 @@ other two. rsample's
 instead splits off the training set first and then splits the rest.
 
 The methods, options, and group handling are the same as for
-[`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md).
+[`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md).
 With `method = "twinning"`, the data are split into `m` similar parts
 with
 [`twinning::multiplet()`](https://rdrr.io/pkg/twinning/man/multiplet.html),
@@ -149,8 +149,8 @@ set.
 
 ## See also
 
-[`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md),
-[`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+[`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md),
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 
 ## Examples
 

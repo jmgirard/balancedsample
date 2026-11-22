@@ -98,7 +98,7 @@ An `rsplit` object with class `balanced_initial_split` and
 ## Details
 
 The methods, options, and group handling are the same as for
-[`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md).
+[`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md).
 With `method = "twinning"`, the split uses
 [`twinning::twin()`](https://rdrr.io/pkg/twinning/man/twin.html), and
 the options are `leaf_size` only. Strata with fewer than `2 * r` rows
@@ -111,8 +111,8 @@ same arguments.
 
 ## See also
 
-[`balanced_vfold_cv()`](https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.md),
-[`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+[`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md),
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 
 ## Examples
 

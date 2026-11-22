@@ -3,4 +3,4 @@
 ### All vignettes
 
 - [Get started with
-  balancesample](https://jmgirard.github.io/balancesample/articles/balancesample.md):
+  balancedsample](https://jmgirard.github.io/balancedsample/articles/balancedsample.md):

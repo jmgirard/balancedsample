@@ -110,7 +110,7 @@ column of `rsplit` objects and one or two ID columns.
     grows quickly with the number of rows. A small number, such as 20,
     is much faster on large data, but categorical `balance` columns can
     end up less balanced. Check the result with
-    [`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md).
+    [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md).
 
   - `local_maximum` (default `TRUE`): repeat the exchange passes until a
     pass makes no swap (at most 100 passes). `FALSE` runs one pass.
@@ -205,9 +205,9 @@ or one shared ID, depending on which is true.
 tune and
 [`rsample::reshuffle_rset()`](https://rsample.tidymodels.org/reference/reshuffle_rset.html)
 find the function that made an `rset` by its class name. They only find
-`balanced_vfold_cv()` when balancesample is attached with
-[`library(balancesample)`](https://github.com/jmgirard/balancesample).
-If you call `balancesample::balanced_vfold_cv()` without attaching the
+`balanced_vfold_cv()` when balancedsample is attached with
+[`library(balancedsample)`](https://github.com/jmgirard/balancedsample).
+If you call `balancedsample::balanced_vfold_cv()` without attaching the
 package,
 [`tune::fit_resamples()`](https://tune.tidymodels.org/reference/fit_resamples.html)
 and
@@ -217,7 +217,7 @@ fail with "Could not find function".
 If a workflow has a postprocessor that must be trained, such as a
 calibration from the tailor package, tune splits each analysis set
 again. That inner split is a
-[`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md)
+[`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md)
 with the same `balance`, `exact`, `group`, `na`, `method`, and `options`
 (without twinning's `strategy`), and with `prop = 1 - 1/v`. With
 `na = "include"`, a column with no observed values in the analysis set
@@ -244,8 +244,8 @@ Analysis and Data Mining, 15*(5), 598-610.
 
 ## See also
 
-[`balanced_initial_split()`](https://jmgirard.github.io/balancesample/reference/balanced_initial_split.md),
-[`balance_check()`](https://jmgirard.github.io/balancesample/reference/balance_check.md)
+[`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md),
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 
 ## Examples
 

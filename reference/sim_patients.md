@@ -3,7 +3,7 @@
 Simulated data from 300 patients at three sites. Age and income are
 skewed, and diagnosis has a rare level. The README, the Get started
 article
-([`vignette("balancesample")`](https://jmgirard.github.io/balancesample/articles/balancesample.md)),
+([`vignette("balancedsample")`](https://jmgirard.github.io/balancedsample/articles/balancedsample.md)),
 and the examples use these data.
 
 ## Usage

@@ -8,16 +8,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/jmgirard/balancesample/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/jmgirard/balancedsample/blob/main/DESCRIPTION)
 
-Girard J (2026). *balancesample: Multivariate Balanced Data Splitting
+Girard J (2026). *balancedsample: Multivariate Balanced Data Splitting
 for 'rsample'*. R package version 0.0.0.9000,
-<https://github.com/jmgirard/balancesample>.
+<https://github.com/jmgirard/balancedsample>.
 
     @Manual{,
-      title = {balancesample: Multivariate Balanced Data Splitting for 'rsample'},
+      title = {balancedsample: Multivariate Balanced Data Splitting for 'rsample'},
       author = {Jeffrey M. Girard},
       year = {2026},
       note = {R package version 0.0.0.9000},
-      url = {https://github.com/jmgirard/balancesample},
+      url = {https://github.com/jmgirard/balancedsample},
     }

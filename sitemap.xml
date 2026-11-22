@@ -1,19 +1,19 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>https://jmgirard.github.io/balancesample/404.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/LICENSE-text.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/LICENSE.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/articles/balancesample.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/articles/index.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/authors.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/index.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/news/index.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/autoplot.balance_check.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/balance_check.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/balanced_initial_split.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/balanced_initial_validation_split.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/balanced_vfold_cv.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/balancesample-package.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/index.html</loc></url>
-<url><loc>https://jmgirard.github.io/balancesample/reference/sim_patients.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/404.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/LICENSE-text.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/LICENSE.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/articles/balancedsample.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/articles/index.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/authors.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/index.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/news/index.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/autoplot.balance_check.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/balance_check.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/balancedsample-package.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/index.html</loc></url>
+<url><loc>https://jmgirard.github.io/balancedsample/reference/sim_patients.html</loc></url>
 </urlset>
 
