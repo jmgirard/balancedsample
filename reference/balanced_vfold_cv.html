@@ -158,7 +158,11 @@ result is kept.</p></li>
 <code><a href="https://rdrr.io/pkg/twinning/man/twin.html" class="external-link">twinning::twin()</a></code> for <code>v = 2</code> with strategy 1 or 2, which then give the
 same result. Options are <code>strategy</code> (1, 2, or 3; strategy 2 needs <code>v</code> to
 be a power of 2) and <code>leaf_size</code>. Strata with fewer than <code>2 * v</code> rows
-(or groups) are assigned at random. The twinning package is required.</p></li>
+(or groups) are assigned at random. The twinning package is required.
+Leave the outcome out of <code>balance</code> and <code>exact</code> with this method. Each
+held-out row then has a close twin in the training rows, outcome
+included, so models that predict from nearby rows, such as k-nearest
+neighbours, look better than they are.</p></li>
 <li><p><code>"rerandomize"</code> draws stratified random splits and keeps the first one
 whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,
 2012). For folds, the imbalance is the largest over the "one fold versus

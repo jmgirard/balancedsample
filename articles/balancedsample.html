@@ -294,13 +294,23 @@ the same here. A numeric outcome can go in <code>balance</code>, next to
 the predictors, and a class outcome can go in <code>exact</code> if the
 class counts matter and every class has enough rows for every set. The
 outcome is used only to assign rows to sets, as with
-<code>strata</code>. This assumes you have the outcome when you make the
-split. If the evaluation must hold out whole time periods or whole
-sites, split by those instead: put the site in <code>group</code>, or
-use rsample’s time-based splits. In this article, the outcome is left
-out. It depends on age, income, and diagnosis, so balancing those also
-balances the part of the outcome they explain. The rest is random noise,
-so the outcome itself can still differ between the sets.</p>
+<code>strata</code>. With <code>method = "twinning"</code>, though,
+leave the outcome out of both. Twinning puts rows that are close on
+every column into different sets. With the outcome among those columns,
+each held-out row then has a training row much like it, outcome
+included. Models that predict from nearby rows, such as k-nearest
+neighbours, SVMs, and random forests, then score better than they will
+on new data. In simulations with 300 rows and 10 folds, a class outcome
+in <code>exact</code> raised the AUC of these models by about 0.01 to
+0.04 over random folds, above their true AUC. anticlust doesn’t pair
+rows like this: with it, the outcome changed the AUC by less than 0.005.
+This assumes you have the outcome when you make the split. If the
+evaluation must hold out whole time periods or whole sites, split by
+those instead: put the site in <code>group</code>, or use rsample’s
+time-based splits. In this article, the outcome is left out. It depends
+on age, income, and diagnosis, so balancing those also balances the part
+of the outcome they explain. The rest is random noise, so the outcome
+itself can still differ between the sets.</p>
 <p>Each column you add to <code>exact</code> splits the strata further.
 Here diagnosis and site together make 9 strata:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -553,7 +563,8 @@ whole data does. It does this within each <code>exact</code> stratum.
 For folds, the default strategy repeats this on the rows that are left.
 It needs the twinning package, allows only some split proportions, and
 splits small strata at random (for folds, strata with fewer than
-<code>2 * v</code> rows).</li>
+<code>2 * v</code> rows). Leave the outcome out of <code>balance</code>
+and <code>exact</code> with this method (see <a href="#choosing-columns-balance-and-exact">Choosing columns</a>).</li>
 <li>
 <code>"rerandomize"</code> uses rerandomization (<a href="https://doi.org/10.1214/12-AOS1008" class="external-link">Morgan and Rubin, 2012</a>).
 It draws stratified random splits and scores each one by its Mahalanobis

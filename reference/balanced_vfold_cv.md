@@ -125,7 +125,11 @@ column of `rsplit` objects and one or two ID columns.
   `v = 2` with strategy 1 or 2, which then give the same result. Options
   are `strategy` (1, 2, or 3; strategy 2 needs `v` to be a power of 2)
   and `leaf_size`. Strata with fewer than `2 * v` rows (or groups) are
-  assigned at random. The twinning package is required.
+  assigned at random. The twinning package is required. Leave the
+  outcome out of `balance` and `exact` with this method. Each held-out
+  row then has a close twin in the training rows, outcome included, so
+  models that predict from nearby rows, such as k-nearest neighbours,
+  look better than they are.
 
 - `"rerandomize"` draws stratified random splits and keeps the first one
   whose Mahalanobis imbalance is under a threshold (Morgan and Rubin,

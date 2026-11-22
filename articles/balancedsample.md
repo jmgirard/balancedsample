@@ -257,13 +257,23 @@ that every set has a similar mix of outcomes. You can do the same here.
 A numeric outcome can go in `balance`, next to the predictors, and a
 class outcome can go in `exact` if the class counts matter and every
 class has enough rows for every set. The outcome is used only to assign
-rows to sets, as with `strata`. This assumes you have the outcome when
-you make the split. If the evaluation must hold out whole time periods
-or whole sites, split by those instead: put the site in `group`, or use
-rsample’s time-based splits. In this article, the outcome is left out.
-It depends on age, income, and diagnosis, so balancing those also
-balances the part of the outcome they explain. The rest is random noise,
-so the outcome itself can still differ between the sets.
+rows to sets, as with `strata`. With `method = "twinning"`, though,
+leave the outcome out of both. Twinning puts rows that are close on
+every column into different sets. With the outcome among those columns,
+each held-out row then has a training row much like it, outcome
+included. Models that predict from nearby rows, such as k-nearest
+neighbours, SVMs, and random forests, then score better than they will
+on new data. In simulations with 300 rows and 10 folds, a class outcome
+in `exact` raised the AUC of these models by about 0.01 to 0.04 over
+random folds, above their true AUC. anticlust doesn’t pair rows like
+this: with it, the outcome changed the AUC by less than 0.005. This
+assumes you have the outcome when you make the split. If the evaluation
+must hold out whole time periods or whole sites, split by those instead:
+put the site in `group`, or use rsample’s time-based splits. In this
+article, the outcome is left out. It depends on age, income, and
+diagnosis, so balancing those also balances the part of the outcome they
+explain. The rest is random noise, so the outcome itself can still
+differ between the sets.
 
 Each column you add to `exact` splits the strata further. Here diagnosis
 and site together make 9 strata:
@@ -554,7 +564,9 @@ They differ in how they make the sets similar on the `balance` columns:
   folds, the default strategy repeats this on the rows that are left. It
   needs the twinning package, allows only some split proportions, and
   splits small strata at random (for folds, strata with fewer than
-  `2 * v` rows).
+  `2 * v` rows). Leave the outcome out of `balance` and `exact` with
+  this method (see [Choosing
+  columns](#choosing-columns-balance-and-exact)).
 - `"rerandomize"` uses rerandomization ([Morgan and Rubin,
   2012](https://doi.org/10.1214/12-AOS1008)). It draws stratified random
   splits and scores each one by its Mahalanobis imbalance: a distance
