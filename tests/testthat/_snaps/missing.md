@@ -6,7 +6,7 @@
       Error in `balanced_vfold_cv()`:
       ! Selected columns must not have missing values.
       x Missing values in x1 (30 rows) and cat (20 rows).
-      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancesample")`.
+      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancedsample")`.
     Code
       balanced_vfold_cv(d, balance = x2, na = "drop")
     Condition
@@ -21,7 +21,7 @@
       Error in `balanced_vfold_cv()`:
       ! Selected columns must not have missing values.
       x Missing values in x1 (30 rows) and id (2 rows).
-      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancesample")`.
+      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancedsample")`.
       i `group` can't have missing values. Give the rows with a missing ID their own IDs, or one shared ID, depending on whether they can belong together.
 
 # missing exact values are their own level in every combination
@@ -72,5 +72,5 @@
       Error in `balanced_initial_split()`:
       ! Selected columns must not have missing values.
       x Missing values in x1 (30 rows) and cat (20 rows).
-      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancesample")`.
+      i Use `na = "include"` to balance on which values are missing, or drop those rows. See `vignette("balancedsample")`.
 

@@ -134,8 +134,8 @@
 #'
 #' tune and [rsample::reshuffle_rset()] find the function that made an
 #' `rset` by its class name. They only find `balanced_vfold_cv()` when
-#' balancesample is attached with `library(balancesample)`. If you call
-#' `balancesample::balanced_vfold_cv()` without attaching the package,
+#' balancedsample is attached with `library(balancedsample)`. If you call
+#' `balancedsample::balanced_vfold_cv()` without attaching the package,
 #' [tune::fit_resamples()] and [tune::tune_grid()] fail with "Could not find
 #' function".
 #'
@@ -382,14 +382,14 @@ check_dots <- function(..., call = rlang::caller_env()) {
   if ("strata" %in% ...names()) {
     cli::cli_abort(
       c(
-        "balancesample uses {.arg exact}, not {.arg strata}.",
+        "balancedsample uses {.arg exact}, not {.arg strata}.",
         i = "Put categorical columns in {.arg exact}, for example {.code exact = class}.",
         i = "Put numeric columns in {.arg balance}."
       ),
       call = call
     )
   }
-  # rsample arguments with a counterpart in balancesample.
+  # rsample arguments with a counterpart in balancedsample.
   hints <- c(
     pool = "{.code method = \"interaction\"} pools small cells with {.code options = list(pool = 0.1)}.",
     breaks = "{.code method = \"interaction\"} sets the number of bins per numeric column with {.code options = list(n_bins = 4)}.",
@@ -399,7 +399,7 @@ check_dots <- function(..., call = rlang::caller_env()) {
   if (length(used) > 0) {
     cli::cli_abort(
       c(
-        "balancesample doesn't use {.arg {used}}.",
+        "balancedsample doesn't use {.arg {used}}.",
         stats::setNames(hints[used], rep("i", length(used)))
       ),
       call = call

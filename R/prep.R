@@ -144,7 +144,7 @@ check_missing <- function(data, bal_pos, exa_pos, grp_pos, na, call) {
         "Selected columns must not have missing values.",
         x = "Missing values in {has_na}.",
         i = if (any(n[setdiff(names(n), names(grp_pos))] > 0)) {
-          "Use {.code na = \"include\"} to balance on which values are missing, or drop those rows. See {.code vignette(\"balancesample\")}."
+          "Use {.code na = \"include\"} to balance on which values are missing, or drop those rows. See {.code vignette(\"balancedsample\")}."
         },
         i = group_hint
       ),
@@ -394,7 +394,7 @@ warn_sparse_strata <- function(prep, labels, k, call = rlang::caller_env()) {
         "Whole-number columns in {.arg exact} are categories, and each value is a level: {.field {numeric_exact}}. Put continuous columns in {.arg balance}, or use {.fn cut}."
       }
     ),
-    class = "balancesample_sparse_strata",
+    class = "balancedsample_sparse_strata",
     call = call
   )
   invisible()

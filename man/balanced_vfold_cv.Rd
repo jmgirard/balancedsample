@@ -169,8 +169,8 @@ or one shared ID, depending on which is true.
 \section{Use with tune}{
 tune and \code{\link[rsample:reshuffle_rset]{rsample::reshuffle_rset()}} find the function that made an
 \code{rset} by its class name. They only find \code{balanced_vfold_cv()} when
-balancesample is attached with \code{library(balancesample)}. If you call
-\code{balancesample::balanced_vfold_cv()} without attaching the package,
+balancedsample is attached with \code{library(balancedsample)}. If you call
+\code{balancedsample::balanced_vfold_cv()} without attaching the package,
 \code{\link[tune:fit_resamples]{tune::fit_resamples()}} and \code{\link[tune:tune_grid]{tune::tune_grid()}} fail with "Could not find
 function".
 

@@ -60,7 +60,7 @@ test_that("exact strata follow the actual fold sizes", {
     # Two of the three strata have fewer rows than folds, on purpose.
     expect_warning(
       folds <- balanced_vfold_cv(d, v = 4, exact = s, method = "interaction"),
-      class = "balancesample_sparse_strata"
+      class = "balancedsample_sparse_strata"
     )
     expect_true(shares_respected(folds, d$s))
     expect_true(strata_exact(folds, d$s))
@@ -394,7 +394,7 @@ test_that("rerandomize calibrates its threshold under exact strata", {
   )
 })
 
-test_that("reshuffle_rset() works when balancesample is attached", {
+test_that("reshuffle_rset() works when balancedsample is attached", {
   set.seed(1)
   folds <- balanced_vfold_cv(mtcars, 3, balance = mpg, method = "interaction")
   re <- rsample::reshuffle_rset(folds)
@@ -861,7 +861,7 @@ test_that("most strata being too small gives one warning", {
   # With 8 testing rows, at least 12 of the 20 strata miss the testing set.
   expect_warning(
     balanced_initial_split(d, prop = 0.96, balance = x, exact = s),
-    class = "balancesample_sparse_strata"
+    class = "balancedsample_sparse_strata"
   )
   # One testing row per stratum: 1 - 0.8 is a little under 0.2, but every
   # stratum is still in both sets.
@@ -881,6 +881,6 @@ test_that("most strata being too small gives one warning", {
   d$site <- d$id %% 8
   expect_warning(
     balanced_vfold_cv(d, v = 10, balance = x, exact = site, group = id),
-    class = "balancesample_sparse_strata"
+    class = "balancedsample_sparse_strata"
   )
 })

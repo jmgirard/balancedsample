@@ -1,4 +1,4 @@
-url: https://jmgirard.github.io/balancesample/
+url: https://jmgirard.github.io/balancedsample/
 template:
   bootstrap: 5
   light-switch: true
@@ -18,4 +18,4 @@ reference:
       - sim_patients
   - title: Package
     contents:
-      - balancesample-package
+      - balancedsample-package

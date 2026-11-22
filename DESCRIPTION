@@ -1,4 +1,4 @@
-Package: balancesample
+Package: balancedsample
 Title: Multivariate Balanced Data Splitting for 'rsample'
 Version: 0.0.0.9000
 Authors@R: 
@@ -16,9 +16,9 @@ Description: Creates training/testing splits, training/validation/testing
     can be kept together. Results are 'rsample' objects for resampling and
     tuning with 'tune'.
 License: MIT + file LICENSE
-URL: https://github.com/jmgirard/balancesample,
-    https://jmgirard.github.io/balancesample/
-BugReports: https://github.com/jmgirard/balancesample/issues
+URL: https://github.com/jmgirard/balancedsample,
+    https://jmgirard.github.io/balancedsample/
+BugReports: https://github.com/jmgirard/balancedsample/issues
 Depends: 
     R (>= 4.1.0)
 Imports: 
