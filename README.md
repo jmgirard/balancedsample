@@ -18,7 +18,11 @@ that are similar on several variables at once. The results are
 with tune and the rest of tidymodels.
 
 rsample can stratify on one variable. If you need folds that match on
-age, income, and diagnosis together, rsample cannot do that.
+age, income, and diagnosis together, rsample cannot do that. Folds that
+differ by chance on such variables make performance estimates less
+accurate (Moreno-Torres et al., 2012). This matters most in small data
+and for rare levels.
+
 balancedsample fills this gap with four methods:
 
 | Method | What it does | Package |
@@ -183,6 +187,11 @@ default method matches variances as well as means. It can also make the
 counts of several categorical variables exact.
 
 ## References
+
+Moreno-Torres, J. G., Sáez, J. A., & Herrera, F. (2012). Study on the
+impact of partition-induced dataset shift on k-fold cross-validation.
+*IEEE Transactions on Neural Networks and Learning Systems, 23*(8),
+1304-1312.
 
 Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve
 covariate balance in experiments. *The Annals of Statistics, 40*(2),
