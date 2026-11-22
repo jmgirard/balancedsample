@@ -165,13 +165,21 @@ and how to choose a method, with run times for large data.
 
 ## Prior art
 
+These functions in other packages solve similar problems, but their
+output is not an rsample object, so they do not work with tidymodels
+directly.
+
 - `groupdata2::fold()` makes folds that balance one numeric variable,
   stratify one categorical variable, and keep groups together.
 - `groupdata2::collapse_groups()` combines existing groups into fewer
-  groups that are similar in size and in several numeric and categorical
-  variables.
+  groups. It standardizes group size and each numeric and categorical
+  variable, averages them into one score, and balances that score.
 - `splitTools::multi_strata()` makes one stratification variable from
   several variables, by crossing them or by k-means clustering.
+
+balancedsample instead balances each variable on its own, and the
+default method matches variances as well as means. It can also make the
+counts of several categorical variables exact.
 
 ## References
 

@@ -205,14 +205,16 @@
 <div class="section level2">
 <h2 id="prior-art">Prior art<a class="anchor" aria-label="anchor" href="#prior-art"></a>
 </h2>
+<p>These functions in other packages solve similar problems, but their output is not an rsample object, so they do not work with tidymodels directly.</p>
 <ul>
 <li>
 <code>groupdata2::fold()</code> makes folds that balance one numeric variable, stratify one categorical variable, and keep groups together.</li>
 <li>
-<code>groupdata2::collapse_groups()</code> combines existing groups into fewer groups that are similar in size and in several numeric and categorical variables.</li>
+<code>groupdata2::collapse_groups()</code> combines existing groups into fewer groups. It standardizes group size and each numeric and categorical variable, averages them into one score, and balances that score.</li>
 <li>
 <code>splitTools::multi_strata()</code> makes one stratification variable from several variables, by crossing them or by k-means clustering.</li>
 </ul>
+<p>balancedsample instead balances each variable on its own, and the default method matches variances as well as means. It can also make the counts of several categorical variables exact.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
