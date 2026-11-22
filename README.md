@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Edit README.Rmd, then run devtools::build_readme(). -->
 
-# balancedsample
+# balancedsample <a href="https://jmgirard.github.io/balancedsample/"><img src="man/figures/logo.svg" align="right" height="138" alt="balancedsample website" /></a>
 
 <!-- badges: start -->
 
