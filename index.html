@@ -107,6 +107,7 @@
 </tbody>
 </table>
 <p>twinning is a suggested package. If you select <code>method = "twinning"</code> and it is not installed, balancedsample asks you to install it.</p>
+<p>There are three functions: <code><a href="reference/balanced_initial_split.html">balanced_initial_split()</a></code> for a training/testing split, <code><a href="reference/balanced_initial_validation_split.html">balanced_initial_validation_split()</a></code> for a training/validation/testing split, and <code><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv()</a></code> for v-fold cross-validation, with or without repeats. All three take a <code>group</code> column, which keeps all rows of a person, site, or other unit in the same set, as rsample’s <code>group_*</code> functions do.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -183,9 +184,23 @@
 <p>The folds work with tune. Attach balancedsample with <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> first, because tune finds the function that made the folds by its name.</p>
 </div>
 <div class="section level2">
+<h2 id="nested-cross-validation">Nested cross-validation<a class="anchor" aria-label="anchor" href="#nested-cross-validation"></a>
+</h2>
+<p>For nested cross-validation, use balanced folds at both levels of <code>nestedtune::nested_resamples()</code>. The inner folds are made from each outer analysis set, so they are balanced within it. Then tune with <code>nested_tune_grid()</code> or another <code>nested_tune_*()</code> function. nestedtune is in development; install it with <code>pak::pak("tidymodels/nestedtune")</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/balancedsample" class="external-link">balancedsample</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">nestedtune</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">nested</span> <span class="op">&lt;-</span> <span class="fu">nested_resamples</span><span class="op">(</span></span>
+<span>  <span class="va">sim_patients</span>,</span>
+<span>  outside <span class="op">=</span> <span class="fu"><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">5</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>, exact <span class="op">=</span> <span class="va">site</span><span class="op">)</span>,</span>
+<span>  inside <span class="op">=</span> <span class="fu"><a href="reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">5</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>, exact <span class="op">=</span> <span class="va">site</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
 </h2>
-<p>The <a href="https://jmgirard.github.io/balancedsample/articles/balancedsample.html">Get started article</a> (<code><a href="articles/balancedsample.html">vignette("balancedsample")</a></code>) goes through a full modeling project: a balanced training/testing split, balanced folds, tuning with tune, and a final fit. It also shows how to choose the columns for <code>balance</code> and <code>exact</code>, how to handle missing values and repeated rows per person, and how to choose a method, with run times for large data.</p>
+<p>The <a href="https://jmgirard.github.io/balancedsample/articles/balancedsample.html">Get started article</a> (<code><a href="articles/balancedsample.html">vignette("balancedsample")</a></code>) goes through a full modeling project: a balanced training/testing split, balanced folds, tuning with tune, a final fit, and nested cross-validation. It also shows how to choose the columns for <code>balance</code> and <code>exact</code>, how to handle missing values and repeated rows per person, and how to choose a method, with run times for large data.</p>
 </div>
 <div class="section level2">
 <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>

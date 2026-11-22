@@ -475,6 +475,28 @@ collect_metrics(final_fit)
 #> 2 rsq     standard       0.470 pre0_mod0_post0
 ```
 
+### Nested cross-validation
+
+To estimate how well the whole tuning process does, use nested
+cross-validation with the
+[nestedtune](https://github.com/tidymodels/nestedtune) package, which is
+in development. Give `nested_resamples()` balanced folds at both levels.
+The inner folds are made from each outer analysis set, so they are
+balanced within it. `group` works at both levels too.
+
+``` r
+
+library(nestedtune)
+
+nested <- nested_resamples(
+  d,
+  outside = balanced_vfold_cv(v = 5, balance = c(age, income), exact = site),
+  inside = balanced_vfold_cv(v = 5, balance = c(age, income), exact = site)
+)
+nested_res <- nested_tune_grid(wf, nested, grid = 6)
+collect_metrics(nested_res)
+```
+
 ## Choosing a method
 
 balancedsample has four methods. All of them keep the `exact` counts.

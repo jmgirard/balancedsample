@@ -19,6 +19,16 @@ balancedsample fills this gap with four methods:
 twinning is a suggested package. If you select `method = "twinning"` and
 it is not installed, balancedsample asks you to install it.
 
+There are three functions:
+[`balanced_initial_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_split.md)
+for a training/testing split,
+[`balanced_initial_validation_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.md)
+for a training/validation/testing split, and
+[`balanced_vfold_cv()`](https://jmgirard.github.io/balancedsample/reference/balanced_vfold_cv.md)
+for v-fold cross-validation, with or without repeats. All three take a
+`group` column, which keeps all rows of a person, site, or other unit in
+the same set, as rsample’s `group_*` functions do.
+
 ## Installation
 
 Install the development version from GitHub:
@@ -122,16 +132,36 @@ The folds work with tune. Attach balancedsample with
 [`library()`](https://rdrr.io/r/base/library.html) first, because tune
 finds the function that made the folds by its name.
 
+## Nested cross-validation
+
+For nested cross-validation, use balanced folds at both levels of
+`nestedtune::nested_resamples()`. The inner folds are made from each
+outer analysis set, so they are balanced within it. Then tune with
+`nested_tune_grid()` or another `nested_tune_*()` function. nestedtune
+is in development; install it with `pak::pak("tidymodels/nestedtune")`.
+
+``` r
+
+library(balancedsample)
+library(nestedtune)
+
+nested <- nested_resamples(
+  sim_patients,
+  outside = balanced_vfold_cv(v = 5, balance = c(age, income), exact = site),
+  inside = balanced_vfold_cv(v = 5, balance = c(age, income), exact = site)
+)
+```
+
 ## Learn more
 
 The [Get started
 article](https://jmgirard.github.io/balancedsample/articles/balancedsample.html)
 ([`vignette("balancedsample")`](https://jmgirard.github.io/balancedsample/articles/balancedsample.md))
 goes through a full modeling project: a balanced training/testing split,
-balanced folds, tuning with tune, and a final fit. It also shows how to
-choose the columns for `balance` and `exact`, how to handle missing
-values and repeated rows per person, and how to choose a method, with
-run times for large data.
+balanced folds, tuning with tune, a final fit, and nested
+cross-validation. It also shows how to choose the columns for `balance`
+and `exact`, how to handle missing values and repeated rows per person,
+and how to choose a method, with run times for large data.
 
 ## Background
 

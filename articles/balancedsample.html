@@ -478,6 +478,26 @@ training set and evaluates it on the test set:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> rmse    standard       1.12  pre0_mod0_post0</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> rsq     standard       0.470 pre0_mod0_post0</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="nested-cross-validation">Nested cross-validation<a class="anchor" aria-label="anchor" href="#nested-cross-validation"></a>
+</h3>
+<p>To estimate how well the whole tuning process does, use nested
+cross-validation with the <a href="https://github.com/tidymodels/nestedtune" class="external-link">nestedtune</a> package,
+which is in development. Give <code>nested_resamples()</code> balanced
+folds at both levels. The inner folds are made from each outer analysis
+set, so they are balanced within it. <code>group</code> works at both
+levels too.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">nestedtune</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">nested</span> <span class="op">&lt;-</span> <span class="fu">nested_resamples</span><span class="op">(</span></span>
+<span>  <span class="va">d</span>,</span>
+<span>  outside <span class="op">=</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">5</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>, exact <span class="op">=</span> <span class="va">site</span><span class="op">)</span>,</span>
+<span>  inside <span class="op">=</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">5</span>, balance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">income</span><span class="op">)</span>, exact <span class="op">=</span> <span class="va">site</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">nested_res</span> <span class="op">&lt;-</span> <span class="fu">nested_tune_grid</span><span class="op">(</span><span class="va">wf</span>, <span class="va">nested</span>, grid <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">nested_res</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="choosing-a-method">Choosing a method<a class="anchor" aria-label="anchor" href="#choosing-a-method"></a>
@@ -528,7 +548,7 @@ cells get small fast: here, with age and income in quartiles and 9
 strata become sparse.</li>
 </ul>
 <p>This compares all four on the full data with 10 folds:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">methods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"anticlust"</span>, <span class="st">"twinning"</span>, <span class="st">"rerandomize"</span>, <span class="st">"interaction"</span><span class="op">)</span></span>
 <span><span class="va">by_method</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">methods</span>, <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
@@ -583,7 +603,7 @@ the options of each method.</p>
 Columns in <code>exact</code> must be constant within each person, and
 the exact counts are counts of people, not rows. <code>group</code>
 works the same way in <code><a href="../reference/balanced_initial_split.html">balanced_initial_split()</a></code>.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span><span class="op">$</span><span class="va">person</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
 <span><span class="va">long</span> <span class="op">&lt;-</span> <span class="va">d</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="va">grouped</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/balanced_vfold_cv.html">balanced_vfold_cv</a></span><span class="op">(</span></span>
