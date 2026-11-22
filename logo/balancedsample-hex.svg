@@ -9,5 +9,5 @@
   <path d="M0,0 Q12.5,-12.5 25,0 Q12.5,12.5 0,0 Z" transform="translate(100 79) scale(-1 1) rotate(-30)" fill="#96cfa8"></path>
   <line x1="100" y1="135" x2="100" y2="54" stroke="#e6dcc8" stroke-width="3" stroke-linecap="round"></line>
   <circle cx="100" cy="50" r="4.4" fill="#e6dcc8"></circle>
-  <text x="100" y="164" text-anchor="middle" font-family="Poppins, sans-serif" font-size="17" letter-spacing="0.3"><tspan font-weight="400" fill="#e6dcc8">balanced</tspan><tspan font-weight="600" fill="#eef2f1">sample</tspan></text>
+  <text x="100" y="163.5" text-anchor="middle" font-family="Poppins, sans-serif" font-size="16" letter-spacing="0.3"><tspan font-weight="400" fill="#e6dcc8">balanced</tspan><tspan font-weight="600" fill="#eef2f1">sample</tspan></text>
 </svg>
