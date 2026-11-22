@@ -54,6 +54,39 @@ each held-out fold has only about 30 rows, so folds stratified on
 diagnosis alone can still differ on the other variables, as the output
 below shows.
 
+Why does this matter? Each held-out set stands in for new data. If one
+fold has older patients or more severe cases than the rest, its score
+reflects that difference as well as the model. Random folds can differ
+like this by chance. That makes a single cross-validation estimate less
+accurate, and more repeats are needed to get a stable one
+([Moreno-Torres et al.,
+2012](https://doi.org/10.1109/TNNLS.2012.2199516)). In [Kohavi’s
+(1995)](https://www.ijcai.org/Proceedings/95-2/Papers/016.pdf) tests,
+folds stratified on the outcome class gave estimates with slightly less
+bias and variance than plain random folds. Folds that also matched on
+the predictors gave less biased estimates, especially with few folds
+([Zeng and Martinez, 2000](https://doi.org/10.1080/095281300146272);
+[Diamantidis et al.,
+2000](https://doi.org/10.1016/S0004-3702%2899%2900094-6)). For a
+training/testing split, sets that each look like the whole data made
+poor test results less likely than random splits did ([Joseph and
+Vakayil, 2022](https://doi.org/10.1080/00401706.2021.1921037)).
+
+The gains are largest in small data and for rare levels, as here. With
+thousands of rows, random sets are usually close to balanced already,
+and
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
+shows whether there is much to gain. Balanced folds also differ less
+from each other, so the standard error that tune reports for a metric
+tends to be smaller. That standard error is a rough guide at best,
+because the folds share training rows and no formula from the fold
+scores gets it right in general ([Bengio and Grandvalet,
+2004](https://jmlr.org/papers/v5/grandvalet04a.html)). A smaller value
+is not proof of a better estimate. Last, balancing makes the held-out
+rows look like the rest. If the model will be used at new sites or in
+later periods, the held-out rows should differ in that way instead (see
+[Choosing columns](#choosing-columns-balance-and-exact)).
+
 [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 measures how similar the sets are. For each fold, it compares the
 held-out rows with the other rows in two ways:
@@ -635,3 +668,41 @@ person’s means of the `balance` columns and the log of their number of
 rows. anticlust has a `must_link` argument for groups. balancedsample
 does not use it, because it needs fold sizes that the groups can fill
 exactly, and it was slow in tests.
+
+## References
+
+Bengio, Y., & Grandvalet, Y. (2004). No unbiased estimator of the
+variance of k-fold cross-validation. *Journal of Machine Learning
+Research, 5*, 1089-1105.
+
+Diamantidis, N. A., Karlis, D., & Giakoumakis, E. A. (2000).
+Unsupervised stratification of cross-validation for accuracy estimation.
+*Artificial Intelligence, 116*(1-2), 1-16.
+
+Joseph, V. R., & Vakayil, A. (2022). SPlit: An optimal method for data
+splitting. *Technometrics, 64*(2), 166-176.
+
+Kohavi, R. (1995). A study of cross-validation and bootstrap for
+accuracy estimation and model selection. In *Proceedings of the
+Fourteenth International Joint Conference on Artificial Intelligence*
+(pp. 1137-1144).
+
+Moreno-Torres, J. G., Sáez, J. A., & Herrera, F. (2012). Study on the
+impact of partition-induced dataset shift on k-fold cross-validation.
+*IEEE Transactions on Neural Networks and Learning Systems, 23*(8),
+1304-1312.
+
+Morgan, K. L., & Rubin, D. B. (2012). Rerandomization to improve
+covariate balance in experiments. *The Annals of Statistics, 40*(2),
+1263-1282.
+
+Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+criterion for maximizing between-group similarity. *British Journal of
+Mathematical and Statistical Psychology, 77*(1), 80-102.
+
+Vakayil, A., & Joseph, V. R. (2022). Data twinning. *Statistical
+Analysis and Data Mining, 15*(5), 598-610.
+
+Zeng, X., & Martinez, T. R. (2000). Distribution-balanced stratified
+cross-validation for accuracy estimation. *Journal of Experimental &
+Theoretical Artificial Intelligence, 12*(1), 1-12.

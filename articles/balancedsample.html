@@ -117,6 +117,33 @@ might want every fold to have similar ages, incomes, diagnoses, and
 sites. With 300 rows and 10 folds, each held-out fold has only about 30
 rows, so folds stratified on diagnosis alone can still differ on the
 other variables, as the output below shows.</p>
+<p>Why does this matter? Each held-out set stands in for new data. If
+one fold has older patients or more severe cases than the rest, its
+score reflects that difference as well as the model. Random folds can
+differ like this by chance. That makes a single cross-validation
+estimate less accurate, and more repeats are needed to get a stable one
+(<a href="https://doi.org/10.1109/TNNLS.2012.2199516" class="external-link">Moreno-Torres et
+al., 2012</a>). In <a href="https://www.ijcai.org/Proceedings/95-2/Papers/016.pdf" class="external-link">Kohavi’s
+(1995)</a> tests, folds stratified on the outcome class gave estimates
+with slightly less bias and variance than plain random folds. Folds that
+also matched on the predictors gave less biased estimates, especially
+with few folds (<a href="https://doi.org/10.1080/095281300146272" class="external-link">Zeng
+and Martinez, 2000</a>; <a href="https://doi.org/10.1016/S0004-3702%2899%2900094-6" class="external-link">Diamantidis et
+al., 2000</a>). For a training/testing split, sets that each look like
+the whole data made poor test results less likely than random splits did
+(<a href="https://doi.org/10.1080/00401706.2021.1921037" class="external-link">Joseph and
+Vakayil, 2022</a>).</p>
+<p>The gains are largest in small data and for rare levels, as here.
+With thousands of rows, random sets are usually close to balanced
+already, and <code><a href="../reference/balance_check.html">balance_check()</a></code> shows whether there is much to
+gain. Balanced folds also differ less from each other, so the standard
+error that tune reports for a metric tends to be smaller. That standard
+error is a rough guide at best, because the folds share training rows
+and no formula from the fold scores gets it right in general (<a href="https://jmlr.org/papers/v5/grandvalet04a.html" class="external-link">Bengio and
+Grandvalet, 2004</a>). A smaller value is not proof of a better
+estimate. Last, balancing makes the held-out rows look like the rest. If
+the model will be used at new sites or in later periods, the held-out
+rows should differ in that way instead (see <a href="#choosing-columns-balance-and-exact">Choosing columns</a>).</p>
 <p><code><a href="../reference/balance_check.html">balance_check()</a></code> measures how similar the sets are. For
 each fold, it compares the held-out rows with the other rows in two
 ways:</p>
@@ -633,6 +660,38 @@ person’s means of the <code>balance</code> columns and the log of their
 number of rows. anticlust has a <code>must_link</code> argument for
 groups. balancedsample does not use it, because it needs fold sizes that
 the groups can fill exactly, and it was slow in tests.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Bengio, Y., &amp; Grandvalet, Y. (2004). No unbiased estimator of the
+variance of k-fold cross-validation. <em>Journal of Machine Learning
+Research, 5</em>, 1089-1105.</p>
+<p>Diamantidis, N. A., Karlis, D., &amp; Giakoumakis, E. A. (2000).
+Unsupervised stratification of cross-validation for accuracy estimation.
+<em>Artificial Intelligence, 116</em>(1-2), 1-16.</p>
+<p>Joseph, V. R., &amp; Vakayil, A. (2022). SPlit: An optimal method for
+data splitting. <em>Technometrics, 64</em>(2), 166-176.</p>
+<p>Kohavi, R. (1995). A study of cross-validation and bootstrap for
+accuracy estimation and model selection. In <em>Proceedings of the
+Fourteenth International Joint Conference on Artificial
+Intelligence</em> (pp. 1137-1144).</p>
+<p>Moreno-Torres, J. G., Sáez, J. A., &amp; Herrera, F. (2012). Study on
+the impact of partition-induced dataset shift on k-fold
+cross-validation. <em>IEEE Transactions on Neural Networks and Learning
+Systems, 23</em>(8), 1304-1312.</p>
+<p>Morgan, K. L., &amp; Rubin, D. B. (2012). Rerandomization to improve
+covariate balance in experiments. <em>The Annals of Statistics,
+40</em>(2), 1263-1282.</p>
+<p>Papenberg, M. (2024). K-plus anticlustering: An improved k-means
+criterion for maximizing between-group similarity. <em>British Journal
+of Mathematical and Statistical Psychology, 77</em>(1), 80-102.</p>
+<p>Vakayil, A., &amp; Joseph, V. R. (2022). Data twinning.
+<em>Statistical Analysis and Data Mining, 15</em>(5), 598-610.</p>
+<p>Zeng, X., &amp; Martinez, T. R. (2000). Distribution-balanced
+stratified cross-validation for accuracy estimation. <em>Journal of
+Experimental &amp; Theoretical Artificial Intelligence, 12</em>(1),
+1-12.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -70,7 +70,8 @@
 <!-- badges: start -->
 
 <p>balancedsample makes training/testing splits and cross-validation folds that are similar on several variables at once. The results are <a href="https://rsample.tidymodels.org" class="external-link">rsample</a> objects, so you can use them with tune and the rest of tidymodels.</p>
-<p>rsample can stratify on one variable. If you need folds that match on age, income, and diagnosis together, rsample cannot do that. balancedsample fills this gap with four methods:</p>
+<p>rsample can stratify on one variable. If you need folds that match on age, income, and diagnosis together, rsample cannot do that. Folds that differ by chance on such variables make performance estimates less accurate (Moreno-Torres et al., 2012). This matters most in small data and for rare levels.</p>
+<p>balancedsample fills this gap with four methods:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -219,6 +220,7 @@
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
+<p>Moreno-Torres, J. G., Sáez, J. A., &amp; Herrera, F. (2012). Study on the impact of partition-induced dataset shift on k-fold cross-validation. <em>IEEE Transactions on Neural Networks and Learning Systems, 23</em>(8), 1304-1312.</p>
 <p>Morgan, K. L., &amp; Rubin, D. B. (2012). Rerandomization to improve covariate balance in experiments. <em>The Annals of Statistics, 40</em>(2), 1263-1282.</p>
 <p>Papenberg, M. (2024). K-plus anticlustering: An improved k-means criterion for maximizing between-group similarity. <em>British Journal of Mathematical and Statistical Psychology, 77</em>(1), 80-102.</p>
 <p>Papenberg, M., &amp; Klau, G. W. (2021). Using anticlustering to partition data sets into equivalent parts. <em>Psychological Methods, 26</em>(2), 161-174.</p>
