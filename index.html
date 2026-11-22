@@ -203,12 +203,6 @@
 <p>The <a href="https://jmgirard.github.io/balancedsample/articles/balancedsample.html">Get started article</a> (<code><a href="articles/balancedsample.html">vignette("balancedsample")</a></code>) goes through a full modeling project: a balanced training/testing split, balanced folds, tuning with tune, a final fit, and nested cross-validation. It also shows how to choose the columns for <code>balance</code> and <code>exact</code>, how to handle missing values and repeated rows per person, and how to choose a method, with run times for large data.</p>
 </div>
 <div class="section level2">
-<h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
-</h2>
-<p>In 2021, I asked for multivariate stratification in rsample (<a href="https://github.com/tidymodels/rsample/issues/266" class="external-link">tidymodels/rsample#266</a>). Julia Silge suggested an extension package, and balancedsample is that package. Its design follows <a href="https://spatialsample.tidymodels.org" class="external-link">spatialsample</a>: it builds folds with <code><a href="https://rsample.tidymodels.org/reference/make_splits.html" class="external-link">rsample::make_splits()</a></code> and <code><a href="https://rsample.tidymodels.org/reference/new_rset.html" class="external-link">rsample::new_rset()</a></code>.</p>
-<p>Two other rsample issues are related. <a href="https://github.com/tidymodels/rsample/issues/371" class="external-link">tidymodels/rsample#371</a> proposes twinning as the multi-variable strata method for rsample. <a href="https://github.com/tidymodels/rsample/issues/109" class="external-link">tidymodels/rsample#109</a> records Max Kuhn’s concern that crossed strata become sparse. The <code>"interaction"</code> method is in balancedsample so that you can see this problem next to the other methods.</p>
-</div>
-<div class="section level2">
 <h2 id="prior-art">Prior art<a class="anchor" aria-label="anchor" href="#prior-art"></a>
 </h2>
 <ul>

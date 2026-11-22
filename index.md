@@ -163,26 +163,6 @@ cross-validation. It also shows how to choose the columns for `balance`
 and `exact`, how to handle missing values and repeated rows per person,
 and how to choose a method, with run times for large data.
 
-## Background
-
-In 2021, I asked for multivariate stratification in rsample
-([tidymodels/rsample#266](https://github.com/tidymodels/rsample/issues/266)).
-Julia Silge suggested an extension package, and balancedsample is that
-package. Its design follows
-[spatialsample](https://spatialsample.tidymodels.org): it builds folds
-with
-[`rsample::make_splits()`](https://rsample.tidymodels.org/reference/make_splits.html)
-and
-[`rsample::new_rset()`](https://rsample.tidymodels.org/reference/new_rset.html).
-
-Two other rsample issues are related.
-[tidymodels/rsample#371](https://github.com/tidymodels/rsample/issues/371)
-proposes twinning as the multi-variable strata method for rsample.
-[tidymodels/rsample#109](https://github.com/tidymodels/rsample/issues/109)
-records Max Kuhn’s concern that crossed strata become sparse. The
-`"interaction"` method is in balancedsample so that you can see this
-problem next to the other methods.
-
 ## Prior art
 
 - `groupdata2::fold()` makes folds that balance one numeric variable,
