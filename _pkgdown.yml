@@ -2,6 +2,10 @@ url: https://jmgirard.github.io/balancedsample/
 template:
   bootstrap: 5
   light-switch: true
+  opengraph:
+    image:
+      src: card.png
+      alt: "balancedsample hex logo"
 
 reference:
   - title: Make balanced resamples

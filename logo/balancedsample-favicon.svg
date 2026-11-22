@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 231" width="1740" height="2010" role="img" aria-label="balancedsample hex favicon">
+  <polygon points="100,0 200,57.74 200,173.21 100,230.94 0,173.21 0,57.74" fill="#1a2e24"></polygon>
+  <polygon points="100,6.93 194,61.24 194,169.76 100,224.07 6,169.76 6,61.24" fill="none" stroke="#96cfa8" stroke-width="1.1" stroke-opacity="0.7"></polygon>
+  <path d="M0,0 Q36.75,-36.75 73.5,0 Q36.75,36.75 0,0 Z" transform="translate(100 176.41) scale(1 1) rotate(-30)" fill="#cf8a5e"></path>
+  <path d="M0,0 Q36.75,-36.75 73.5,0 Q36.75,36.75 0,0 Z" transform="translate(100 176.41) scale(-1 1) rotate(-30)" fill="#96cfa8"></path>
+  <path d="M0,0 Q29.31,-29.31 58.62,0 Q29.31,29.31 0,0 Z M5.69,0 Q29.31,-21.26 52.93,0 Q29.31,21.26 5.69,0 Z" transform="translate(100 130.91) scale(1 1) rotate(-30)" fill="#cf8a5e" fill-rule="evenodd"></path>
+  <path d="M0,0 Q29.31,-29.31 58.62,0 Q29.31,29.31 0,0 Z M5.69,0 Q29.31,-21.26 52.93,0 Q29.31,21.26 5.69,0 Z" transform="translate(100 130.91) scale(-1 1) rotate(-30)" fill="#96cfa8" fill-rule="evenodd"></path>
+  <path d="M0,0 Q21.88,-21.88 43.75,0 Q21.88,21.88 0,0 Z" transform="translate(100 92.41) scale(1 1) rotate(-30)" fill="#cf8a5e"></path>
+  <path d="M0,0 Q21.88,-21.88 43.75,0 Q21.88,21.88 0,0 Z" transform="translate(100 92.41) scale(-1 1) rotate(-30)" fill="#96cfa8"></path>
+  <line x1="100" y1="190.41" x2="100" y2="48.66" stroke="#e6dcc8" stroke-width="5.25" stroke-linecap="round"></line>
+  <circle cx="100" cy="41.66" r="7.7" fill="#e6dcc8"></circle>
+</svg>
