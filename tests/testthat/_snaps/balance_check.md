@@ -29,7 +29,7 @@
       summary(bc, threshold = -1)
     Condition
       Error in `summary()`:
-      ! `threshold` must be a number of at least 0.
+      ! `threshold` must be `NULL` or a number of at least 0.
 
 ---
 
@@ -37,7 +37,7 @@
       summary(bc, threshold = NA)
     Condition
       Error in `summary()`:
-      ! `threshold` must be a number of at least 0.
+      ! `threshold` must be `NULL` or a number of at least 0.
 
 ---
 
@@ -53,32 +53,33 @@
       print(balance_check(s, x, g, z, variance_ratio = TRUE))
     Output
       # Balance check: 1 split, 3 variables
-      # |SMD| > 0.1 in 3 of 3 variables, energy distance 1.02
+      # |SMD| above chance (95%) in 0 of 3 variables, ratio to chance 0.661,
+      # energy distance 1.02
       
-      variable  level         SMD  variance ratio
-      x                    -0.129           0.667
-      g         a          -0.272
+      variable  level         SMD  chance 95%  variance ratio
+      x                    -0.129        1.58           0.667
+      g         a          -0.272        1.62
       g         b           0.272
-      z                    -0.937           0.419
+      z                    -0.937        1.41           0.419
       z         (missing)  -0.816
       
-      # tibble::as_tibble() gives all 8 rows.
+      # tibble::as_tibble() gives all 14 rows.
 
 ---
 
     Code
-      withr::with_options(list(width = 100), print(balance_check(folds(3), x, g,
+      withr::with_options(list(width = 120), print(balance_check(folds(3), x, g,
       variance_ratio = TRUE)))
     Output
       # Balance check: 3 splits, 2 variables
-      # 3 of 3 splits have a variable with |SMD| > 0.1, mean energy distance 0.894
+      # 0 of 3 splits have a variable with |SMD| above chance (95%), mean ratio to chance 0.699, mean energy distance 0.894
       
-      id     max |SMD|  variable  mean |SMD|  over 0.1  energy  variance ratio  ratio variable
-      Fold1      0.693  x              0.555       2/2   0.707           1.23   x
-      Fold2      1.15   g: a           0.805       2/2   1.09            0.479  x
-      Fold3      0.417  g: a           0.292       2/2   0.884           2.22   x
+      id     max |SMD|  variable  mean |SMD|  vs chance  over chance  energy  variance ratio  ratio variable
+      Fold1      0.693  x              0.555      0.705          0/2   0.707           1.23   x
+      Fold2      1.15   g: a           0.805      1.02           0/2   1.09            0.479  x
+      Fold3      0.417  g: a           0.292      0.37           0/2   0.884           2.22   x
       
-      # summary() gives this table as a tibble, and tibble::as_tibble() gives all 15 rows.
+      # summary() gives this table as a tibble, and tibble::as_tibble() gives all 27 rows.
 
 ---
 
@@ -86,15 +87,16 @@
       print(balance_check(folds(11), x, g, z))
     Output
       # Balance check: 11 splits, 3 variables
-      # 11 of 11 splits have a variable with |SMD| > 0.1, mean energy distance 1.54
+      # 1 of 11 splits has a variable with |SMD| above chance (95%),
+      # mean ratio to chance 0.876, mean energy distance 1.54
       
-      variable  median |SMD|  max |SMD|  level  in split  over 0.1
-      x                0.36        1.13         Fold8        10/11
-      g                0.417       1.15  a      Fold2        11/11
-      z                0.979       3.19         Fold7        11/11
+      variable  median |SMD|  max |SMD|  level  in split  chance 95%  over chance
+      x                0.36        1.13         Fold8           1.91         0/11
+      g                0.417       1.15  a      Fold2           1.24         0/11
+      z                0.979       3.19         Fold7           2.15         1/11
       
       # summary(by = "variable") gives this table as a tibble, summary() gives one
-      # row per split, and tibble::as_tibble() gives all 66 rows.
+      # row per split, and tibble::as_tibble() gives all 132 rows.
 
 # print() falls back to the rows when it can't summarize
 
@@ -138,7 +140,7 @@
       summary(bc[c(NA, seq_len(nrow(bc))), ])
     Condition
       Error in `summary()`:
-      ! `statistic` must be "smd", "energy", or "variance_ratio" in every row of `object`.
+      ! `statistic` must be "smd", "energy", "variance_ratio", "chance_mean", or "chance_q95" in every row of `object`.
 
 # variance ratios show differences in spread
 
@@ -156,4 +158,12 @@
       Error in `balance_check()`:
       ! Every split of `x` must have the columns to check.
       x Split 2 has no x.
+
+# balance_check() adds a chance reference for each variable
+
+    Code
+      balance_check(folds, chance = -1)
+    Condition
+      Error in `balance_check()`:
+      ! `chance` must be a whole number of at least 0.
 

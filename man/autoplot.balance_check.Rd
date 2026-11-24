@@ -18,8 +18,12 @@ A ggplot object.
 }
 \description{
 Plot the output of \code{\link[=balance_check]{balance_check()}}. \code{type = "smd"} shows the
-standardized mean difference of each variable in each split, with dashed
-lines at -0.1 and 0.1. For a three-way split, the validation and testing
+standardized mean difference of each variable in each split. A grey band
+around each variable shows how far its largest absolute SMD went in 95\% of
+random sets of the same sizes (\code{"chance_q95"}, the median over the
+splits), so points well inside the band are better balanced than chance.
+Without the chance reference (with \code{chance = 0}), dashed lines at -0.1 and
+0.1 are drawn instead. For a three-way split, the validation and testing
 sets have different shapes. \code{type = "energy"} shows the energy distance of
 each split.
 }

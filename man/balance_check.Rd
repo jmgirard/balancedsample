@@ -8,15 +8,15 @@
 \alias{summary.balance_check}
 \title{Check the balance of a split or of a set of resamples}
 \usage{
-balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
-\method{balance_check}{rset}(x, ..., max_n = 2000, variance_ratio = FALSE)
+\method{balance_check}{rset}(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
-\method{balance_check}{rsplit}(x, ..., max_n = 2000, variance_ratio = FALSE)
+\method{balance_check}{rsplit}(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
-\method{balance_check}{three_way_split}(x, ..., max_n = 2000, variance_ratio = FALSE)
+\method{balance_check}{three_way_split}(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
-\method{summary}{balance_check}(object, ..., threshold = 0.1, by = c("split", "variable"))
+\method{summary}{balance_check}(object, ..., threshold = NULL, by = c("split", "variable"))
 }
 \arguments{
 \item{x}{An \code{rset} (for example from \code{\link[=balanced_vfold_cv]{balanced_vfold_cv()}}), an \code{rsplit}
@@ -34,20 +34,31 @@ Larger sets are subsampled at random to keep memory use low.}
 \item{variance_ratio}{If \code{TRUE}, also report the variance ratio of each
 numeric variable.}
 
+\item{chance}{The number of times the rows of each split are reassigned
+at random to sets of the same sizes, to show how unbalanced random sets
+would be. Use \code{0} to leave this out. See Details.}
+
 \item{object}{A \code{balance_check} object.}
 
-\item{threshold}{The absolute SMD above which \code{summary()} counts a
-variable in \code{n_over}. A value within rounding error of \code{threshold}
-(1.5e-8) counts as equal to it, so it isn't counted.}
+\item{threshold}{\code{NULL} (the default) to count a variable in \code{n_over}
+when its largest absolute SMD is above its chance reference
+(\code{"chance_q95"}), or 0.1 if \code{object} has none. Or a fixed absolute SMD
+to count above, such as 0.1. A value within rounding error of the
+cut-off (1.5e-8) counts as equal to it, so it isn't counted.}
 
 \item{by}{\code{"split"} for one row per split, or \code{"variable"} for one row per
 variable across the splits.}
 }
 \value{
 A tibble with class \code{balance_check}. It has the ID columns of \code{x},
-and the columns \code{variable}, \code{level}, \code{statistic} (\code{"smd"}, \code{"energy"}, or
-\code{"variance_ratio"}), and \code{value}. Energy rows have \code{NA} in \code{variable} and
-\code{level}.
+and the columns \code{variable}, \code{level}, \code{statistic} (\code{"smd"}, \code{"energy"},
+\code{"variance_ratio"}, \code{"chance_mean"}, or \code{"chance_q95"}), and \code{value}.
+Energy rows have \code{NA} in \code{variable} and \code{level}. Each variable in each
+split has a \code{"chance_mean"} row, the mean of its largest absolute SMD
+over the random sets (leaving out any that are infinite, which tiny
+sets can give), and a \code{"chance_q95"} row, the value that 95\% of them
+stay under. These rows have \code{NA} in \code{level}, and come after the
+energy row of their split.
 
 \code{summary()} with \code{by = "split"} returns a tibble with one row per split.
 It has the ID columns and these columns:
@@ -57,13 +68,17 @@ It has the ID columns and these columns:
 \item \code{mean_abs_smd}: the mean over the variables of their largest absolute
 SMD.
 \item \code{n_over}: the number of variables whose largest absolute SMD is above
-\code{threshold}.
+their own \code{"chance_q95"}, or above \code{threshold} if you give one. Without
+chance rows (with \code{chance = 0}), \code{threshold} is 0.1.
 \item \code{n_variables}: the number of variables with an SMD that isn't
 missing.
 \item \code{energy}: the energy distance.
 \item With variance ratios, \code{variance_ratio}, the ratio farthest from 1 on
 the log scale (so 0.25 is farther than 3), and
 \code{variance_ratio_variable}, the variable it belongs to.
+\item With chance rows, \code{chance_mean_abs_smd}, the mean over the variables
+of their \code{"chance_mean"}, and \code{ratio_to_chance}, \code{mean_abs_smd}
+divided by it. Random sets give about 1, and balanced sets less.
 }
 
 If the split has no SMD that isn't missing, \code{max_abs_smd},
@@ -74,10 +89,11 @@ With \code{by = "variable"}, it returns one row per variable, with
 \code{median_abs_smd} and \code{max_abs_smd} (the median and the largest of the
 variable's largest absolute SMD in each split), the \code{level} and the ID
 columns of the split with the largest, \code{n_over} (the number of splits
-where it is above \code{threshold}), and \code{n_splits} (the number of splits
+where it is over, as above), and \code{n_splits} (the number of splits
 where the variable has an SMD that isn't missing). With variance
 ratios, it also has \code{variance_ratio}, the ratio farthest from 1 over the
-splits.
+splits. With chance rows, it also has \code{chance_q95}, the median over the
+splits of the variable's \code{"chance_q95"}.
 
 Each split must have its own ID, so no ID may have more than one energy
 row. Only the ID columns that \code{balance_check()} made are used, so
@@ -91,7 +107,8 @@ printing shows the rows.
 analysis set. For a three-way split, it compares the validation set and the
 testing set each with the training set. It reports a standardized mean
 difference (SMD) for each variable and the energy distance for all
-variables together. It works
+variables together. It also reports how random sets of the same sizes
+from these data would look, so you can tell balance from chance. It works
 with any \code{rset} or \code{rsplit}, so you can compare balanced folds with
 ordinary \code{\link[rsample:vfold_cv]{rsample::vfold_cv()}} folds.
 }
@@ -100,7 +117,9 @@ For a numeric variable, the SMD is the difference in means (assessment
 minus analysis) divided by the pooled standard deviation,
 \code{sqrt((var_assessment + var_analysis) / 2)}. For a categorical variable,
 there is one SMD per level, from the proportions of that level. Values
-under 0.1 in absolute size are often taken as good balance. If both sets
+under 0.1 in absolute size are often taken as good balance, but with
+small sets or many variables random sets rarely meet that rule; see
+below. If both sets
 have zero variance but different means, the SMD is \code{Inf} or \code{-Inf}; the
 plot shows these values at the edge of the panel.
 
@@ -136,9 +155,9 @@ Printing the result shows a short table. For one split, it has the SMD
 of each variable and level. For up to 10 splits, it has one row per split,
 as from \code{summary()}. For more splits, it has one row per variable, as from
 \code{summary(by = "variable")}. Columns that don't fit the width of the
-console are left out, and a note names them. Printing counts SMDs over
-0.1; use \code{summary()} with \code{threshold} for another value. Use
-\code{\link[tibble:as_tibble]{tibble::as_tibble()}} to see all rows.
+console are left out, and a note names them. Printing compares each
+variable with chance, as \code{summary()} does; use \code{summary()} with
+\code{threshold} for a fixed value. Use \code{\link[tibble:as_tibble]{tibble::as_tibble()}} to see all rows.
 
 \code{summary()} first reduces each variable in each split to its largest
 absolute SMD, over its levels and its \code{"(missing)"} row. So a variable
@@ -151,6 +170,29 @@ comparing splits that check different numbers of variables. The rule of
 thumb of 0.1 is hard to meet with small sets: in the same random splits,
 one variable's absolute SMD was under 0.1 only about 40\% of the time. An
 \code{exact} column also can't do better than whole rows allow.
+
+So \code{balance_check()} also shows how random sets of the same sizes from
+these data would look. For each split, it puts the rows of the analysis
+and assessment sets back together, deals them out at random into two sets
+of the same sizes, and measures each variable's largest absolute SMD, as
+\code{summary()} does. It does this \code{chance} times. A random SMD has a
+standard deviation of about \code{sqrt(1 / n_assessment + 1 / n_analysis)}, so
+this reference grows as the sets get smaller. Splits with the same data
+and sizes, such as the folds of \code{\link[rsample:vfold_cv]{rsample::vfold_cv()}}, share one set of
+draws. The draws use R's random number generator, so use \code{\link[=set.seed]{set.seed()}} to
+repeat them. If \code{x} was made with \code{group} and its data have the group
+column, whole groups are dealt out instead, with the same number of
+groups in each set as in the split.
+
+\code{summary()} divides the mean of the variables' largest absolute SMDs by
+the same mean in the random sets. Random folds, such as those from
+\code{\link[rsample:vfold_cv]{rsample::vfold_cv()}}, give a ratio near 1, and well-balanced folds give
+less. By default, it counts a variable as over when its largest absolute
+SMD is above what 95\% of the random sets stay under. This count shows
+splits that are worse than chance; one in 20 variables is over in random
+splits. The ratio and the count say how balanced the sets are, not how
+much balancing will change your results. That depends mostly on how small
+the sets are and, for a yes/no outcome, on how few events each set has.
 }
 \examples{
 set.seed(1)

@@ -48,10 +48,28 @@
   one split, one row per split for up to 10 splits, or one row per variable
   for more. `summary()` gives one row per split, with its largest absolute
   SMD and the variable it belongs to, the mean over the variables of their
-  largest absolute SMD, the number of variables above `threshold` (0.1 by
-  default), and its energy distance. `summary(by = "variable")` gives one
+  largest absolute SMD, the number of variables over the cut-off described
+  below, and its energy distance. `summary(by = "variable")` gives one
   row per variable across the splits. `autoplot()` plots the result with
   ggplot2.
+
+* `balance_check()` also shows how random sets of the same sizes from the
+  same data would look. For each split, it deals the rows (or, with
+  `group`, whole groups) out at random into two sets of the same sizes,
+  `chance` times (100 by default; `chance = 0` leaves this out), and adds
+  rows with the mean (`"chance_mean"`) and the 95th percentile
+  (`"chance_q95"`) of each variable's largest absolute SMD. `summary()` adds
+  `chance_mean_abs_smd` and `ratio_to_chance`, the split's mean absolute
+  SMD divided by it: random folds give about 1 and balanced folds less. By
+  default, `n_over` now counts the variables above their own
+  `"chance_q95"`; a numeric `threshold` gives the old count, and without
+  chance rows the cut-off is 0.1. The fixed 0.1 rule flagged nearly all
+  random folds of small or moderate size, because chance alone exceeds it.
+  Printing shows the ratio and labels the count by its cut-off, and
+  `autoplot()` draws each variable's chance band instead of lines at -0.1
+  and 0.1. The vignette no longer says that `balance_check()` shows how
+  much there is to gain: whether balancing pays depends mostly on how
+  small the sets are and how few events each has.
 
 * Balanced folds work with `tune::fit_resamples()` and `tune::tune_grid()`,
   and balanced splits with `tune::last_fit()`. To tune on the validation set

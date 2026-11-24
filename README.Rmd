@@ -70,7 +70,7 @@ folds <- balanced_vfold_cv(
 folds
 ```
 
-`balance_check()` compares the held-out rows of each fold with the other rows. The printed table gives the largest and the mean absolute standardized mean difference (SMD) over the variables, how many variables are over 0.1, and the energy distance, which compares all the variables at once. The function works with any rsample object, so you can compare balanced folds with ordinary folds.
+`balance_check()` compares the held-out rows of each fold with the other rows. The printed table gives the largest and the mean absolute standardized mean difference (SMD) over the variables, the mean compared with random sets of the same sizes (`vs chance`: about 1 for random folds, less for balanced ones), how many variables are worse than 95% of random sets, and the energy distance, which compares all the variables at once. The function works with any rsample object, so you can compare balanced folds with ordinary folds.
 
 ```{r check}
 balance_check(folds)

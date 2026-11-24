@@ -672,7 +672,10 @@ test_that("logical balance columns and exact-only groups work", {
   folds <- balanced_vfold_cv(d, v = 4, balance = c(flag, x2))
   expect_true(assessed_once(folds, nrow(d)))
   bc <- balance_check(folds)
-  expect_equal(unique(bc$level[bc$variable %in% "flag"]), c("FALSE", "TRUE"))
+  expect_equal(
+    unique(bc$level[bc$variable %in% "flag" & bc$statistic == "smd"]),
+    c("FALSE", "TRUE")
+  )
 
   set.seed(13)
   folds <- balanced_vfold_cv(d, v = 4, exact = site, group = id)
