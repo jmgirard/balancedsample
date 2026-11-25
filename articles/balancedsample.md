@@ -57,35 +57,58 @@ below shows.
 Why does this matter? Each held-out set stands in for new data. If one
 fold has older patients or more severe cases than the rest, its score
 reflects that difference as well as the model. Random folds can differ
-like this by chance. That makes a single cross-validation estimate less
-accurate, and more repeats are needed to get a stable one
-([Moreno-Torres et al.,
-2012](https://doi.org/10.1109/TNNLS.2012.2199516)). In [Kohavi’s
-(1995)](https://www.ijcai.org/Proceedings/95-2/Papers/016.pdf) tests,
-folds stratified on the outcome class gave estimates with slightly less
-bias and variance than plain random folds. Folds that also matched on
-the predictors gave less biased estimates, especially with few folds
-([Zeng and Martinez, 2000](https://doi.org/10.1080/095281300146272);
-[Diamantidis et al.,
+like this by chance, so the estimate depends on which folds were drawn,
+and more repeats are needed to get a stable one ([Moreno-Torres et al.,
+2012](https://doi.org/10.1109/TNNLS.2012.2199516)). Balanced folds give
+a steadier estimate. They make it only a little more accurate, though,
+because most of the error in a cross-validation estimate comes from the
+sample itself, not from the folds (see the simulation below). In
+[Kohavi’s (1995)](https://www.ijcai.org/Proceedings/95-2/Papers/016.pdf)
+tests, folds stratified on the outcome class gave estimates with
+slightly less bias and variance than plain random folds. Folds that also
+matched on the predictors gave less biased estimates in some earlier
+tests ([Zeng and Martinez,
+2000](https://doi.org/10.1080/095281300146272); [Diamantidis et al.,
 2000](https://doi.org/10.1016/S0004-3702%2899%2900094-6)). For a
 training/testing split, sets that each look like the whole data made
 poor test results less likely than random splits did ([Joseph and
 Vakayil, 2022](https://doi.org/10.1080/00401706.2021.1921037)).
 
-The gains are largest in small data and for rare levels, as here. With
-thousands of rows, random sets are usually close to balanced already,
-and
+The gains are largest when the sets are small and, for a yes/no outcome,
+when each set has few events.
 [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
-shows whether there is much to gain. Balanced folds also differ less
-from each other, so the standard error that tune reports for a metric
-tends to be smaller. That standard error is a rough guide at best,
-because the folds share training rows and no formula from the fold
-scores gets it right in general ([Bengio and Grandvalet,
-2004](https://jmlr.org/papers/v5/grandvalet04a.html)). A smaller value
-is not proof of a better estimate. Last, balancing makes the held-out
-rows look like the rest. If the model will be used at new sites or in
-later periods, the held-out rows should differ in that way instead (see
-[Choosing columns](#choosing-columns-balance-and-exact)).
+doesn’t tell you how much balancing will gain. It shows how balanced the
+sets are compared with random sets of the same sizes, and random folds
+can look unbalanced without costing much.
+
+In one simulation study, 10-fold cross-validation of a random forest was
+run with balanced folds (balancing on the predictors, with the outcome
+in `exact`) and with random folds. One set of balanced folds gave an
+estimate as steady as the average over 1.8 to 4.2 sets of random folds
+with about 5 rows per fold, 1.2 to 11 with 10 rows per fold (the high
+end with 5% events, under 1 event per fold), 1.0 to 3.1 with 30 rows per
+fold, and about 1 (no gain) with 100 rows per fold. The typical error
+against the model fit to all the data was at most about 9% smaller, for
+AUC with folds of 30 rows or fewer, and within 2% for the Brier score
+and RMSE. So balancing is worth most with small folds and rare events,
+and with folds of 100 rows or more it changes little. Balancing with 5
+folds instead of 10 brought no extra gain. For a single 80/20 split,
+fixing the outcome’s count in the test set (the outcome in `exact`) made
+the error of the Brier score 13% to 51% smaller with 5% or 20% events,
+and the error of AUC a little smaller (by a median 4%, with up to 300
+rows). Using cross-validation instead of a single split mattered more
+than how the split was made: a single split had a median 1.8 times the
+error of 10-fold cross-validation.
+
+Balanced folds also differ less from each other, so the standard error
+that tune reports for a metric tends to be smaller. That standard error
+is a rough guide at best, because the folds share training rows and no
+formula from the fold scores gets it right in general ([Bengio and
+Grandvalet, 2004](https://jmlr.org/papers/v5/grandvalet04a.html)). A
+smaller value is not proof of a better estimate. Last, balancing makes
+the held-out rows look like the rest. If the model will be used at new
+sites or in later periods, the held-out rows should differ in that way
+instead (see [Choosing columns](#choosing-columns-balance-and-exact)).
 
 [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 measures how similar the sets are. For each fold, it compares the
@@ -96,7 +119,8 @@ held-out rows with the other rows in two ways:
   other rows) divided by the pooled standard deviation. For a
   categorical variable, there is one SMD per level, from the proportions
   of that level. An absolute SMD under 0.1 is a common rule of thumb for
-  good balance.
+  good balance, but random sets rarely meet it when they are small or
+  when many variables are checked.
 - The energy distance compares all the variables at once. It turns each
   level of a categorical variable into a 0/1 column, standardizes all
   the columns, and then looks at the distances between rows. It is twice
@@ -108,6 +132,13 @@ held-out rows with the other rows in two ways:
   the variables relate to each other. It has no fixed cutoff like 0.1,
   so use it to compare splits of the same data on the same variables.
 
+To tell balance from chance,
+[`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
+also deals the rows of each fold out at random into two sets of the same
+sizes, 100 times by default (set `chance`), and measures each variable
+the same way. This shows how random sets of the same sizes from these
+data would look.
+
 For each fold,
 [`balance_check()`](https://jmgirard.github.io/balancedsample/reference/balance_check.md)
 returns one SMD row per numeric variable, one per level of each
@@ -115,10 +146,13 @@ categorical variable, and one energy row. Printing the result shows one
 row per fold. Each variable first counts with its largest absolute SMD,
 so a variable with three levels counts once, like a numeric one. The row
 then gives the largest absolute SMD and the variable it belongs to, the
-mean over the variables, how many of them are over 0.1, and the energy
-distance. [`summary()`](https://rdrr.io/r/base/summary.html) returns the
-same numbers as a tibble. The largest SMD shows which variable to look
-at. The mean is steadier for comparing splits, because the largest grows
+mean over the variables, and that mean divided by the same mean in the
+random sets (`vs chance`). Random folds give about 1 and balanced folds
+less. Next comes how many variables are above what 95% of the random
+sets stay under (`over chance`), and last the energy distance.
+[`summary()`](https://rdrr.io/r/base/summary.html) returns the same
+numbers as a tibble. The largest SMD shows which variable to look at.
+The mean is steadier for comparing splits, because the largest grows
 with the number of variables checked. Here are ordinary folds from
 rsample, stratified on diagnosis. For these, you list the columns to
 check:
@@ -129,23 +163,23 @@ random_folds <- rsample::vfold_cv(d, v = 10, strata = diagnosis)
 random_check <- balance_check(random_folds, age, income, diagnosis, site)
 random_check
 #> # Balance check: 10 splits, 4 variables
-#> # 10 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.0945
+#> # 1 of 10 splits has a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.672, mean energy distance 0.0945
 #> 
-#> id      max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Fold01      0.41   income        0.198        3/4  0.137
-#> Fold02      0.282  income        0.101        1/4  0.0658
-#> Fold03      0.158  site: A       0.0704       1/4  0.0619
-#> Fold04      0.24   site: B       0.101        2/4  0.0826
-#> Fold05      0.201  age           0.132        3/4  0.0897
-#> Fold06      0.175  site: A       0.0951       2/4  0.0772
-#> Fold07      0.22   site: B       0.0885       2/4  0.097
-#> Fold08      0.372  site: C       0.182        2/4  0.129
-#> Fold09      0.405  site: B       0.233        3/4  0.142
-#> Fold10      0.163  age           0.0817       1/4  0.0639
+#> id      max |SMD|  variable  mean |SMD|  vs chance  over chance  energy
+#> Fold01      0.41   income        0.198       1.09           1/4  0.137
+#> Fold02      0.282  income        0.101       0.552          0/4  0.0658
+#> Fold03      0.158  site: A       0.0704      0.385          0/4  0.0619
+#> Fold04      0.24   site: B       0.101       0.551          0/4  0.0826
+#> Fold05      0.201  age           0.132       0.673          0/4  0.0897
+#> Fold06      0.175  site: A       0.0951      0.485          0/4  0.0772
+#> Fold07      0.22   site: B       0.0885      0.453          0/4  0.097
+#> Fold08      0.372  site: C       0.182       0.932          0/4  0.129
+#> Fold09      0.405  site: B       0.233       1.19           0/4  0.142
+#> Fold10      0.163  age           0.0817      0.418          0/4  0.0639
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
-#> # all 90 rows.
+#> # all 170 rows.
 ```
 
 And here are balanced folds. `balance` lists the columns to make
@@ -165,41 +199,44 @@ folds <- balanced_vfold_cv(
 balanced_check <- balance_check(folds)
 balanced_check
 #> # Balance check: 10 splits, 4 variables
-#> # 8 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.0549
+#> # 0 of 10 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.177, mean energy distance 0.0502
 #> 
-#> id      max |SMD|  variable           mean |SMD|  over 0.1  energy
-#> Fold01     0.119   diagnosis: mild        0.045        1/4  0.0568
-#> Fold02     0.104   diagnosis: severe      0.0567       1/4  0.0578
-#> Fold03     0.104   diagnosis: severe      0.0406       1/4  0.0437
-#> Fold04     0.0545  site: C                0.029        0/4  0.0561
-#> Fold05     0.104   diagnosis: severe      0.04         1/4  0.052
-#> Fold06     0.115   diagnosis: severe      0.0432       1/4  0.0513
-#> Fold07     0.0496  site: B                0.0254       0/4  0.0589
-#> Fold08     0.115   diagnosis: severe      0.0441       1/4  0.0674
-#> Fold09     0.129   diagnosis: mild        0.0483       1/4  0.0612
-#> Fold10     0.115   diagnosis: severe      0.0416       1/4  0.0441
+#> id      max |SMD|  variable           mean |SMD|  vs chance  over chance
+#> Fold01     0.104   diagnosis: severe      0.0414      0.21           0/4
+#> Fold02     0.0545  site: A                0.0235      0.119          0/4
+#> Fold03     0.0496  site: B                0.0222      0.113          0/4
+#> Fold04     0.104   diagnosis: severe      0.0444      0.225          0/4
+#> Fold05     0.0496  site: B                0.0215      0.109          0/4
+#> Fold06     0.0496  site: B                0.0221      0.112          0/4
+#> Fold07     0.115   diagnosis: severe      0.0588      0.298          0/4
+#> Fold08     0.0496  site: B                0.0252      0.128          0/4
+#> Fold09     0.0496  site: B                0.0266      0.135          0/4
+#> Fold10     0.134   site: C                0.0636      0.322          0/4
 #> 
+#> # Not shown for lack of width: energy.
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
-#> # all 90 rows.
+#> # all 170 rows.
 ```
 
 The largest absolute SMD in any fold fell from 0.41 to 0.13, the mean
-absolute SMD over folds fell from 0.128 to 0.041, and the mean energy
-distance fell from 0.095 to 0.055. With `by = "variable"`,
+absolute SMD over folds fell from 0.128 to 0.035, the mean ratio to
+chance fell from 0.67 (under 1 already, because these folds are
+stratified on diagnosis) to 0.18, and the mean energy distance fell from
+0.095 to 0.05. With `by = "variable"`,
 [`summary()`](https://rdrr.io/r/base/summary.html) shows where what is
 left comes from:
 
 ``` r
 
 summary(balanced_check, by = "variable")
-#> # A tibble: 4 × 7
-#>   variable  median_abs_smd max_abs_smd level id     n_over n_splits
-#>   <chr>              <dbl>       <dbl> <chr> <chr>   <int>    <int>
-#> 1 age              0.00205     0.00300 NA    Fold05      0       10
-#> 2 income           0.00383     0.0207  NA    Fold02      0       10
-#> 3 diagnosis        0.110       0.129   mild  Fold09      8       10
-#> 4 site             0.0545      0.0995  C     Fold02      0       10
+#> # A tibble: 4 × 8
+#>   variable  median_abs_smd max_abs_smd level id    n_over n_splits chance_q95
+#>   <chr>              <dbl>       <dbl> <chr> <chr>  <int>    <int>      <dbl>
+#> 1 age              0.00194     0.00906 NA    Fold…      0       10      0.360
+#> 2 income           0.00390     0.0147  NA    Fold…      0       10      0.399
+#> 3 diagnosis        0.0490      0.115   seve… Fold…      0       10      0.435
+#> 4 site             0.0496      0.134   C     Fold…      0       10      0.482
 ```
 
 It is mostly in the category proportions of the `exact` columns. The
@@ -208,7 +245,9 @@ each level on its own. So a level’s total in a fold can be one row off
 for each site, even when the total divides evenly into 10 folds. For
 example, the 40 severe cases get 3 to 5 per fold. In a fold of 30 rows,
 one row more or less of a level moves its SMD by 0.075 to 0.11 for the
-levels here, so 0.1 is not always within reach.
+levels here, so 0.1 is not always within reach. That is still well under
+chance: compare the `chance_q95` column, which is what the variable’s
+largest SMD stayed under in 95% of the random sets.
 
 ## Choosing columns: `balance` and `exact`
 
@@ -354,28 +393,29 @@ head(na_rows[na_rows$level %in% "(missing)", ], 4)
 #>   id     variable level     statistic   value
 #>   <chr>  <chr>    <chr>     <chr>       <dbl>
 #> 1 Fold01 income   (missing) smd        0     
-#> 2 Fold01 site     (missing) smd        0.0797
+#> 2 Fold01 site     (missing) smd       -0.0918
 #> 3 Fold02 income   (missing) smd        0     
-#> 4 Fold02 site     (missing) smd       -0.0918
+#> 4 Fold02 site     (missing) smd        0.0797
 na_check
 #> # Balance check: 10 splits, 4 variables
-#> # 6 of 10 splits have a variable with |SMD| > 0.1,
-#> # mean energy distance 0.0676
+#> # 0 of 10 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.218, mean energy distance 0.0613
 #> 
-#> id      max |SMD|  variable           mean |SMD|  over 0.1  energy
-#> Fold01     0.0797  site: (missing)        0.0333       0/4  0.0574
-#> Fold02     0.115   diagnosis: severe      0.0528       1/4  0.0522
-#> Fold03     0.17    site: A                0.0524       1/4  0.0813
-#> Fold04     0.0918  site: (missing)        0.0386       0/4  0.058
-#> Fold05     0.343   site: (missing)        0.0951       1/4  0.0848
-#> Fold06     0.0797  site: (missing)        0.0299       0/4  0.0693
-#> Fold07     0.216   site: (missing)        0.0642       1/4  0.087
-#> Fold08     0.202   diagnosis: severe      0.0798       1/4  0.0685
-#> Fold09     0.0797  site: (missing)        0.0334       0/4  0.0629
-#> Fold10     0.115   diagnosis: severe      0.0494       1/4  0.0547
+#> id      max |SMD|  variable           mean |SMD|  vs chance  over chance
+#> Fold01     0.119   diagnosis: mild        0.0538      0.238          0/4
+#> Fold02     0.104   diagnosis: severe      0.0525      0.232          0/4
+#> Fold03     0.104   diagnosis: severe      0.0502      0.222          0/4
+#> Fold04     0.115   diagnosis: severe      0.0531      0.235          0/4
+#> Fold05     0.115   diagnosis: severe      0.0494      0.218          0/4
+#> Fold06     0.115   diagnosis: severe      0.0494      0.218          0/4
+#> Fold07     0.0814  site: B                0.0358      0.158          0/4
+#> Fold08     0.104   diagnosis: severe      0.0507      0.224          0/4
+#> Fold09     0.137   site: A                0.0433      0.191          0/4
+#> Fold10     0.129   diagnosis: mild        0.0545      0.241          0/4
 #> 
+#> # Not shown for lack of width: energy.
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives
-#> # all 110 rows.
+#> # all 190 rows.
 ```
 
 A column with no observed values is an error. A `group` column must not
@@ -412,23 +452,26 @@ split <- balanced_initial_split(
 train <- rsample::training(split)
 balance_check(split)
 #> # Balance check: 1 split, 4 variables
-#> # |SMD| > 0.1 in 0 of 4 variables, energy distance 0.0222
+#> # |SMD| above chance (95%) in 0 of 4 variables, ratio to chance 0.0659,
+#> # energy distance 0.0207
 #> 
-#> variable   level         SMD
-#> age                -0.000449
-#> income              0.00051
-#> diagnosis  none    -0.00846
+#> variable   level         SMD  chance 95%
+#> age                -0.000237       0.255
+#> income              0.00179        0.258
+#> diagnosis  none    -0.00846        0.348
 #> diagnosis  mild     0.00927
 #> diagnosis  severe   0
-#> site       A        0.026
+#> site       A        0.026          0.327
 #> site       B       -0.00923
 #> site       C       -0.0174
 #> 
-#> # tibble::as_tibble() gives all 9 rows.
+#> # tibble::as_tibble() gives all 17 rows.
 ```
 
 For a single split, the table shows the signed SMD of each variable and
-level, and the header gives the energy distance.
+level, and what each variable’s largest SMD stayed under in 95% of
+random sets (`chance 95%`). The header gives the ratio to chance and the
+energy distance.
 
 To tune on one validation set instead of folds, use
 [`balanced_initial_validation_split()`](https://jmgirard.github.io/balancedsample/reference/balanced_initial_validation_split.md),
@@ -448,8 +491,9 @@ folds <- balanced_vfold_cv(
 
 Use
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) to
-see the SMD of every variable in every fold. The dashed lines are at
--0.1 and 0.1.
+see the SMD of every variable in every fold. The grey band around each
+variable shows how far its largest SMD went in 95% of random sets of the
+same sizes.
 
 ``` r
 
@@ -460,11 +504,11 @@ autoplot(balance_check(folds))
 ![](balancedsample_files/figure-html/plot-1.png)
 
 The diagnosis levels sit farther from 0 than age and income, even though
-diagnosis is in `exact`, and with other data they can land outside the
-lines. The counts are exact for each diagnosis and site combination. A
-fold can be one row off in each of the three sites, and these rows add
-up for the diagnosis as a whole. Rare levels show this most, because one
-row is a large share of a small level.
+diagnosis is in `exact`, but they stay well inside the band. The counts
+are exact for each diagnosis and site combination. A fold can be one row
+off in each of the three sites, and these rows add up for the diagnosis
+as a whole. Rare levels show this most, because one row is a large share
+of a small level.
 
 The folds work with tune like any other `rset`, as long as
 balancedsample is attached with
@@ -496,9 +540,9 @@ show_best(res, metric = "rmse", n = 3)
 #> # A tibble: 3 × 8
 #>   tree_depth min_n .metric .estimator  mean     n std_err .config        
 #>        <int> <int> <chr>   <chr>      <dbl> <int>   <dbl> <chr>          
-#> 1         12     9 rmse    standard    1.24     5  0.0446 pre0_mod5_post0
-#> 2          9    24 rmse    standard    1.26     5  0.0502 pre0_mod4_post0
-#> 3          6     2 rmse    standard    1.27     5  0.0483 pre0_mod3_post0
+#> 1          6     2 rmse    standard    1.12     5  0.0457 pre0_mod3_post0
+#> 2         12     9 rmse    standard    1.13     5  0.0417 pre0_mod5_post0
+#> 3          9    24 rmse    standard    1.13     5  0.0416 pre0_mod4_post0
 ```
 
 Finalize the workflow with the settings that had the lowest
@@ -514,8 +558,8 @@ collect_metrics(final_fit)
 #> # A tibble: 2 × 4
 #>   .metric .estimator .estimate .config        
 #>   <chr>   <chr>          <dbl> <chr>          
-#> 1 rmse    standard       1.12  pre0_mod0_post0
-#> 2 rsq     standard       0.470 pre0_mod0_post0
+#> 1 rmse    standard       1.23  pre0_mod0_post0
+#> 2 rsq     standard       0.388 pre0_mod0_post0
 ```
 
 ### Nested cross-validation
@@ -611,15 +655,15 @@ shown <- by_method
 shown[-1] <- round(shown[-1], 3)
 shown
 #>        method max_abs_smd mean_abs_smd mean_energy
-#> 1   anticlust       0.134        0.043       0.054
-#> 2    twinning       0.287        0.090       0.043
-#> 3 rerandomize       0.263        0.091       0.066
-#> 4 interaction       0.425        0.103       0.068
+#> 1   anticlust       0.134        0.040       0.055
+#> 2    twinning       0.211        0.085       0.040
+#> 3 rerandomize       0.318        0.100       0.062
+#> 4 interaction       0.318        0.110       0.070
 ```
 
 In this run, the smallest `max_abs_smd` came from anticlust (0.134), the
-smallest `mean_abs_smd` from anticlust (0.043), and the smallest
-`mean_energy` from twinning (0.043). These come from one run of each
+smallest `mean_abs_smd` from anticlust (0.04), and the smallest
+`mean_energy` from twinning (0.04). These come from one run of each
 method on one data set, so they don’t show which method does best in
 general, and small differences may be noise.
 
@@ -662,11 +706,11 @@ grouped
 #> # A tibble: 5 × 2
 #>   splits            id   
 #>   <list>            <chr>
-#> 1 <split [593/148]> Fold1
-#> 2 <split [593/148]> Fold2
-#> 3 <split [593/148]> Fold3
-#> 4 <split [592/149]> Fold4
-#> 5 <split [593/148]> Fold5
+#> 1 <split [607/151]> Fold1
+#> 2 <split [606/152]> Fold2
+#> 3 <split [606/152]> Fold3
+#> 4 <split [607/151]> Fold4
+#> 5 <split [606/152]> Fold5
 ```
 
 The split sizes are numbers of rows. Each fold gets about the same

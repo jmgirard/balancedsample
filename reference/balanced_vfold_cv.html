@@ -287,17 +287,18 @@ and Data Mining, 15</em>(5), 598-610.
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> <span style="color: #949494;">&lt;split [240/60]&gt;</span> Fold5</span>
 <span class="r-in"><span><span class="fu"><a href="balance_check.html">balance_check</a></span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 5 splits, 4 variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.031</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 5 splits have a variable with |SMD| above chance (95%),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # mean ratio to chance 0.0827, mean energy distance 0.031</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1     0.026   site: C             0.00967       0/4  0.0277</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2     0.026   site: A             0.00941       0/4  0.0361</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3     0.0373  diagnosis: mild     0.0187        0/4  0.0276</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4     0.026   site: C             0.00955       0/4  0.0309</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold5     0.026   site: A             0.0091        0/4  0.0327</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1     0.026   site: C             0.00967     0.0708          0/4  0.0277</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2     0.026   site: A             0.00941     0.0689          0/4  0.0361</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3     0.0373  diagnosis: mild     0.0187      0.137           0/4  0.0276</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4     0.026   site: C             0.00955     0.0699          0/4  0.0309</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold5     0.026   site: A             0.0091      0.0667          0/4  0.0327</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 45 rows.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 85 rows.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Other methods</span></span></span>
 <span class="r-in"><span><span class="fu">balanced_vfold_cv</span><span class="op">(</span></span></span>

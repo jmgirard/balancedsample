@@ -4,27 +4,29 @@
 analysis set. For a three-way split, it compares the validation set and
 the testing set each with the training set. It reports a standardized
 mean difference (SMD) for each variable and the energy distance for all
-variables together. It works with any `rset` or `rsplit`, so you can
-compare balanced folds with ordinary
+variables together. It also reports how random sets of the same sizes
+from these data would look, so you can tell balance from chance. It
+works with any `rset` or `rsplit`, so you can compare balanced folds
+with ordinary
 [`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html)
 folds.
 
 ## Usage
 
 ``` r
-balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
 # S3 method for class 'rset'
-balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
 # S3 method for class 'rsplit'
-balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
 # S3 method for class 'three_way_split'
-balance_check(x, ..., max_n = 2000, variance_ratio = FALSE)
+balance_check(x, ..., max_n = 2000, variance_ratio = FALSE, chance = 100)
 
 # S3 method for class 'balance_check'
-summary(object, ..., threshold = 0.1, by = c("split", "variable"))
+summary(object, ..., threshold = NULL, by = c("split", "variable"))
 ```
 
 ## Arguments
@@ -58,16 +60,23 @@ summary(object, ..., threshold = 0.1, by = c("split", "variable"))
 
   If `TRUE`, also report the variance ratio of each numeric variable.
 
+- chance:
+
+  The number of times the rows of each split are reassigned at random to
+  sets of the same sizes, to show how unbalanced random sets would be.
+  Use `0` to leave this out. See Details.
+
 - object:
 
   A `balance_check` object.
 
 - threshold:
 
-  The absolute SMD above which
-  [`summary()`](https://rdrr.io/r/base/summary.html) counts a variable
-  in `n_over`. A value within rounding error of `threshold` (1.5e-8)
-  counts as equal to it, so it isn't counted.
+  `NULL` (the default) to count a variable in `n_over` when its largest
+  absolute SMD is above its chance reference (`"chance_q95"`), or 0.1 if
+  `object` has none. Or a fixed absolute SMD to count above, such as
+  0.1. A value within rounding error of the cut-off (1.5e-8) counts as
+  equal to it, so it isn't counted.
 
 - by:
 
@@ -77,9 +86,14 @@ summary(object, ..., threshold = 0.1, by = c("split", "variable"))
 ## Value
 
 A tibble with class `balance_check`. It has the ID columns of `x`, and
-the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`, or
-`"variance_ratio"`), and `value`. Energy rows have `NA` in `variable`
-and `level`.
+the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`,
+`"variance_ratio"`, `"chance_mean"`, or `"chance_q95"`), and `value`.
+Energy rows have `NA` in `variable` and `level`. Each variable in each
+split has a `"chance_mean"` row, the mean of its largest absolute SMD
+over the random sets (leaving out any that are infinite, which tiny sets
+can give), and a `"chance_q95"` row, the value that 95% of them stay
+under. These rows have `NA` in `level`, and come after the energy row of
+their split.
 
 [`summary()`](https://rdrr.io/r/base/summary.html) with `by = "split"`
 returns a tibble with one row per split. It has the ID columns and these
@@ -92,7 +106,8 @@ columns:
   SMD.
 
 - `n_over`: the number of variables whose largest absolute SMD is above
-  `threshold`.
+  their own `"chance_q95"`, or above `threshold` if you give one.
+  Without chance rows (with `chance = 0`), `threshold` is 0.1.
 
 - `n_variables`: the number of variables with an SMD that isn't missing.
 
@@ -102,6 +117,10 @@ columns:
   the log scale (so 0.25 is farther than 3), and
   `variance_ratio_variable`, the variable it belongs to.
 
+- With chance rows, `chance_mean_abs_smd`, the mean over the variables
+  of their `"chance_mean"`, and `ratio_to_chance`, `mean_abs_smd`
+  divided by it. Random sets give about 1, and balanced sets less.
+
 If the split has no SMD that isn't missing, `max_abs_smd`,
 `mean_abs_smd`, `variable`, and `level` are `NA`. If it has no energy
 row, `energy` is `NA`.
@@ -110,9 +129,11 @@ With `by = "variable"`, it returns one row per variable, with
 `median_abs_smd` and `max_abs_smd` (the median and the largest of the
 variable's largest absolute SMD in each split), the `level` and the ID
 columns of the split with the largest, `n_over` (the number of splits
-where it is above `threshold`), and `n_splits` (the number of splits
-where the variable has an SMD that isn't missing). With variance ratios,
-it also has `variance_ratio`, the ratio farthest from 1 over the splits.
+where it is over, as above), and `n_splits` (the number of splits where
+the variable has an SMD that isn't missing). With variance ratios, it
+also has `variance_ratio`, the ratio farthest from 1 over the splits.
+With chance rows, it also has `chance_q95`, the median over the splits
+of the variable's `"chance_q95"`.
 
 Each split must have its own ID, so no ID may have more than one energy
 row. Only the ID columns that `balance_check()` made are used, so
@@ -128,9 +149,10 @@ For a numeric variable, the SMD is the difference in means (assessment
 minus analysis) divided by the pooled standard deviation,
 `sqrt((var_assessment + var_analysis) / 2)`. For a categorical variable,
 there is one SMD per level, from the proportions of that level. Values
-under 0.1 in absolute size are often taken as good balance. If both sets
-have zero variance but different means, the SMD is `Inf` or `-Inf`; the
-plot shows these values at the edge of the panel.
+under 0.1 in absolute size are often taken as good balance, but with
+small sets or many variables random sets rarely meet that rule; see
+below. If both sets have zero variance but different means, the SMD is
+`Inf` or `-Inf`; the plot shows these values at the edge of the panel.
 
 Stored `exact` columns with whole numbers are treated as categories, as
 the split functions treat them, so they get one SMD per level and no
@@ -168,9 +190,11 @@ of each variable and level. For up to 10 splits, it has one row per
 split, as from [`summary()`](https://rdrr.io/r/base/summary.html). For
 more splits, it has one row per variable, as from
 `summary(by = "variable")`. Columns that don't fit the width of the
-console are left out, and a note names them. Printing counts SMDs over
-0.1; use [`summary()`](https://rdrr.io/r/base/summary.html) with
-`threshold` for another value. Use
+console are left out, and a note names them. Printing compares each
+variable with chance, as
+[`summary()`](https://rdrr.io/r/base/summary.html) does; use
+[`summary()`](https://rdrr.io/r/base/summary.html) with `threshold` for
+a fixed value. Use
 [`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
 to see all rows.
 
@@ -187,6 +211,34 @@ the same random splits, one variable's absolute SMD was under 0.1 only
 about 40% of the time. An `exact` column also can't do better than whole
 rows allow.
 
+So `balance_check()` also shows how random sets of the same sizes from
+these data would look. For each split, it puts the rows of the analysis
+and assessment sets back together, deals them out at random into two
+sets of the same sizes, and measures each variable's largest absolute
+SMD, as [`summary()`](https://rdrr.io/r/base/summary.html) does. It does
+this `chance` times. A random SMD has a standard deviation of about
+`sqrt(1 / n_assessment + 1 / n_analysis)`, so this reference grows as
+the sets get smaller. Splits with the same data and sizes, such as the
+folds of
+[`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html),
+share one set of draws. The draws use R's random number generator, so
+use [`set.seed()`](https://rdrr.io/r/base/Random.html) to repeat them.
+If `x` was made with `group` and its data have the group column, whole
+groups are dealt out instead, with the same number of groups in each set
+as in the split.
+
+[`summary()`](https://rdrr.io/r/base/summary.html) divides the mean of
+the variables' largest absolute SMDs by the same mean in the random
+sets. Random folds, such as those from
+[`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html),
+give a ratio near 1, and well-balanced folds give less. By default, it
+counts a variable as over when its largest absolute SMD is above what
+95% of the random sets stay under. This count shows splits that are
+worse than chance; one in 20 variables is over in random splits. The
+ratio and the count say how balanced the sets are, not how much
+balancing will change your results. That depends mostly on how small the
+sets are and, for a yes/no outcome, on how few events each set has.
+
 ## Examples
 
 ``` r
@@ -198,34 +250,19 @@ folds <- balanced_vfold_cv(
 )
 balance_check(folds)
 #> # Balance check: 5 splits, 3 variables
-#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.023
+#> # 0 of 5 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.0384, mean energy distance 0.023
 #> 
-#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
-#> Fold1    0.00927  diagnosis: mild     0.00318       0/3  0.0218
-#> Fold2    0.00927  diagnosis: mild     0.00322       0/3  0.0152
-#> Fold3    0.00927  diagnosis: mild     0.00349       0/3  0.0193
-#> Fold4    0.00927  diagnosis: mild     0.00326       0/3  0.0243
-#> Fold5    0.0373   diagnosis: mild     0.0125        0/3  0.0343
+#> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy
+#> Fold1    0.00927  diagnosis: mild     0.00318     0.0238          0/3  0.0218
+#> Fold2    0.00927  diagnosis: mild     0.00322     0.0241          0/3  0.0152
+#> Fold3    0.00927  diagnosis: mild     0.00349     0.0261          0/3  0.0193
+#> Fold4    0.00927  diagnosis: mild     0.00326     0.0244          0/3  0.0243
+#> Fold5    0.0373   diagnosis: mild     0.0125      0.0934          0/3  0.0343
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 30 rows.
+#> # 60 rows.
 summary(balance_check(folds))
-#> # A tibble: 5 × 8
-#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
-#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
-#> 1 Fold1     0.00927 diagnosis mild       0.00318      0           3 0.0218
-#> 2 Fold2     0.00927 diagnosis mild       0.00322      0           3 0.0152
-#> 3 Fold3     0.00927 diagnosis mild       0.00349      0           3 0.0193
-#> 4 Fold4     0.00927 diagnosis mild       0.00326      0           3 0.0243
-#> 5 Fold5     0.0373  diagnosis mild       0.0125       0           3 0.0343
-summary(balance_check(folds), by = "variable")
-#> # A tibble: 3 × 7
-#>   variable  median_abs_smd max_abs_smd level id    n_over n_splits
-#>   <chr>              <dbl>       <dbl> <chr> <chr>  <int>    <int>
-#> 1 age             0.000230    0.000482 NA    Fold3      0        5
-#> 2 income          0.000242    0.000735 NA    Fold3      0        5
-#> 3 diagnosis       0.00927     0.0373   mild  Fold5      0        5
-summary(balance_check(folds, variance_ratio = TRUE))
 #> # A tibble: 5 × 10
 #>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
 #>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
@@ -234,17 +271,36 @@ summary(balance_check(folds, variance_ratio = TRUE))
 #> 3 Fold3     0.00927 diagnosis mild       0.00349      0           3 0.0193
 #> 4 Fold4     0.00927 diagnosis mild       0.00326      0           3 0.0243
 #> 5 Fold5     0.0373  diagnosis mild       0.0125       0           3 0.0343
-#> # ℹ 2 more variables: variance_ratio <dbl>, variance_ratio_variable <chr>
+#> # ℹ 2 more variables: chance_mean_abs_smd <dbl>, ratio_to_chance <dbl>
+summary(balance_check(folds), by = "variable")
+#> # A tibble: 3 × 8
+#>   variable  median_abs_smd max_abs_smd level id    n_over n_splits chance_q95
+#>   <chr>              <dbl>       <dbl> <chr> <chr>  <int>    <int>      <dbl>
+#> 1 age             0.000230    0.000482 NA    Fold3      0        5      0.253
+#> 2 income          0.000242    0.000735 NA    Fold3      0        5      0.307
+#> 3 diagnosis       0.00927     0.0373   mild  Fold5      0        5      0.338
+summary(balance_check(folds, variance_ratio = TRUE))
+#> # A tibble: 5 × 12
+#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1     0.00927 diagnosis mild       0.00318      0           3 0.0218
+#> 2 Fold2     0.00927 diagnosis mild       0.00322      0           3 0.0152
+#> 3 Fold3     0.00927 diagnosis mild       0.00349      0           3 0.0193
+#> 4 Fold4     0.00927 diagnosis mild       0.00326      0           3 0.0243
+#> 5 Fold5     0.0373  diagnosis mild       0.0125       0           3 0.0343
+#> # ℹ 4 more variables: variance_ratio <dbl>, variance_ratio_variable <chr>,
+#> #   chance_mean_abs_smd <dbl>, ratio_to_chance <dbl>
 
 # Compare with ordinary folds
 random_folds <- rsample::vfold_cv(sim_patients, v = 5)
 summary(balance_check(random_folds, age, income, diagnosis))
-#> # A tibble: 5 × 8
-#>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy
-#>   <chr>       <dbl> <chr>     <chr>        <dbl>  <int>       <int>  <dbl>
-#> 1 Fold1       0.280 diagnosis mild         0.173      3           3 0.0857
-#> 2 Fold2       0.291 income    NA           0.237      3           3 0.102 
-#> 3 Fold3       0.343 diagnosis none         0.190      2           3 0.133 
-#> 4 Fold4       0.191 diagnosis mild         0.101      1           3 0.0567
-#> 5 Fold5       0.207 diagnosis none         0.128      2           3 0.0671
+#> # A tibble: 5 × 10
+#>   id    max_abs_smd variable  level  mean_abs_smd n_over n_variables energy
+#>   <chr>       <dbl> <chr>     <chr>         <dbl>  <int>       <int>  <dbl>
+#> 1 Fold1      0.118  diagnosis severe       0.0695      0           3 0.0289
+#> 2 Fold2      0.219  income    NA           0.145       0           3 0.0544
+#> 3 Fold3      0.207  diagnosis none         0.120       0           3 0.0511
+#> 4 Fold4      0.0847 diagnosis mild         0.0426      0           3 0.0381
+#> 5 Fold5      0.175  diagnosis severe       0.167       0           3 0.0625
+#> # ℹ 2 more variables: chance_mean_abs_smd <dbl>, ratio_to_chance <dbl>
 ```

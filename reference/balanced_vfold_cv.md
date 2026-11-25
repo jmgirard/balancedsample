@@ -274,17 +274,18 @@ folds
 #> 5 <split [240/60]> Fold5
 balance_check(folds)
 #> # Balance check: 5 splits, 4 variables
-#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.031
+#> # 0 of 5 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.0827, mean energy distance 0.031
 #> 
-#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
-#> Fold1     0.026   site: C             0.00967       0/4  0.0277
-#> Fold2     0.026   site: A             0.00941       0/4  0.0361
-#> Fold3     0.0373  diagnosis: mild     0.0187        0/4  0.0276
-#> Fold4     0.026   site: C             0.00955       0/4  0.0309
-#> Fold5     0.026   site: A             0.0091        0/4  0.0327
+#> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy
+#> Fold1     0.026   site: C             0.00967     0.0708          0/4  0.0277
+#> Fold2     0.026   site: A             0.00941     0.0689          0/4  0.0361
+#> Fold3     0.0373  diagnosis: mild     0.0187      0.137           0/4  0.0276
+#> Fold4     0.026   site: C             0.00955     0.0699          0/4  0.0309
+#> Fold5     0.026   site: A             0.0091      0.0667          0/4  0.0327
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 45 rows.
+#> # 85 rows.
 
 # Other methods
 balanced_vfold_cv(

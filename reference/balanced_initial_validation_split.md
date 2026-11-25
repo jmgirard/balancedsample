@@ -169,14 +169,15 @@ split
 #> <180/60/60/300>
 balance_check(split)
 #> # Balance check: 2 splits, 4 variables
-#> # 0 of 2 splits have a variable with |SMD| > 0.1, mean energy distance 0.0271
+#> # 0 of 2 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.0703, mean energy distance 0.0271
 #> 
-#> id          max |SMD|  variable  mean |SMD|  over 0.1  energy
-#> Validation     0.0367  site: B      0.0125        0/4  0.0282
-#> Testing        0.0232  site: C      0.00906       0/4  0.0259
+#> id          max |SMD|  variable  mean |SMD|  vs chance  over chance  energy
+#> Validation     0.0367  site: B      0.0125      0.0818          0/4  0.0282
+#> Testing        0.0232  site: C      0.00906     0.0588          0/4  0.0259
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 18 rows.
+#> # 34 rows.
 rsample::validation_set(split)
 #> # A tibble: 1 × 2
 #>   splits           id        

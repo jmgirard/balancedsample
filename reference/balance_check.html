@@ -3,13 +3,15 @@
 analysis set. For a three-way split, it compares the validation set and the
 testing set each with the training set. It reports a standardized mean
 difference (SMD) for each variable and the energy distance for all
-variables together. It works
+variables together. It also reports how random sets of the same sizes
+from these data would look, so you can tell balance from chance. It works
 with any rset or rsplit, so you can compare balanced folds with
 ordinary rsample::vfold_cv() folds."><meta property="og:description" content="balance_check() compares the assessment set of each split with its
 analysis set. For a three-way split, it compares the validation set and the
 testing set each with the training set. It reports a standardized mean
 difference (SMD) for each variable and the energy distance for all
-variables together. It works
+variables together. It also reports how random sets of the same sizes
+from these data would look, so you can tell balance from chance. It works
 with any rset or rsplit, so you can compare balanced folds with
 ordinary rsample::vfold_cv() folds."><meta property="og:image" content="https://jmgirard.github.io/balancedsample/card.png"><meta property="og:image:alt" content="balancedsample hex logo"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -56,26 +58,27 @@ ordinary rsample::vfold_cv() folds."><meta property="og:image" content="https://
 analysis set. For a three-way split, it compares the validation set and the
 testing set each with the training set. It reports a standardized mean
 difference (SMD) for each variable and the energy distance for all
-variables together. It works
+variables together. It also reports how random sets of the same sizes
+from these data would look, so you can tell balance from chance. It works
 with any <code>rset</code> or <code>rsplit</code>, so you can compare balanced folds with
 ordinary <code><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">rsample::vfold_cv()</a></code> folds.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span>, chance <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'rset'</span></span>
-<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span>, chance <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'rsplit'</span></span>
-<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span>, chance <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'three_way_split'</span></span>
-<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu">balance_check</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, max_n <span class="op">=</span> <span class="fl">2000</span>, variance_ratio <span class="op">=</span> <span class="cn">FALSE</span>, chance <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'balance_check'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span>, threshold <span class="op">=</span> <span class="fl">0.1</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"split"</span>, <span class="st">"variable"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span>, threshold <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"split"</span>, <span class="st">"variable"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -105,14 +108,22 @@ Larger sets are subsampled at random to keep memory use low.</p></dd>
 numeric variable.</p></dd>
 
 
+<dt id="arg-chance">chance<a class="anchor" aria-label="anchor" href="#arg-chance"></a></dt>
+<dd><p>The number of times the rows of each split are reassigned
+at random to sets of the same sizes, to show how unbalanced random sets
+would be. Use <code>0</code> to leave this out. See Details.</p></dd>
+
+
 <dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>A <code>balance_check</code> object.</p></dd>
 
 
 <dt id="arg-threshold">threshold<a class="anchor" aria-label="anchor" href="#arg-threshold"></a></dt>
-<dd><p>The absolute SMD above which <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> counts a
-variable in <code>n_over</code>. A value within rounding error of <code>threshold</code>
-(1.5e-8) counts as equal to it, so it isn't counted.</p></dd>
+<dd><p><code>NULL</code> (the default) to count a variable in <code>n_over</code>
+when its largest absolute SMD is above its chance reference
+(<code>"chance_q95"</code>), or 0.1 if <code>object</code> has none. Or a fixed absolute SMD
+to count above, such as 0.1. A value within rounding error of the
+cut-off (1.5e-8) counts as equal to it, so it isn't counted.</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
@@ -123,22 +134,31 @@ variable across the splits.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with class <code>balance_check</code>. It has the ID columns of <code>x</code>,
-and the columns <code>variable</code>, <code>level</code>, <code>statistic</code> (<code>"smd"</code>, <code>"energy"</code>, or
-<code>"variance_ratio"</code>), and <code>value</code>. Energy rows have <code>NA</code> in <code>variable</code> and
-<code>level</code>.</p>
+and the columns <code>variable</code>, <code>level</code>, <code>statistic</code> (<code>"smd"</code>, <code>"energy"</code>,
+<code>"variance_ratio"</code>, <code>"chance_mean"</code>, or <code>"chance_q95"</code>), and <code>value</code>.
+Energy rows have <code>NA</code> in <code>variable</code> and <code>level</code>. Each variable in each
+split has a <code>"chance_mean"</code> row, the mean of its largest absolute SMD
+over the random sets (leaving out any that are infinite, which tiny
+sets can give), and a <code>"chance_q95"</code> row, the value that 95% of them
+stay under. These rows have <code>NA</code> in <code>level</code>, and come after the
+energy row of their split.</p>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> with <code>by = "split"</code> returns a tibble with one row per split.
 It has the ID columns and these columns:</p><ul><li><p><code>max_abs_smd</code>: the largest absolute SMD in the split, with the
 <code>variable</code> and <code>level</code> it belongs to (the first one if several tie).</p></li>
 <li><p><code>mean_abs_smd</code>: the mean over the variables of their largest absolute
 SMD.</p></li>
 <li><p><code>n_over</code>: the number of variables whose largest absolute SMD is above
-<code>threshold</code>.</p></li>
+their own <code>"chance_q95"</code>, or above <code>threshold</code> if you give one. Without
+chance rows (with <code>chance = 0</code>), <code>threshold</code> is 0.1.</p></li>
 <li><p><code>n_variables</code>: the number of variables with an SMD that isn't
 missing.</p></li>
 <li><p><code>energy</code>: the energy distance.</p></li>
 <li><p>With variance ratios, <code>variance_ratio</code>, the ratio farthest from 1 on
 the log scale (so 0.25 is farther than 3), and
 <code>variance_ratio_variable</code>, the variable it belongs to.</p></li>
+<li><p>With chance rows, <code>chance_mean_abs_smd</code>, the mean over the variables
+of their <code>"chance_mean"</code>, and <code>ratio_to_chance</code>, <code>mean_abs_smd</code>
+divided by it. Random sets give about 1, and balanced sets less.</p></li>
 </ul><p>If the split has no SMD that isn't missing, <code>max_abs_smd</code>,
 <code>mean_abs_smd</code>, <code>variable</code>, and <code>level</code> are <code>NA</code>. If it has no energy
 row, <code>energy</code> is <code>NA</code>.</p>
@@ -146,10 +166,11 @@ row, <code>energy</code> is <code>NA</code>.</p>
 <code>median_abs_smd</code> and <code>max_abs_smd</code> (the median and the largest of the
 variable's largest absolute SMD in each split), the <code>level</code> and the ID
 columns of the split with the largest, <code>n_over</code> (the number of splits
-where it is above <code>threshold</code>), and <code>n_splits</code> (the number of splits
+where it is over, as above), and <code>n_splits</code> (the number of splits
 where the variable has an SMD that isn't missing). With variance
 ratios, it also has <code>variance_ratio</code>, the ratio farthest from 1 over the
-splits.</p>
+splits. With chance rows, it also has <code>chance_q95</code>, the median over the
+splits of the variable's <code>"chance_q95"</code>.</p>
 <p>Each split must have its own ID, so no ID may have more than one energy
 row. Only the ID columns that <code>balance_check()</code> made are used, so
 columns you add are ignored. If you rename an ID column, the columns
@@ -163,7 +184,9 @@ printing shows the rows.</p>
 minus analysis) divided by the pooled standard deviation,
 <code>sqrt((var_assessment + var_analysis) / 2)</code>. For a categorical variable,
 there is one SMD per level, from the proportions of that level. Values
-under 0.1 in absolute size are often taken as good balance. If both sets
+under 0.1 in absolute size are often taken as good balance, but with
+small sets or many variables random sets rarely meet that rule; see
+below. If both sets
 have zero variance but different means, the SMD is <code>Inf</code> or <code>-Inf</code>; the
 plot shows these values at the edge of the panel.</p>
 <p>Stored <code>exact</code> columns with whole numbers are treated as categories, as
@@ -194,9 +217,9 @@ same distribution, and it also detects differences in spread and shape.</p>
 of each variable and level. For up to 10 splits, it has one row per split,
 as from <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>. For more splits, it has one row per variable, as from
 <code>summary(by = "variable")</code>. Columns that don't fit the width of the
-console are left out, and a note names them. Printing counts SMDs over
-0.1; use <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> with <code>threshold</code> for another value. Use
-<code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">tibble::as_tibble()</a></code> to see all rows.</p>
+console are left out, and a note names them. Printing compares each
+variable with chance, as <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> does; use <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> with
+<code>threshold</code> for a fixed value. Use <code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">tibble::as_tibble()</a></code> to see all rows.</p>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> first reduces each variable in each split to its largest
 absolute SMD, over its levels and its <code>"(missing)"</code> row. So a variable
 with many levels counts once, like a numeric variable. The largest
@@ -208,6 +231,27 @@ comparing splits that check different numbers of variables. The rule of
 thumb of 0.1 is hard to meet with small sets: in the same random splits,
 one variable's absolute SMD was under 0.1 only about 40% of the time. An
 <code>exact</code> column also can't do better than whole rows allow.</p>
+<p>So <code>balance_check()</code> also shows how random sets of the same sizes from
+these data would look. For each split, it puts the rows of the analysis
+and assessment sets back together, deals them out at random into two sets
+of the same sizes, and measures each variable's largest absolute SMD, as
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> does. It does this <code>chance</code> times. A random SMD has a
+standard deviation of about <code>sqrt(1 / n_assessment + 1 / n_analysis)</code>, so
+this reference grows as the sets get smaller. Splits with the same data
+and sizes, such as the folds of <code><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">rsample::vfold_cv()</a></code>, share one set of
+draws. The draws use R's random number generator, so use <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> to
+repeat them. If <code>x</code> was made with <code>group</code> and its data have the group
+column, whole groups are dealt out instead, with the same number of
+groups in each set as in the split.</p>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> divides the mean of the variables' largest absolute SMDs by
+the same mean in the random sets. Random folds, such as those from
+<code><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">rsample::vfold_cv()</a></code>, give a ratio near 1, and well-balanced folds give
+less. By default, it counts a variable as over when its largest absolute
+SMD is above what 95% of the random sets stay under. This count shows
+splits that are worse than chance; one in 20 variables is over in random
+splits. The ratio and the count say how balanced the sets are, not how
+much balancing will change your results. That depends mostly on how small
+the sets are and, for a yes/no outcome, on how few events each set has.</p>
     </div>
 
     <div class="section level2">
@@ -220,34 +264,19 @@ one variable's absolute SMD was under 0.1 only about 40% of the time. An
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # Balance check: 5 splits, 3 variables</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 5 splits have a variable with |SMD| &gt; 0.1, mean energy distance 0.023</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 0 of 5 splits have a variable with |SMD| above chance (95%),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # mean ratio to chance 0.0384, mean energy distance 0.023</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable         mean |SMD|  over 0.1  energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1    0.00927  diagnosis: mild     0.00318       0/3  0.0218</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2    0.00927  diagnosis: mild     0.00322       0/3  0.0152</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3    0.00927  diagnosis: mild     0.00349       0/3  0.0193</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4    0.00927  diagnosis: mild     0.00326       0/3  0.0243</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Fold5    0.0373   diagnosis: mild     0.0125        0/3  0.0343</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold1    0.00927  diagnosis: mild     0.00318     0.0238          0/3  0.0218</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold2    0.00927  diagnosis: mild     0.00322     0.0241          0/3  0.0152</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold3    0.00927  diagnosis: mild     0.00349     0.0261          0/3  0.0193</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold4    0.00927  diagnosis: mild     0.00326     0.0244          0/3  0.0243</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fold5    0.0373   diagnosis: mild     0.0125      0.0934          0/3  0.0343</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # summary() gives this table as a tibble, and tibble::as_tibble() gives all</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # 30 rows.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # 60 rows.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 8</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">18</span>      0           3 0.021<span style="text-decoration: underline;">8</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">22</span>      0           3 0.015<span style="text-decoration: underline;">2</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">49</span>      0           3 0.019<span style="text-decoration: underline;">3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">26</span>      0           3 0.024<span style="text-decoration: underline;">3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Fold5     0.037<span style="text-decoration: underline;">3</span>  diagnosis mild       0.012<span style="text-decoration: underline;">5</span>       0           3 0.034<span style="text-decoration: underline;">3</span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"variable"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   variable  median_abs_smd max_abs_smd level id    n_over n_splits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> age             0.000<span style="text-decoration: underline;">230</span>    0.000<span style="text-decoration: underline;">482</span> <span style="color: #BB0000;">NA</span>    Fold3      0        5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> income          0.000<span style="text-decoration: underline;">242</span>    0.000<span style="text-decoration: underline;">735</span> <span style="color: #BB0000;">NA</span>    Fold3      0        5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> diagnosis       0.009<span style="text-decoration: underline;">27</span>     0.037<span style="text-decoration: underline;">3</span>   mild  Fold5      0        5</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span>, variance_ratio <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 10</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
@@ -256,19 +285,38 @@ one variable's absolute SMD was under 0.1 only about 40% of the time. An
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">49</span>      0           3 0.019<span style="text-decoration: underline;">3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">26</span>      0           3 0.024<span style="text-decoration: underline;">3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Fold5     0.037<span style="text-decoration: underline;">3</span>  diagnosis mild       0.012<span style="text-decoration: underline;">5</span>       0           3 0.034<span style="text-decoration: underline;">3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: variance_ratio &lt;dbl&gt;, variance_ratio_variable &lt;chr&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: chance_mean_abs_smd &lt;dbl&gt;, ratio_to_chance &lt;dbl&gt;</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"variable"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 8</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   variable  median_abs_smd max_abs_smd level id    n_over n_splits chance_q95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> age             0.000<span style="text-decoration: underline;">230</span>    0.000<span style="text-decoration: underline;">482</span> <span style="color: #BB0000;">NA</span>    Fold3      0        5      0.253</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> income          0.000<span style="text-decoration: underline;">242</span>    0.000<span style="text-decoration: underline;">735</span> <span style="color: #BB0000;">NA</span>    Fold3      0        5      0.307</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> diagnosis       0.009<span style="text-decoration: underline;">27</span>     0.037<span style="text-decoration: underline;">3</span>   mild  Fold5      0        5      0.338</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">folds</span>, variance_ratio <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 12</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">18</span>      0           3 0.021<span style="text-decoration: underline;">8</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">22</span>      0           3 0.015<span style="text-decoration: underline;">2</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">49</span>      0           3 0.019<span style="text-decoration: underline;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4     0.009<span style="text-decoration: underline;">27</span> diagnosis mild       0.003<span style="text-decoration: underline;">26</span>      0           3 0.024<span style="text-decoration: underline;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Fold5     0.037<span style="text-decoration: underline;">3</span>  diagnosis mild       0.012<span style="text-decoration: underline;">5</span>       0           3 0.034<span style="text-decoration: underline;">3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: variance_ratio &lt;dbl&gt;, variance_ratio_variable &lt;chr&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   chance_mean_abs_smd &lt;dbl&gt;, ratio_to_chance &lt;dbl&gt;</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compare with ordinary folds</span></span></span>
 <span class="r-in"><span><span class="va">random_folds</span> <span class="op">&lt;-</span> <span class="fu">rsample</span><span class="fu">::</span><span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">sim_patients</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">balance_check</span><span class="op">(</span><span class="va">random_folds</span>, <span class="va">age</span>, <span class="va">income</span>, <span class="va">diagnosis</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 8</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable  level mean_abs_smd n_over n_variables energy</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1       0.280 diagnosis mild         0.173      3           3 0.085<span style="text-decoration: underline;">7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2       0.291 income    <span style="color: #BB0000;">NA</span>           0.237      3           3 0.102 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3       0.343 diagnosis none         0.190      2           3 0.133 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4       0.191 diagnosis mild         0.101      1           3 0.056<span style="text-decoration: underline;">7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Fold5       0.207 diagnosis none         0.128      2           3 0.067<span style="text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 10</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   id    max_abs_smd variable  level  mean_abs_smd n_over n_variables energy</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Fold1      0.118  diagnosis severe       0.069<span style="text-decoration: underline;">5</span>      0           3 0.028<span style="text-decoration: underline;">9</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Fold2      0.219  income    <span style="color: #BB0000;">NA</span>           0.145       0           3 0.054<span style="text-decoration: underline;">4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> Fold3      0.207  diagnosis none         0.120       0           3 0.051<span style="text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Fold4      0.084<span style="text-decoration: underline;">7</span> diagnosis mild         0.042<span style="text-decoration: underline;">6</span>      0           3 0.038<span style="text-decoration: underline;">1</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> Fold5      0.175  diagnosis severe       0.167       0           3 0.062<span style="text-decoration: underline;">5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: chance_mean_abs_smd &lt;dbl&gt;, ratio_to_chance &lt;dbl&gt;</span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
