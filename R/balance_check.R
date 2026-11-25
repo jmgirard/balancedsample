@@ -4,7 +4,8 @@
 #' analysis set. For a three-way split, it compares the validation set and the
 #' testing set each with the training set. It reports a standardized mean
 #' difference (SMD) for each variable and the energy distance for all
-#' variables together. It works
+#' variables together. It also reports how random sets of the same sizes
+#' from these data would look, so you can tell balance from chance. It works
 #' with any `rset` or `rsplit`, so you can compare balanced folds with
 #' ordinary [rsample::vfold_cv()] folds.
 #'
@@ -19,13 +20,18 @@
 #'   Larger sets are subsampled at random to keep memory use low.
 #' @param variance_ratio If `TRUE`, also report the variance ratio of each
 #'   numeric variable.
+#' @param chance The number of times the rows of each split are reassigned
+#'   at random to sets of the same sizes, to show how unbalanced random sets
+#'   would be. Use `0` to leave this out. See Details.
 #'
 #' @details
 #' For a numeric variable, the SMD is the difference in means (assessment
 #' minus analysis) divided by the pooled standard deviation,
 #' `sqrt((var_assessment + var_analysis) / 2)`. For a categorical variable,
 #' there is one SMD per level, from the proportions of that level. Values
-#' under 0.1 in absolute size are often taken as good balance. If both sets
+#' under 0.1 in absolute size are often taken as good balance, but with
+#' small sets or many variables random sets rarely meet that rule; see
+#' below. If both sets
 #' have zero variance but different means, the SMD is `Inf` or `-Inf`; the
 #' plot shows these values at the edge of the panel.
 #'
@@ -61,9 +67,9 @@
 #' of each variable and level. For up to 10 splits, it has one row per split,
 #' as from `summary()`. For more splits, it has one row per variable, as from
 #' `summary(by = "variable")`. Columns that don't fit the width of the
-#' console are left out, and a note names them. Printing counts SMDs over
-#' 0.1; use `summary()` with `threshold` for another value. Use
-#' [tibble::as_tibble()] to see all rows.
+#' console are left out, and a note names them. Printing compares each
+#' variable with chance, as `summary()` does; use `summary()` with
+#' `threshold` for a fixed value. Use [tibble::as_tibble()] to see all rows.
 #'
 #' `summary()` first reduces each variable in each split to its largest
 #' absolute SMD, over its levels and its `"(missing)"` row. So a variable
@@ -77,10 +83,38 @@
 #' one variable's absolute SMD was under 0.1 only about 40% of the time. An
 #' `exact` column also can't do better than whole rows allow.
 #'
+#' So `balance_check()` also shows how random sets of the same sizes from
+#' these data would look. For each split, it puts the rows of the analysis
+#' and assessment sets back together, deals them out at random into two sets
+#' of the same sizes, and measures each variable's largest absolute SMD, as
+#' `summary()` does. It does this `chance` times. A random SMD has a
+#' standard deviation of about `sqrt(1 / n_assessment + 1 / n_analysis)`, so
+#' this reference grows as the sets get smaller. Splits with the same data
+#' and sizes, such as the folds of [rsample::vfold_cv()], share one set of
+#' draws. The draws use R's random number generator, so use [set.seed()] to
+#' repeat them. If `x` was made with `group` and its data have the group
+#' column, whole groups are dealt out instead, with the same number of
+#' groups in each set as in the split.
+#'
+#' `summary()` divides the mean of the variables' largest absolute SMDs by
+#' the same mean in the random sets. Random folds, such as those from
+#' [rsample::vfold_cv()], give a ratio near 1, and well-balanced folds give
+#' less. By default, it counts a variable as over when its largest absolute
+#' SMD is above what 95% of the random sets stay under. This count shows
+#' splits that are worse than chance; one in 20 variables is over in random
+#' splits. The ratio and the count say how balanced the sets are, not how
+#' much balancing will change your results. That depends mostly on how small
+#' the sets are and, for a yes/no outcome, on how few events each set has.
+#'
 #' @return A tibble with class `balance_check`. It has the ID columns of `x`,
-#'   and the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`, or
-#'   `"variance_ratio"`), and `value`. Energy rows have `NA` in `variable` and
-#'   `level`.
+#'   and the columns `variable`, `level`, `statistic` (`"smd"`, `"energy"`,
+#'   `"variance_ratio"`, `"chance_mean"`, or `"chance_q95"`), and `value`.
+#'   Energy rows have `NA` in `variable` and `level`. Each variable in each
+#'   split has a `"chance_mean"` row, the mean of its largest absolute SMD
+#'   over the random sets (leaving out any that are infinite, which tiny
+#'   sets can give), and a `"chance_q95"` row, the value that 95% of them
+#'   stay under. These rows have `NA` in `level`, and come after the
+#'   energy row of their split.
 #'
 #'   `summary()` with `by = "split"` returns a tibble with one row per split.
 #'   It has the ID columns and these columns:
@@ -89,13 +123,17 @@
 #'   * `mean_abs_smd`: the mean over the variables of their largest absolute
 #'     SMD.
 #'   * `n_over`: the number of variables whose largest absolute SMD is above
-#'     `threshold`.
+#'     their own `"chance_q95"`, or above `threshold` if you give one. Without
+#'     chance rows (with `chance = 0`), `threshold` is 0.1.
 #'   * `n_variables`: the number of variables with an SMD that isn't
 #'     missing.
 #'   * `energy`: the energy distance.
 #'   * With variance ratios, `variance_ratio`, the ratio farthest from 1 on
 #'     the log scale (so 0.25 is farther than 3), and
 #'     `variance_ratio_variable`, the variable it belongs to.
+#'   * With chance rows, `chance_mean_abs_smd`, the mean over the variables
+#'     of their `"chance_mean"`, and `ratio_to_chance`, `mean_abs_smd`
+#'     divided by it. Random sets give about 1, and balanced sets less.
 #'
 #'   If the split has no SMD that isn't missing, `max_abs_smd`,
 #'   `mean_abs_smd`, `variable`, and `level` are `NA`. If it has no energy
@@ -105,10 +143,11 @@
 #'   `median_abs_smd` and `max_abs_smd` (the median and the largest of the
 #'   variable's largest absolute SMD in each split), the `level` and the ID
 #'   columns of the split with the largest, `n_over` (the number of splits
-#'   where it is above `threshold`), and `n_splits` (the number of splits
+#'   where it is over, as above), and `n_splits` (the number of splits
 #'   where the variable has an SMD that isn't missing). With variance
 #'   ratios, it also has `variance_ratio`, the ratio farthest from 1 over the
-#'   splits.
+#'   splits. With chance rows, it also has `chance_q95`, the median over the
+#'   splits of the variable's `"chance_q95"`.
 #'
 #'   Each split must have its own ID, so no ID may have more than one energy
 #'   row. Only the ID columns that `balance_check()` made are used, so
@@ -133,7 +172,13 @@
 #' random_folds <- rsample::vfold_cv(sim_patients, v = 5)
 #' summary(balance_check(random_folds, age, income, diagnosis))
 #' @export
-balance_check <- function(x, ..., max_n = 2000, variance_ratio = FALSE) {
+balance_check <- function(
+  x,
+  ...,
+  max_n = 2000,
+  variance_ratio = FALSE,
+  chance = 100
+) {
   UseMethod("balance_check")
 }
 
@@ -142,7 +187,8 @@ balance_check.default <- function(
   x,
   ...,
   max_n = 2000,
-  variance_ratio = FALSE
+  variance_ratio = FALSE,
+  chance = 100
 ) {
   cli::cli_abort(
     "{.arg x} must be an {.cls rset}, an {.cls rsplit}, or a {.cls three_way_split}, not {.obj_type_friendly {x}}."
@@ -155,10 +201,12 @@ balance_check.rset <- function(
   x,
   ...,
   max_n = 2000,
-  variance_ratio = FALSE
+  variance_ratio = FALSE,
+  chance = 100
 ) {
   check_whole(max_n, min = 2)
   check_flag(variance_ratio)
+  check_whole(chance, min = 0)
   if (nrow(x) == 0) {
     cli::cli_abort("{.arg x} has no splits.")
   }
@@ -178,12 +226,22 @@ balance_check.rset <- function(
   }
   id_cols <- grep("^id", names(x), value = TRUE)
   ids <- tibble::as_tibble(as.data.frame(x)[id_cols])
+  cache <- new.env(parent = emptyenv())
 
   res <- lapply(seq_len(nrow(x)), function(i) {
     # Splits of a manual_rset() can have different data.
     split <- x$splits[[i]]
     data <- exact_as_factors(split$data, x, cols)
-    out <- split_balance(split, cols, max_n, data, variance_ratio)
+    out <- split_balance(
+      split,
+      cols,
+      max_n,
+      data,
+      variance_ratio,
+      chance,
+      group_units(split$data, x),
+      cache
+    )
     id_rows <- ids[rep(i, nrow(out)), , drop = FALSE]
     cbind(id_rows, out)
   })
@@ -196,17 +254,21 @@ balance_check.rsplit <- function(
   x,
   ...,
   max_n = 2000,
-  variance_ratio = FALSE
+  variance_ratio = FALSE,
+  chance = 100
 ) {
   check_whole(max_n, min = 2)
   check_flag(variance_ratio)
+  check_whole(chance, min = 0)
   cols <- check_columns(x$data, x, ...)
   out <- split_balance(
     x,
     cols,
     max_n,
     exact_as_factors(x$data, x, cols),
-    variance_ratio
+    variance_ratio,
+    chance,
+    group_units(x$data, x)
   )
   new_balance_check(cbind(tibble::tibble(id = rep("Split", nrow(out))), out))
 }
@@ -217,13 +279,17 @@ balance_check.three_way_split <- function(
   x,
   ...,
   max_n = 2000,
-  variance_ratio = FALSE
+  variance_ratio = FALSE,
+  chance = 100
 ) {
   check_whole(max_n, min = 2)
   check_flag(variance_ratio)
+  check_whole(chance, min = 0)
   cols <- check_columns(x$data, x, ...)
   data <- exact_as_factors(x$data, x, cols)
   test_id <- setdiff(seq_len(nrow(x$data)), c(x$train_id, x$val_id))
+  units <- group_units(x$data, x)
+  cache <- new.env(parent = emptyenv())
   res <- lapply(
     list(Validation = x$val_id, Testing = test_id),
     function(out_id) {
@@ -231,7 +297,16 @@ balance_check.three_way_split <- function(
         list(analysis = x$train_id, assessment = out_id),
         data = x$data
       )
-      split_balance(split, cols, max_n, data, variance_ratio)
+      split_balance(
+        split,
+        cols,
+        max_n,
+        data,
+        variance_ratio,
+        chance,
+        units,
+        cache
+      )
     }
   )
   ids <- rep(names(res), vapply(res, nrow, integer(1)))
@@ -280,32 +355,34 @@ exact_as_factors <- function(data, x, cols) {
   data
 }
 
+# The group of each row, if `x` was made with `group` and the data have the
+# column, so that the chance reference reassigns whole groups.
+group_units <- function(data, x) {
+  group <- unname(stored_args(x)$group)
+  if (length(group) == 1 && is.character(group) && group %in% names(data)) {
+    data[[group]]
+  }
+}
+
 split_balance <- function(
   split,
   cols,
   max_n,
   data = split$data,
-  variance_ratio = FALSE
+  variance_ratio = FALSE,
+  chance = 0,
+  units = NULL,
+  cache = NULL
 ) {
   an <- split$in_id
   as <- rsample::complement(split)
+  measured <- lapply(data[cols], smd_columns)
 
-  smd <- lapply(cols, function(nm) {
-    out <- variable_balance(data[[nm]], nm, an, as, variance_ratio)
-    miss <- is.na(data[[nm]])
-    if (any(miss)) {
-      out <- rbind(
-        out,
-        tibble::tibble(
-          variable = nm,
-          level = "(missing)",
-          statistic = "smd",
-          value = smd_value(miss[as] * 1, miss[an] * 1, binary = TRUE)
-        )
-      )
-    }
-    out
-  })
+  smd <- Map(
+    function(m, nm) variable_balance(m, nm, an, as, variance_ratio),
+    measured,
+    cols
+  )
 
   # The energy distance uses all rows, encoded as the split functions
   # encode them, so that missing values count too.
@@ -324,51 +401,153 @@ split_balance <- function(
     statistic = "energy",
     value = en
   )
-  do.call(rbind, c(smd, list(energy)))
+  out <- do.call(rbind, c(unname(smd), list(energy)))
+  if (chance > 0) {
+    out <- rbind(
+      out,
+      chance_balance(measured, cols, an, as, chance, units, cache)
+    )
+  }
+  out
 }
 
-# SMDs (and variance ratios) of one variable, from its observed values.
-variable_balance <- function(v, nm, an, as, variance_ratio) {
+# The values that the SMDs of one variable are measured on: one 0/1 column
+# per level of a categorical variable, or the numeric values, and a 0/1
+# column of which values are missing if any are.
+smd_columns <- function(v) {
   if (is.logical(v)) {
     v <- factor(v, levels = c(FALSE, TRUE))
   }
   if (is.character(v)) {
     v <- factor(v)
   }
+  numeric <- NULL
   if (is.factor(v)) {
-    lv <- levels(droplevels(v))
-    vals <- vapply(
-      lv,
-      function(l) {
-        z <- as.numeric(v == l)
-        smd_value(z[as], z[an], binary = TRUE)
-      },
-      numeric(1)
-    )
-    return(tibble::tibble(
-      variable = nm,
-      level = lv,
-      statistic = "smd",
-      value = unname(vals)
-    ))
+    level <- levels(droplevels(v))
+    values <- lapply(level, function(l) as.numeric(v == l))
+    binary <- rep(TRUE, length(level))
+  } else {
+    numeric <- as.numeric(as_balance_numeric(v))
+    level <- NA_character_
+    values <- list(numeric)
+    binary <- FALSE
   }
-  v <- as.numeric(as_balance_numeric(v))
+  miss <- is.na(v)
+  if (any(miss)) {
+    level <- c(level, "(missing)")
+    values <- c(values, list(miss * 1))
+    binary <- c(binary, TRUE)
+  }
+  list(level = level, values = values, binary = binary, numeric = numeric)
+}
+
+# The SMDs of one variable, from smd_columns(), one per level and one for
+# the share missing.
+column_smds <- function(m, an, as) {
+  vapply(
+    seq_along(m$values),
+    function(j) {
+      smd_value(m$values[[j]][as], m$values[[j]][an], binary = m$binary[j])
+    },
+    numeric(1)
+  )
+}
+
+# SMDs (and variance ratios) of one variable. Missing values are dropped,
+# and the share missing gets its own row.
+variable_balance <- function(m, nm, an, as, variance_ratio) {
   out <- tibble::tibble(
     variable = nm,
-    level = NA_character_,
+    level = m$level,
     statistic = "smd",
-    value = smd_value(v[as], v[an])
+    value = column_smds(m, an, as)
   )
-  if (variance_ratio) {
-    out <- rbind(
-      out,
-      tibble::tibble(
-        variable = nm,
-        level = NA_character_,
-        statistic = "variance_ratio",
-        value = variance_ratio_value(v[as], v[an])
-      )
+  if (variance_ratio && !is.null(m$numeric)) {
+    v <- m$numeric
+    vr <- tibble::tibble(
+      variable = nm,
+      level = NA_character_,
+      statistic = "variance_ratio",
+      value = variance_ratio_value(v[as], v[an])
     )
+    out <- rbind(out[1, ], vr, out[-1, ])
+  }
+  out
+}
+
+# How unbalanced random sets of the same sizes would be. The rows of both
+# sets are reassigned at random to sets of the same sizes, `chance` times,
+# and each time each variable is reduced to its largest absolute SMD, as in
+# summary(). With `units`, whole groups are reassigned instead, with the
+# same number of groups in each set as in the split. Splits with the same
+# data, rows, and sizes share one set of draws through `cache`.
+chance_balance <- function(measured, cols, an, as, chance, units, cache) {
+  rows <- sort(c(an, as))
+  n_as <- length(as)
+  if (!is.null(units)) {
+    code <- match(units[rows], unique(units[rows]))
+    n_units <- max(c(0L, code))
+    n_as_units <- length(unique(units[as]))
+  }
+  key <- list(
+    measured = measured,
+    rows = rows,
+    n_as = n_as,
+    units = if (!is.null(units)) list(code, n_as_units)
+  )
+  if (!is.null(cache)) {
+    for (entry in cache$entries) {
+      if (identical(entry$key, key)) {
+        return(entry$out)
+      }
+    }
+  }
+
+  worst <- function(m, an, as) {
+    smd <- abs(column_smds(m, an, as))
+    if (all(is.na(smd))) NA_real_ else max(smd, na.rm = TRUE)
+  }
+  draws <- vapply(
+    seq_len(chance),
+    function(r) {
+      if (is.null(units)) {
+        new_as <- seq_len(length(rows)) %in% sample.int(length(rows), n_as)
+      } else {
+        new_as <- code %in% sample.int(n_units, n_as_units)
+      }
+      vapply(
+        measured,
+        worst,
+        numeric(1),
+        an = rows[!new_as],
+        as = rows[new_as]
+      )
+    },
+    numeric(length(measured))
+  )
+  draws <- matrix(draws, nrow = length(measured))
+  stat <- function(f) {
+    apply(draws, 1, function(d) {
+      d <- d[!is.na(d)]
+      if (length(d) > 0) f(d) else NA_real_
+    })
+  }
+  # In tiny sets, a draw can separate a level completely (an SMD of Inf).
+  # Such draws are left out of the mean, so that one of them doesn't make
+  # the whole reference Inf.
+  finite_mean <- function(d) {
+    d <- d[is.finite(d)]
+    if (length(d) > 0) mean(d) else Inf
+  }
+  q95 <- function(d) stats::quantile(d, 0.95, names = FALSE)
+  out <- tibble::tibble(
+    variable = rep(cols, each = 2),
+    level = NA_character_,
+    statistic = rep(c("chance_mean", "chance_q95"), length(cols)),
+    value = as.vector(rbind(stat(finite_mean), stat(q95)))
+  )
+  if (!is.null(cache)) {
+    cache$entries <- c(cache$entries, list(list(key = key, out = out)))
   }
   out
 }
@@ -476,7 +655,9 @@ print.balance_check <- function(x, ...) {
     print(unclass_balance(x), ...)
     return(invisible(x))
   }
-  threshold <- 0.1
+  # With chance rows, each variable is compared with its own chance
+  # reference, and otherwise with 0.1.
+  threshold <- if (uses_chance(s$x, NULL)) NULL else 0.1
   by_split <- summary_by_split(s, threshold)
   n_split <- nrow(by_split)
   vars <- s$x$variable[s$x$statistic == "smd"]
@@ -490,10 +671,12 @@ print.balance_check <- function(x, ...) {
   }
 
   en <- by_split$energy
+  ratio <- if ("ratio_to_chance" %in% names(by_split)) by_split$ratio_to_chance
+  rule <- if (is.null(threshold)) "above chance (95%)" else "> 0.1"
   if (n_split == 1) {
     over <- paste0(
-      "|SMD| > ",
-      threshold,
+      "|SMD| ",
+      rule,
       " in ",
       by_split$n_over,
       " of ",
@@ -501,6 +684,7 @@ print.balance_check <- function(x, ...) {
       " variable",
       if (by_split$n_variables != 1) "s"
     )
+    ratio <- if (!is.null(ratio)) paste("ratio to chance", format_num(ratio))
     energy <- paste("energy distance", format_num(en))
   } else {
     n_over <- sum(by_split$n_over > 0)
@@ -510,12 +694,18 @@ print.balance_check <- function(x, ...) {
       n_split,
       " splits",
       if (n_over == 1) " has" else " have",
-      " a variable with |SMD| > ",
-      threshold
+      " a variable with |SMD| ",
+      rule
     )
+    if (!is.null(ratio)) {
+      ratio <- paste(
+        "mean ratio to chance",
+        format_num(mean(ratio, na.rm = TRUE))
+      )
+    }
     energy <- paste("mean energy distance", format_num(mean(en, na.rm = TRUE)))
   }
-  cat_header(c(over, if (any(!is.na(en))) energy))
+  cat_header(c(over, ratio, if (any(!is.na(en))) energy))
   cat("\n")
 
   if (n_split == 1) {
@@ -555,7 +745,13 @@ print.balance_check <- function(x, ...) {
   invisible(x)
 }
 
-# The signed SMD of each variable and level of one split.
+# The name of the column that counts the variables over the cut-off.
+over_name <- function(threshold) {
+  if (is.null(threshold)) "over chance" else paste("over", threshold)
+}
+
+# The signed SMD of each variable and level of one split, with the chance
+# reference of each variable on its first row.
 detail_table <- function(x, threshold) {
   smd <- x$statistic == "smd"
   out <- list(
@@ -564,6 +760,14 @@ detail_table <- function(x, threshold) {
     SMD = format_smd(x$value[smd], threshold)
   )
   align <- c("left", "left", "decimal")
+  first <- !duplicated(x$variable[smd])
+  q95 <- which(x$statistic == "chance_q95")
+  if (length(q95) > 0) {
+    at <- match(x$variable[smd], x$variable[q95])
+    at[!first] <- NA
+    out$`chance 95%` <- ifelse(is.na(at), "", format_num(x$value[q95][at]))
+    align <- c(align, "decimal")
+  }
   vr <- which(x$statistic == "variance_ratio")
   if (length(vr) > 0) {
     at <- match(x$variable[smd], x$variable[vr])
@@ -582,13 +786,17 @@ split_table <- function(s, id_cols, threshold) {
     list(
       `max |SMD|` = format_smd(s$max_abs_smd, threshold),
       variable = variable_label(s$variable, s$level),
-      `mean |SMD|` = format_smd(s$mean_abs_smd, threshold),
-      over = paste0(s$n_over, "/", s$n_variables),
-      energy = format_num(s$energy)
+      `mean |SMD|` = format_smd(s$mean_abs_smd, threshold)
     )
   )
-  names(out)[names(out) == "over"] <- paste("over", threshold)
   align <- c(rep("left", length(ids)), "decimal", "left", "decimal")
+  if ("ratio_to_chance" %in% names(s)) {
+    out$`vs chance` <- format_num(s$ratio_to_chance)
+    align <- c(align, "decimal")
+  }
+  out$over <- paste0(s$n_over, "/", s$n_variables)
+  out$energy <- format_num(s$energy)
+  names(out)[names(out) == "over"] <- over_name(threshold)
   align <- c(align, "right", "decimal")
   if ("variance_ratio" %in% names(s)) {
     out$`variance ratio` <- format_num(s$variance_ratio)
@@ -616,11 +824,16 @@ variable_table <- function(s, id_cols, threshold) {
     `median |SMD|` = format_smd(s$median_abs_smd, threshold),
     `max |SMD|` = format_smd(s$max_abs_smd, threshold),
     level = ifelse(is.na(s$level), "", s$level),
-    `in split` = do.call(paste, c(unname(ids), sep = " / ")),
-    over = paste0(s$n_over, "/", s$n_splits)
+    `in split` = do.call(paste, c(unname(ids), sep = " / "))
   )
-  names(out)[names(out) == "over"] <- paste("over", threshold)
-  align <- c("left", "decimal", "decimal", "left", "left", "right")
+  align <- c("left", "decimal", "decimal", "left", "left")
+  if ("chance_q95" %in% names(s)) {
+    out$`chance 95%` <- format_num(s$chance_q95)
+    align <- c(align, "decimal")
+  }
+  out$over <- paste0(s$n_over, "/", s$n_splits)
+  names(out)[names(out) == "over"] <- over_name(threshold)
+  align <- c(align, "right")
   if ("variance_ratio" %in% names(s)) {
     out$`variance ratio` <- format_num(s$variance_ratio)
     align <- c(align, "decimal")
@@ -659,6 +872,11 @@ above <- function(a, threshold) {
 # with the counts. A value within rounding error of the threshold shows as
 # the threshold.
 format_smd <- function(v, threshold) {
+  # Compared with a cut-off of each variable's own, the values are shown
+  # plainly.
+  if (is.null(threshold)) {
+    return(format_num(v))
+  }
   vapply(
     v,
     function(z) {
@@ -725,21 +943,28 @@ cat_table <- function(table) {
 
 #' @rdname balance_check
 #' @param object A `balance_check` object.
-#' @param threshold The absolute SMD above which `summary()` counts a
-#'   variable in `n_over`. A value within rounding error of `threshold`
-#'   (1.5e-8) counts as equal to it, so it isn't counted.
+#' @param threshold `NULL` (the default) to count a variable in `n_over`
+#'   when its largest absolute SMD is above its chance reference
+#'   (`"chance_q95"`), or 0.1 if `object` has none. Or a fixed absolute SMD
+#'   to count above, such as 0.1. A value within rounding error of the
+#'   cut-off (1.5e-8) counts as equal to it, so it isn't counted.
 #' @param by `"split"` for one row per split, or `"variable"` for one row per
 #'   variable across the splits.
 #' @export
 summary.balance_check <- function(
   object,
   ...,
-  threshold = 0.1,
+  threshold = NULL,
   by = c("split", "variable")
 ) {
   rlang::check_dots_empty()
-  if (!is_number(threshold) || !is.finite(threshold) || threshold < 0) {
-    cli::cli_abort("{.arg threshold} must be a number of at least 0.")
+  if (
+    !is.null(threshold) &&
+      (!is_number(threshold) || !is.finite(threshold) || threshold < 0)
+  ) {
+    cli::cli_abort(
+      "{.arg threshold} must be {.code NULL} or a number of at least 0."
+    )
   }
   by <- rlang::arg_match(by)
   s <- balance_splits(object)
@@ -782,7 +1007,7 @@ balance_splits <- function(object, call = rlang::caller_env()) {
       call = call
     )
   }
-  stats <- c("smd", "energy", "variance_ratio")
+  stats <- c("smd", "energy", "variance_ratio", "chance_mean", "chance_q95")
   if (!all(x$statistic %in% stats)) {
     cli::cli_abort(
       "{.code statistic} must be {.or {.val {stats}}} in every row of {.arg object}.",
@@ -824,9 +1049,36 @@ farthest_ratio <- function(x, i) {
   i[which.max(abs(log(x$value[i])))]
 }
 
+# Whether a variable counts as over compares with its chance reference:
+# with no `threshold`, if `x` has one, and with 0.1 otherwise.
+uses_chance <- function(x, threshold) {
+  is.null(threshold) && any(x$statistic == "chance_q95")
+}
+
+# Among rows `i` of one split, the value of `statistic` for each of `vars`.
+chance_value <- function(x, i, vars, statistic) {
+  j <- i[x$statistic[i] == statistic]
+  x$value[j][match(vars, x$variable[j])]
+}
+
+# The cut-off of each variable in `worst`, a list with the rows of the
+# largest absolute SMD of each variable in each split.
+over_cutoffs <- function(s, worst, threshold) {
+  x <- s$x
+  if (!uses_chance(x, threshold)) {
+    return(lapply(worst, function(w) rep(threshold %||% 0.1, length(w))))
+  }
+  Map(
+    function(i, w) chance_value(x, i, x$variable[w], "chance_q95"),
+    s$rows,
+    worst
+  )
+}
+
 summary_by_split <- function(s, threshold) {
   x <- s$x
   worst <- lapply(s$rows, worst_by_variable, x = x)
+  cutoffs <- over_cutoffs(s, worst, threshold)
   top <- vapply(
     worst,
     function(w) {
@@ -855,8 +1107,8 @@ summary_by_split <- function(s, threshold) {
     numeric(1)
   )
   out$n_over <- vapply(
-    abs_smd,
-    function(a) sum(above(a, threshold)),
+    seq_along(abs_smd),
+    function(k) sum(above(abs_smd[[k]], cutoffs[[k]]), na.rm = TRUE),
     integer(1)
   )
   out$n_variables <- unname(lengths(abs_smd))
@@ -866,6 +1118,20 @@ summary_by_split <- function(s, threshold) {
     out$variance_ratio <- x$value[vr]
     out$variance_ratio_variable <- x$variable[vr]
   }
+  if (any(x$statistic == "chance_mean")) {
+    out$chance_mean_abs_smd <- unname(vapply(
+      seq_along(worst),
+      function(k) {
+        w <- worst[[k]]
+        if (length(w) == 0) {
+          return(NA_real_)
+        }
+        mean(chance_value(x, s$rows[[k]], x$variable[w], "chance_mean"))
+      },
+      numeric(1)
+    ))
+    out$ratio_to_chance <- out$mean_abs_smd / out$chance_mean_abs_smd
+  }
   out
 }
 
@@ -873,6 +1139,7 @@ summary_by_variable <- function(s, threshold) {
   x <- s$x
   worst <- lapply(s$rows, worst_by_variable, x = x)
   rows <- as.integer(unlist(worst, use.names = FALSE))
+  cutoffs <- as.numeric(unlist(over_cutoffs(s, worst, threshold)))
   split_of <- rep(seq_along(worst), lengths(worst))
   smd <- x$statistic == "smd" & !is.na(x$variable)
   vars <- unique(x$variable[smd])
@@ -904,7 +1171,7 @@ summary_by_variable <- function(s, threshold) {
   out <- tibble::as_tibble(c(out, ids))
   out$n_over <- vapply(
     by_var,
-    function(j) sum(above(abs(x$value[rows[j]]), threshold)),
+    function(j) sum(above(abs(x$value[rows[j]]), cutoffs[j]), na.rm = TRUE),
     integer(1)
   )
   out$n_splits <- lengths(by_var)
@@ -913,6 +1180,15 @@ summary_by_variable <- function(s, threshold) {
     out$variance_ratio <- vapply(
       vars,
       function(v) x$value[farthest_ratio(x, vr[x$variable[vr] %in% v])],
+      numeric(1),
+      USE.NAMES = FALSE
+    )
+  }
+  if (any(x$statistic == "chance_q95")) {
+    q <- x$statistic == "chance_q95"
+    out$chance_q95 <- vapply(
+      vars,
+      function(v) stats::median(x$value[q & x$variable %in% v]),
       numeric(1),
       USE.NAMES = FALSE
     )

@@ -19,9 +19,11 @@ with tune and the rest of tidymodels.
 
 rsample can stratify on one variable. If you need folds that match on
 age, income, and diagnosis together, rsample cannot do that. Folds that
-differ by chance on such variables make performance estimates less
-accurate (Moreno-Torres et al., 2012). This matters most in small data
-and for rare levels.
+differ by chance on such variables make performance estimates depend on
+which folds were drawn (Moreno-Torres et al., 2012). Balanced folds give
+steadier estimates. In simulations they were also a little more accurate
+for AUC with small folds and rare events, and about as accurate
+otherwise. This matters most in small data and for rare levels.
 
 balancedsample fills this gap with four methods:
 
@@ -99,40 +101,44 @@ folds
 
 `balance_check()` compares the held-out rows of each fold with the other
 rows. The printed table gives the largest and the mean absolute
-standardized mean difference (SMD) over the variables, how many
-variables are over 0.1, and the energy distance, which compares all the
-variables at once. The function works with any rsample object, so you
-can compare balanced folds with ordinary folds.
+standardized mean difference (SMD) over the variables, the mean compared
+with random sets of the same sizes (`vs chance`: about 1 for random
+folds, less for balanced ones), how many variables are worse than 95% of
+random sets, and the energy distance, which compares all the variables
+at once. The function works with any rsample object, so you can compare
+balanced folds with ordinary folds.
 
 ``` r
 balance_check(folds)
 #> # Balance check: 5 splits, 4 variables
-#> # 0 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.032
+#> # 0 of 5 splits have a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 0.0791, mean energy distance 0.032
 #> 
-#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
-#> Fold1     0.0367  site: B             0.0126        0/4  0.0341
-#> Fold2     0.026   site: C             0.00922       0/4  0.0261
-#> Fold3     0.026   site: A             0.0091        0/4  0.04
-#> Fold4     0.026   site: C             0.00992       0/4  0.0291
-#> Fold5     0.0373  diagnosis: mild     0.0159        0/4  0.0306
+#> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy
+#> Fold1     0.0367  site: B             0.0126      0.0877          0/4  0.0341
+#> Fold2     0.026   site: C             0.00922     0.0643          0/4  0.0261
+#> Fold3     0.026   site: A             0.0091      0.0635          0/4  0.04
+#> Fold4     0.026   site: C             0.00992     0.0692          0/4  0.0291
+#> Fold5     0.0373  diagnosis: mild     0.0159      0.111           0/4  0.0306
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 45 rows.
+#> # 85 rows.
 
 random_folds <- rsample::vfold_cv(sim_patients, v = 5)
 balance_check(random_folds, age, income, diagnosis, site)
 #> # Balance check: 5 splits, 4 variables
-#> # 5 of 5 splits have a variable with |SMD| > 0.1, mean energy distance 0.0789
+#> # 1 of 5 splits has a variable with |SMD| above chance (95%),
+#> # mean ratio to chance 1.09, mean energy distance 0.0768
 #> 
-#> id     max |SMD|  variable         mean |SMD|  over 0.1  energy
-#> Fold1      0.305  site: B               0.148       2/4  0.0827
-#> Fold2      0.411  site: B               0.165       2/4  0.101
-#> Fold3      0.177  diagnosis: none       0.105       2/4  0.054
-#> Fold4      0.277  income                0.201       3/4  0.0883
-#> Fold5      0.282  income                0.136       3/4  0.0684
+#> id     max |SMD|  variable         mean |SMD|  vs chance  over chance  energy
+#> Fold1      0.191  diagnosis: mild       0.117      0.838          0/4  0.0632
+#> Fold2      0.216  site: B               0.112      0.8            0/4  0.0754
+#> Fold3      0.273  income                0.206      1.47           0/4  0.0841
+#> Fold4      0.163  diagnosis: none       0.108      0.77           0/4  0.0638
+#> Fold5      0.353  age                   0.222      1.59           1/4  0.0976
 #> 
 #> # summary() gives this table as a tibble, and tibble::as_tibble() gives all
-#> # 45 rows.
+#> # 85 rows.
 ```
 
 The folds work with tune. Attach balancedsample with `library()` first,

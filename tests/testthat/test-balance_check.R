@@ -11,9 +11,12 @@ test_that("balance_check() returns one SMD per variable and level", {
   bc <- balance_check(folds)
   expect_s3_class(bc, "balance_check")
   expect_named(bc, c("id", "variable", "level", "statistic", "value"))
-  # x1 + 3 levels of cat + 2 levels of sex + energy = 7 rows per fold
-  expect_equal(nrow(bc), 4 * 7)
+  # x1 + 3 levels of cat + 2 levels of sex + energy = 7 rows per fold, and
+  # two chance rows for each of the 3 variables.
+  expect_equal(nrow(bc), 4 * (7 + 6))
   expect_equal(sum(bc$statistic == "energy"), 4)
+  expect_equal(sum(bc$statistic == "chance_mean"), 4 * 3)
+  expect_equal(nrow(balance_check(folds, chance = 0)), 4 * 7)
   expect_true(all(bc$value[bc$statistic == "energy"] >= 0))
 })
 
@@ -56,15 +59,20 @@ test_that("balance_check() works on repeats and on splits", {
   withr::local_options(width = 40)
   header <- utils::capture.output(print(bc))[1:4]
   expect_match(header[1], "^# Balance check: 1 split, 2 variables$")
-  expect_match(header[2], "^# \\|SMD\\| > 0.1 in [0-2] of 2 variables,$")
-  expect_match(header[3], "^# energy distance [0-9.e-]+$")
-  expect_equal(header[4], "")
+  header <- utils::capture.output(print(bc))[1:5]
+  expect_match(
+    header[2],
+    "^# \\|SMD\\| above chance \\(95%\\) in [0-2] of 2 variables,$"
+  )
+  expect_match(header[3], "^# ratio to chance [0-9.e-]+,$")
+  expect_match(header[4], "^# energy distance [0-9.e-]+$")
+  expect_equal(header[5], "")
 })
 
 test_that("balance_check() drops missing values and reports the share missing", {
   d <- data.frame(z = c(1, 2, 3, NA, 5, 6), w = c("a", NA, "b", "a", "b", "a"))
   s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
-  bc <- balance_check(s, z, w)
+  bc <- balance_check(s, z, w, chance = 0)
   smd <- bc$statistic == "smd"
   expect_equal(
     bc$value[smd & bc$variable %in% "z" & is.na(bc$level)],
@@ -117,7 +125,16 @@ test_that("balance_check() reports complete separation as Inf", {
   s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
   bc <- balance_check(s, g)
   expect_equal(bc$value[bc$statistic == "smd"], c(-Inf, Inf))
-  expect_output(print(bc), "|SMD| > 0.1 in 1 of 1 variable,", fixed = TRUE)
+  expect_output(
+    print(bc),
+    "|SMD| above chance (95%) in 1 of 1 variable,",
+    fixed = TRUE
+  )
+  expect_output(
+    print(balance_check(s, g, chance = 0)),
+    "|SMD| > 0.1 in 1 of 1 variable,",
+    fixed = TRUE
+  )
   expect_output(print(bc), "g         A      -Inf", fixed = TRUE)
 
   d <- data.frame(x = c(0, 0, 1e-13, 1e-13))
@@ -173,7 +190,7 @@ test_that("balance_check() handles logical and missing columns", {
     z = c(NA, NA, NA, 1, 2, 3)
   )
   s <- rsample::make_splits(list(analysis = 1:3, assessment = 4:6), d)
-  bc <- balance_check(s, flag, z)
+  bc <- balance_check(s, flag, z, chance = 0)
   expect_equal(bc$level[bc$variable %in% "flag"], c("FALSE", "TRUE"))
   # z is missing in the whole analysis set, so it has no SMD of its values,
   # and its share missing differs completely.
@@ -236,7 +253,9 @@ test_that("summary() gives one row per split", {
       "mean_abs_smd",
       "n_over",
       "n_variables",
-      "energy"
+      "energy",
+      "chance_mean_abs_smd",
+      "ratio_to_chance"
     )
   )
   expect_equal(s$id, folds$id)
@@ -268,7 +287,11 @@ test_that("summary() counts each variable once", {
   expect_equal(out$max_abs_smd, max(worst))
   expect_equal(out$mean_abs_smd, mean(worst))
   expect_equal(out$n_variables, 3L)
-  expect_equal(out$n_over, sum(worst > 0.1))
+  # By default, each variable is compared with its own chance reference.
+  q95 <- bc[bc$statistic == "chance_q95", ]
+  q95 <- setNames(q95$value, q95$variable)[c("x", "g", "z")]
+  expect_equal(out$n_over, sum(worst > q95))
+  expect_equal(summary(bc, threshold = 0.1)$n_over, sum(worst > 0.1))
   expect_equal(summary(bc, threshold = 0)$n_over, sum(worst > 0))
   expect_equal(summary(bc, threshold = 100)$n_over, 0L)
   expect_equal(
@@ -316,7 +339,8 @@ test_that("summary(by = \"variable\") gives one row per variable", {
       "id2",
       "n_over",
       "n_splits",
-      "variance_ratio"
+      "variance_ratio",
+      "chance_q95"
     )
   )
   expect_equal(out$variable, c("x1", "x2", "cat", "sex"))
@@ -360,12 +384,14 @@ test_that("summary(by = \"variable\") gives one row per variable", {
 
   empty <- summary(bc[0, ], by = "variable")
   expect_equal(nrow(empty), 0)
-  expect_named(empty, setdiff(names(out), "variance_ratio"))
+  expect_named(empty, setdiff(names(out), c("variance_ratio", "chance_q95")))
   expect_type(empty$median_abs_smd, "double")
   expect_type(empty$n_over, "integer")
 })
 
 test_that("print() shows one split, a few splits, or many splits", {
+  # The chance reference comes from random draws.
+  set.seed(1)
   d <- data.frame(
     x = c(1, 4, 2, 6, 3, 5, 2, 7, 4, 4, 5, 1),
     g = rep(c("a", "b", "b"), 4),
@@ -386,7 +412,7 @@ test_that("print() shows one split, a few splits, or many splits", {
     rsample::manual_rset(splits, paste0("Fold", seq_len(k)))
   }
   expect_snapshot(withr::with_options(
-    list(width = 100),
+    list(width = 120),
     print(balance_check(folds(3), x, g, variance_ratio = TRUE))
   ))
   expect_snapshot(print(balance_check(folds(11), x, g, z)))
@@ -398,7 +424,7 @@ test_that("print() shows one split, a few splits, or many splits", {
     out <- utils::capture.output(print(wide))
   )
   expect_true(all(nchar(out) <= 70))
-  expect_false(any(grepl("ratio", out[1:8])))
+  expect_false(any(grepl("variance ratio|ratio variable", out[1:8])))
   expect_true(any(grepl(
     "Not shown for lack of width: variance ratio, ratio variable",
     out,
@@ -427,7 +453,8 @@ test_that("print() shows enough digits to agree with the counts", {
       list(analysis = 1:3, assessment = 4:6),
       data.frame(x = x)
     )
-    bc <- balance_check(s, x)
+    # Without the chance reference, the cut-off is 0.1.
+    bc <- balance_check(s, x, chance = 0)
     expect_equal(abs(bc$value[1]), 0.1)
     expect_equal(summary(bc)$n_over, 0L)
     expect_equal(summary(bc, by = "variable")$n_over, 0L)
@@ -547,7 +574,11 @@ test_that("summary() handles empty and incomplete input", {
   bc <- balance_check(rsample::vfold_cv(d, v = 3), x1)
   empty <- summary(bc[0, ])
   expect_equal(nrow(empty), 0)
-  expect_named(empty, names(summary(bc)))
+  # With no rows, there are no chance rows either.
+  expect_named(
+    empty,
+    setdiff(names(summary(bc)), c("chance_mean_abs_smd", "ratio_to_chance"))
+  )
   expect_type(empty$max_abs_smd, "double")
   expect_type(empty$variable, "character")
   expect_type(empty$energy, "double")
@@ -597,7 +628,10 @@ test_that("whole-number exact columns are checked as categories", {
   set.seed(1)
   folds <- balanced_vfold_cv(d, v = 3, balance = x, exact = code)
   bc <- balance_check(folds)
-  expect_equal(bc$level[bc$variable %in% "code"], rep(c("1", "2", "3"), 3))
+  expect_equal(
+    bc$level[bc$variable %in% "code" & bc$statistic == "smd"],
+    rep(c("1", "2", "3"), 3)
+  )
 
   # A set with only code 2 differs from one with codes 1 and 3, although
   # the means are equal.
@@ -608,7 +642,7 @@ test_that("whole-number exact columns are checked as categories", {
   stored <- plain
   attr(stored, "exact") <- "code"
   bc <- balance_check(stored)
-  expect_equal(bc$value[bc$variable %in% "code" & bc$level == "2"], Inf)
+  expect_equal(bc$value[bc$variable %in% "code" & bc$level %in% "2"], Inf)
   # Naming a stored exact column keeps it categorical, with no variance
   # ratio, and the energy distance matches that of a factor.
   bc <- balance_check(stored, code, variance_ratio = TRUE)
@@ -719,9 +753,11 @@ test_that("small differences far from the origin are measured", {
   # Microseconds on a date-time in seconds.
   d <- data.frame(t = t0 + c(0, 10, 0, 10, 10, 30, 10, 30) / 1e6)
   s <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d)
+  set.seed(1)
   bc <- balance_check(s, t, variance_ratio = TRUE)
   d0 <- data.frame(t = c(0, 10, 0, 10, 10, 30, 10, 30))
   s0 <- rsample::make_splits(list(analysis = 1:4, assessment = 5:8), d0)
+  set.seed(1)
   expect_equal(bc$value, balance_check(s0, t, variance_ratio = TRUE)$value)
   expect_equal(ncol(build_balance_matrix(d)), 1)
 })
@@ -771,7 +807,7 @@ test_that("logical exact columns are checked as categories", {
   split <- balanced_initial_split(d, balance = x, exact = flag, na = "include")
   bc <- balance_check(split)
   expect_equal(
-    bc$level[bc$variable %in% "flag"],
+    bc$level[bc$variable %in% "flag" & bc$statistic == "smd"],
     c("FALSE", "TRUE", "(missing)")
   )
   as_factor <- rsample::make_splits(
@@ -780,4 +816,224 @@ test_that("logical exact columns are checked as categories", {
   )
   energy <- function(bc) bc$value[bc$statistic == "energy"]
   expect_equal(energy(bc), energy(balance_check(as_factor, x, flag)))
+})
+
+test_that("balance_check() adds a chance reference for each variable", {
+  d <- sim_data()
+  set.seed(20)
+  folds <- balanced_vfold_cv(d, v = 4, balance = c(x1, cat), exact = sex)
+  set.seed(21)
+  bc <- balance_check(folds)
+  chance <- bc[bc$statistic %in% c("chance_mean", "chance_q95"), ]
+  # Two rows per variable per split, with no level, after the energy row.
+  expect_equal(nrow(chance), 4 * 3 * 2)
+  expect_true(all(is.na(chance$level)))
+  expect_equal(
+    chance$variable[chance$id == "Fold1"],
+    rep(c("x1", "cat", "sex"), each = 2)
+  )
+  fold1 <- which(bc$id == "Fold1")
+  expect_equal(
+    bc$statistic[fold1],
+    c(rep("smd", 6), "energy", rep(c("chance_mean", "chance_q95"), 3))
+  )
+  mean_rows <- chance[chance$statistic == "chance_mean", ]
+  q95_rows <- chance[chance$statistic == "chance_q95", ]
+  expect_true(all(mean_rows$value > 0 & mean_rows$value < q95_rows$value))
+  # Folds of the same size share one set of draws.
+  expect_equal(length(unique(mean_rows$value)), 3)
+
+  # The same seed gives the same draws, and another seed other draws.
+  set.seed(21)
+  expect_equal(balance_check(folds), bc)
+  set.seed(22)
+  expect_false(isTRUE(all.equal(balance_check(folds)$value, bc$value)))
+
+  # Without the reference, the output is as before.
+  plain <- balance_check(folds, chance = 0)
+  expect_equal(
+    plain,
+    bc[!bc$statistic %in% c("chance_mean", "chance_q95"), ],
+    ignore_attr = "row.names"
+  )
+  expect_snapshot(balance_check(folds, chance = -1), error = TRUE)
+})
+
+test_that("the chance reference reduces each variable as summary() does", {
+  d <- data.frame(
+    z = c(1, NA, 3, 4, NA, 6, 7, 8, 2, NA, 1, 5),
+    code = rep(1:3, 4),
+    flag = rep(c(TRUE, FALSE, FALSE), 4)
+  )
+  s <- rsample::make_splits(list(analysis = 1:8, assessment = 9:12), d)
+  attr(s, "exact") <- "code"
+  set.seed(23)
+  bc <- balance_check(s, z, code, flag, chance = 20)
+  # The same draws by hand: reassign the rows, then reduce each variable to
+  # its largest absolute SMD, over its levels and its share missing.
+  set.seed(23)
+  worst <- vapply(
+    1:20,
+    function(r) {
+      new_as <- seq_len(12) %in% sample.int(12, 4)
+      drawn <- rsample::make_splits(
+        list(analysis = which(!new_as), assessment = which(new_as)),
+        d
+      )
+      attr(drawn, "exact") <- "code"
+      out <- summary(
+        balance_check(drawn, z, code, flag, chance = 0),
+        by = "variable"
+      )
+      out$max_abs_smd
+    },
+    numeric(3)
+  )
+  expect_equal(
+    bc$value[bc$statistic == "chance_mean"],
+    unname(rowMeans(worst))
+  )
+  expect_equal(
+    bc$value[bc$statistic == "chance_q95"],
+    unname(apply(worst, 1, stats::quantile, 0.95, names = FALSE))
+  )
+})
+
+test_that("random folds are near chance and balanced folds below it", {
+  set.seed(24)
+  random <- summary(balance_check(
+    rsample::vfold_cv(sim_patients, v = 10),
+    age,
+    income,
+    diagnosis,
+    site
+  ))
+  ratio <- mean(random$ratio_to_chance)
+  expect_gt(ratio, 0.7)
+  expect_lt(ratio, 1.4)
+  expect_equal(
+    random$ratio_to_chance,
+    random$mean_abs_smd / random$chance_mean_abs_smd
+  )
+
+  set.seed(24)
+  folds <- balanced_vfold_cv(
+    sim_patients,
+    v = 10,
+    balance = c(age, income),
+    exact = c(diagnosis, site)
+  )
+  balanced <- summary(balance_check(folds))
+  expect_lt(mean(balanced$ratio_to_chance), 0.5)
+  expect_true(all(balanced$n_over == 0L))
+})
+
+test_that("summary() compares with chance unless given a threshold", {
+  d <- sim_data()
+  set.seed(25)
+  folds <- rsample::vfold_cv(d, v = 5)
+  set.seed(26)
+  bc <- balance_check(folds, x1, x2, cat, sex)
+  plain <- balance_check(folds, x1, x2, cat, sex, chance = 0)
+  # A numeric threshold gives the old counts, and without chance rows the
+  # cut-off is 0.1.
+  new_cols <- c("chance_mean_abs_smd", "ratio_to_chance")
+  fixed <- summary(bc, threshold = 0.1)
+  expect_equal(fixed[setdiff(names(fixed), new_cols)], summary(plain))
+  expect_equal(
+    summary(bc, threshold = 0.1, by = "variable")[1:7],
+    summary(plain, by = "variable")
+  )
+  expect_false(any(new_cols %in% names(summary(plain))))
+  smd <- plain[plain$statistic == "smd", ]
+  per_var <- tapply(abs(smd$value), list(smd$id, smd$variable), max)
+  expect_equal(summary(plain)$n_over, unname(rowSums(per_var > 0.1)))
+
+  # By default, each variable is compared with its own 95th percentile.
+  q95 <- bc[bc$statistic == "chance_q95", ]
+  q95 <- tapply(q95$value, list(q95$id, q95$variable), max)
+  expect_equal(summary(bc)$n_over, unname(rowSums(per_var > q95)))
+  by_var <- summary(bc, by = "variable")
+  expect_equal(
+    by_var$n_over,
+    unname(colSums(per_var > q95)[by_var$variable])
+  )
+  expect_equal(
+    by_var$chance_q95,
+    unname(apply(q95, 2, stats::median)[by_var$variable])
+  )
+
+  # Printing names the cut-off it uses.
+  expect_output(print(bc), "above chance (95%)", fixed = TRUE)
+  expect_output(print(bc), "vs chance", fixed = TRUE)
+  expect_output(print(plain), "|SMD| > 0.1", fixed = TRUE)
+  expect_false(any(grepl("chance", utils::capture.output(print(plain)))))
+})
+
+test_that("the chance reference works for splits and three-way splits", {
+  d <- sim_data()
+  set.seed(27)
+  s <- balanced_initial_split(d, balance = c(x1, cat))
+  out <- summary(balance_check(s))
+  expect_true(out$ratio_to_chance < 1)
+
+  s3 <- balanced_initial_validation_split(
+    d,
+    prop = c(0.6, 0.2),
+    balance = c(x1, x2)
+  )
+  bc3 <- balance_check(s3)
+  expect_equal(
+    unique(bc3$id[bc3$statistic == "chance_q95"]),
+    c("Validation", "Testing")
+  )
+  out3 <- summary(bc3)
+  expect_true(all(is.finite(out3$ratio_to_chance)))
+})
+
+test_that("grouped splits reassign whole groups for the chance reference", {
+  d <- sim_data()
+  set.seed(28)
+  folds <- balanced_vfold_cv(d, v = 4, balance = x1, exact = site, group = id)
+  # `site` is constant within a group, so random groups differ more on it
+  # than random rows do.
+  chance_site <- function(bc) {
+    bc$value[bc$statistic == "chance_mean" & bc$variable %in% "site"]
+  }
+  set.seed(29)
+  grouped <- chance_site(balance_check(folds))
+  ungrouped <- folds
+  attr(ungrouped, "group") <- NULL
+  set.seed(29)
+  by_row <- chance_site(balance_check(ungrouped))
+  expect_true(all(grouped > by_row))
+
+  # rsample's grouped folds store their group column too.
+  rs_folds <- rsample::group_vfold_cv(d, group = id, v = 4)
+  set.seed(30)
+  rs_grouped <- chance_site(balance_check(rs_folds, x1, site))
+  expect_gt(mean(rs_grouped), mean(by_row))
+})
+
+test_that("the SMD plot shows the chance band or the 0.1 lines", {
+  skip_if_not_installed("ggplot2")
+  d <- sim_data()
+  set.seed(31)
+  folds <- balanced_vfold_cv(d, v = 3, balance = c(x1, cat))
+  layers <- function(p) {
+    vapply(p$layers, function(l) class(l$geom)[1], character(1))
+  }
+  p <- ggplot2::autoplot(balance_check(folds))
+  expect_true("GeomTile" %in% layers(p))
+  built <- ggplot2::ggplot_build(p)
+  tiles <- built$data[[which(layers(p) == "GeomTile")]]
+  # One band for x1 and one for each level of cat.
+  expect_equal(nrow(tiles), 4)
+  p0 <- ggplot2::autoplot(balance_check(folds, chance = 0))
+  expect_false("GeomTile" %in% layers(p0))
+  xs <- unlist(lapply(
+    ggplot2::ggplot_build(p0)$data,
+    function(l) l$xintercept
+  ))
+  expect_true(all(c(-0.1, 0.1) %in% xs))
 })

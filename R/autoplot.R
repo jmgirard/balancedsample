@@ -1,8 +1,12 @@
 #' Plot a balance check
 #'
 #' Plot the output of [balance_check()]. `type = "smd"` shows the
-#' standardized mean difference of each variable in each split, with dashed
-#' lines at -0.1 and 0.1. For a three-way split, the validation and testing
+#' standardized mean difference of each variable in each split. A grey band
+#' around each variable shows how far its largest absolute SMD went in 95% of
+#' random sets of the same sizes (`"chance_q95"`, the median over the
+#' splits), so points well inside the band are better balanced than chance.
+#' Without the chance reference (with `chance = 0`), dashed lines at -0.1 and
+#' 0.1 are drawn instead. For a three-way split, the validation and testing
 #' sets have different shapes. `type = "energy"` shows the energy distance of
 #' each split.
 #'
@@ -30,6 +34,7 @@ autoplot.balance_check <- function(object, type = c("smd", "energy"), ...) {
   has_id2 <- "id2" %in% names(df)
 
   if (type == "smd") {
+    q95 <- df[df$statistic == "chance_q95", , drop = FALSE]
     df <- df[df$statistic == "smd", , drop = FALSE]
     df$label <- ifelse(
       is.na(df$level),
@@ -37,13 +42,36 @@ autoplot.balance_check <- function(object, type = c("smd", "energy"), ...) {
       paste0(df$variable, ": ", df$level)
     )
     df$label <- factor(df$label, levels = rev(unique(df$label)))
-    p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$value, y = .data$label)) +
+    p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$value, y = .data$label))
+    if (nrow(q95) > 0) {
+      # One band per row of the plot, from the chance reference of its
+      # variable.
+      band <- unique(df[c("variable", "label")])
+      band$q95 <- vapply(
+        band$variable,
+        function(v) stats::median(q95$value[q95$variable %in% v]),
+        numeric(1)
+      )
+      band <- band[is.finite(band$q95), , drop = FALSE]
+      p <- p +
+        ggplot2::geom_tile(
+          ggplot2::aes(x = 0, y = .data$label, width = 2 * .data$q95),
+          data = band,
+          height = 0.8,
+          fill = "grey60",
+          alpha = 0.3,
+          inherit.aes = FALSE
+        )
+    } else {
+      p <- p +
+        ggplot2::geom_vline(
+          xintercept = c(-0.1, 0.1),
+          linetype = "dashed",
+          colour = "grey50"
+        )
+    }
+    p <- p +
       ggplot2::geom_vline(xintercept = 0, colour = "grey50") +
-      ggplot2::geom_vline(
-        xintercept = c(-0.1, 0.1),
-        linetype = "dashed",
-        colour = "grey50"
-      ) +
       ggplot2::labs(
         x = "Standardized mean difference (assessment - analysis)",
         y = NULL
