@@ -19,9 +19,11 @@ with tune and the rest of tidymodels.
 
 rsample can stratify on one variable. If you need folds that match on
 age, income, and diagnosis together, rsample cannot do that. Folds that
-differ by chance on such variables make performance estimates less
-accurate (Moreno-Torres et al., 2012). This matters most in small data
-and for rare levels.
+differ by chance on such variables make performance estimates depend on
+which folds were drawn (Moreno-Torres et al., 2012). Balanced folds give
+steadier estimates. In simulations they were also a little more accurate
+for AUC with small folds and rare events, and about as accurate
+otherwise. This matters most in small data and for rare levels.
 
 balancedsample fills this gap with four methods:
 
